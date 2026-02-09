@@ -77,7 +77,7 @@ bool Engine::Update(float dt) {
             continue;
 
         n.sprite.x = std::floor(sx);
-        n.sprite.y = std::floor(sy) + 360; //Need to fix
+        n.sprite.y = std::floor(sy);
         n.sprite.w = std::floor(sw);
         n.sprite.h = std::floor(sh);
         n.sprite.layer = RenderLayer::WORLD;
