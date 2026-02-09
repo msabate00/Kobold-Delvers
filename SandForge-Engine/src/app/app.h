@@ -48,8 +48,8 @@ public:
 	UI* ui;
 	Audio* audio;
 
-
-
+	int pixelsPerCell = 4;
+	Vec2<int> framebufferSize{ 1280, 720 };
 	Vec2<int> windowSize{ 1280, 720 };
 	Vec2<int> gridSize{ 920, 300 };
 

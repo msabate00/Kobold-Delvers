@@ -21,6 +21,11 @@ void Input::SetupWindow(GLFWwindow* window)
     glfwSetKeyCallback(this->window, &Input::SKey);
     glfwSetMouseButtonCallback(this->window, &Input::SMouseBtn);
     glfwSetScrollCallback(this->window, &Input::SScroll);
+
+    glfwSetWindowSizeCallback(this->window, &Input::SWindowSize);
+    glfwSetFramebufferSizeCallback(this->window, &Input::SFramebufferSize);
+
+    
 }
 
 void Input::BeginFrame()
@@ -75,6 +80,35 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
         brushSize += this->ScrollSteps();
         brushSize = std::max(1, std::min(64, brushSize));
     }
+}
+
+double Input::MouseX() const {
+    int ww = std::max(1, app->windowSize.x);
+    int fw = std::max(1, app->framebufferSize.x);
+    return mx * (double)fw / (double)ww;
+}
+
+double Input::MouseY() const {
+    int wh = std::max(1, app->windowSize.y);
+    int fh = std::max(1, app->framebufferSize.y);
+    return my * (double)fh / (double)wh;
+}
+
+void Input::SWindowSize(GLFWwindow* w, int ww, int wh) {
+    auto* self = static_cast<Input*>(glfwGetWindowUserPointer(w));
+    if (!self || !self->app) return;
+    self->app->windowSize = { ww, wh };
+}
+
+void Input::SFramebufferSize(GLFWwindow* w, int fw, int fh) {
+    auto* self = static_cast<Input*>(glfwGetWindowUserPointer(w));
+    if (!self || !self->app) return;
+
+    self->app->framebufferSize = { fw, fh };
+
+    float camW = fw / (float)self->app->pixelsPerCell;
+    float camH = fh / (float)self->app->pixelsPerCell;
+    self->app->SetCameraRect(self->app->camera.pos.x, self->app->camera.pos.y, camW, camH);
 }
 
 void Input::SKey(GLFWwindow* w, int key, int, int action, int) {

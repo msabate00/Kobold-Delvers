@@ -242,14 +242,21 @@ void UI::Circle(float cx, float cy, float r, uint32 c, int segments) {
 
 void UI::Ring(float cx, float cy, float r, float t, uint32 c, int segments) {
 
-	float rx = r * (float)app->windowSize.x / (float)app->camera.size.x;
-	float ry = r * (float)app->windowSize.y / (float)app->camera.size.y;
+	float vw = (float)app->framebufferSize.x;
+	float vh = (float)app->framebufferSize.y;
+	float cw = app->camera.size.x, ch = app->camera.size.y;
 
-	if (t <= 0 || rx <= 0 || ry <= 0) return;
+	float sxCell = floor(vw / cw);
+	float syCell = floor(vh / ch);
+	float s = std::max(1.0f, std::min(sxCell, syCell));
 
-	float rx0 = std::fmax(0.0f, rx - t * 0.5f), ry0 = std::fmax(0.0f, ry - t * 0.5f);
-	float rx1 = rx + t * 0.5f, ry1 = ry + t * 0.5f;
-	int n = segments > 0 ? segments : std::fmax(12, std::fmin(128, int((6.2831853f * std::fmax(rx, ry)) / 8.0f)));
+	float rp = r * s;
+
+	if (t <= 0 || rp <= 0) return;
+
+	float rx0 = std::fmax(0.0f, rp - t * 0.5f), ry0 = std::fmax(0.0f, rp - t * 0.5f);
+	float rx1 = rp + t * 0.5f, ry1 = rp + t * 0.5f;
+	int n = segments > 0 ? segments : std::fmax(12, std::fmin(128, int((6.2831853f * std::fmax(rp, rp)) / 8.0f)));
 	float dA = 6.2831853f / n;
 	float p0x = cx + rx0, p0y = cy, p1x = cx + rx1, p1y = cy;
 	for (int i = 1;i <= n;++i) {

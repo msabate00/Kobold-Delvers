@@ -39,10 +39,11 @@ bool App::Awake()
 	window = glfwCreateWindow(windowSize.x, windowSize.y, "SandForge Engine", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
+	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
+	glfwGetFramebufferSize(window, &framebufferSize.x, &framebufferSize.y);
+
 	if (!gladLoadGL(glfwGetProcAddress)) return -1;
 	glfwSwapInterval(1);
-
-
 
 	engine->Awake();
 	registerDefaultMaterials();
@@ -51,6 +52,7 @@ bool App::Awake()
 
 	input->Awake();
 	input->SetupWindow(window);
+	Input::SFramebufferSize(window,framebufferSize.x, framebufferSize.y);
 
 	audio->Awake();
 
@@ -106,7 +108,7 @@ bool App::Update()
 		}
 		ui->SetMouse(input->MouseX(), input->MouseY(), input->MouseDown(GLFW_MOUSE_BUTTON_1));
 		ui->SetNoRender(true);
-		ui->Begin(windowSize.x, windowSize.y);
+		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
 		ui->Draw(brushSize, brushMat);
 		ui->End();
 		input->ProcessBindings(brushMat, brushSize);
@@ -120,7 +122,7 @@ bool App::Update()
 		renderer->Update(dt);
 		
 		ui->SetNoRender(false);
-		ui->Begin(windowSize.x, windowSize.y);
+		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
 		ui->Draw(brushSize, brushMat);
 		ui->End();
 
@@ -137,7 +139,6 @@ bool App::Update()
 			frames = 0;
 		}
 		glfwSwapBuffers(window);
-		glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	}
 
 
@@ -161,6 +162,12 @@ bool App::CleanUp()
 void App::SetCameraRect(float x, float y, float w, float h) {
 	camera.size.x = std::fmax(1.f, w);
 	camera.size.y = std::fmax(1.f, h);
-	camera.pos.x = std::clamp(x, 0.f, (float)gridSize.x - camera.size.x);
-	camera.pos.y = std::clamp(y, 0.f, (float)gridSize.y - camera.size.y);
+	camera.size.x = std::fmin(camera.size.x, (float)gridSize.x);
+	camera.size.y = std::fmin(camera.size.y, (float)gridSize.y);
+
+	float maxX = (float)gridSize.x - camera.size.x;
+	float maxY = (float)gridSize.y - camera.size.y;
+
+	camera.pos.x = std::clamp(x, 0.f, maxX);
+	camera.pos.y = std::clamp(y, 0.f, maxY);
 }

@@ -73,7 +73,7 @@ bool Engine::Update(float dt) {
     for (auto& n : npcs) {
         float sx, sy, sw, sh;
         if (!WorldRectToScreen((float)n.x, (float)n.y, (float)n.w, (float)n.h,
-            app->windowSize.x, app->windowSize.y, sx, sy, sw, sh))
+            app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh))
             continue;
 
         n.sprite.x = std::floor(sx);
@@ -334,10 +334,29 @@ void Engine::Paint(int cx, int cy, Material m, int r) {
 
     if (app->ui->ConsumedMouse()) return;
 
-    float u = cx / (float)app->windowSize.x;
-    float v = cy / (float)app->windowSize.y;
-    cx = (int)std::floor(app->camera.pos.x + u * app->camera.size.x);
-    cy = (int)std::floor(app->camera.pos.y + v * app->camera.size.y);
+    float vw = (float)std::max(1, app->framebufferSize.x);
+    float vh = (float)std::max(1, app->framebufferSize.y);
+    float cw = std::fmax(1.0f, app->camera.size.x);
+    float ch = std::fmax(1.0f, app->camera.size.y);
+
+    float sxCell = std::floor(vw / cw);
+    float syCell = std::floor(vh / ch);
+    float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
+    float sizeW = cw * s;
+    float sizeH = ch * s;
+    float offX = (vw - sizeW) * 0.5f;
+    float offY = (vh - sizeH) * 0.5f;
+
+    // Mouse dentro del área del mundo (letterbox)
+    float fx = (float)cx - offX;
+    float fy = (float)cy - offY;
+    if (fx < 0 || fy < 0 || fx >= sizeW || fy >= sizeH) return;
+
+    float u = fx / sizeW;
+    float v = fy / sizeH;
+
+    cx = (int)std::floor(app->camera.pos.x + u * cw);
+    cy = (int)std::floor(app->camera.pos.y + v * ch);
 
     if (m == Material::NpcCell) {
         if (!npcDrawed) {
@@ -480,8 +499,13 @@ void Engine::MoveNPCs() {
      float syCell = std::floor(vh / ch);
      float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
 
-     sx = (rx - cx) * s;
-     sy = (ry - cy) * s;            
+     float sizeW = cw * s;
+     float sizeH = ch * s;
+     float offX = (vw - sizeW) * 0.5f;
+     float offY = (vh - sizeH) * 0.5f;
+
+     sx = offX + (rx - cx) * s;
+     sy = offY + (ry - cy) * s;
      sw = rw * s;
      sh = rh * s;
 

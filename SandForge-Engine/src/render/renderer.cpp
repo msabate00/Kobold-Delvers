@@ -95,7 +95,7 @@ bool Renderer::Update(float dt) {
     
     int rx = 0, ry = 0, rw = 0, rh = 0;
     bool uploadedDirty = false;
-    ensureSceneTargets(app->windowSize.x, app->windowSize.y);
+    ensureSceneTargets(app->framebufferSize.x, app->framebufferSize.y);
 
     while (app->engine->PopChunkDirtyGPURect(rx, ry, rw, rh)) {
         Draw(app->engine->GetFrontPlane(), app->gridSize.x, app->gridSize.y, rx, ry, rw, rh);
@@ -109,7 +109,7 @@ bool Renderer::Update(float dt) {
     
 
 
-    DrawGrid(std::vector<uint8>{}, app->gridSize.x, app->gridSize.y , app->windowSize.x, app->windowSize.y);
+    DrawGrid(std::vector<uint8>{}, app->gridSize.x, app->gridSize.y, app->framebufferSize.x, app->framebufferSize.y);
 
     return true;
 }

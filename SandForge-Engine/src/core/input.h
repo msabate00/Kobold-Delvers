@@ -31,8 +31,11 @@ public:
     bool MouseDown(int button) const { return mouseDown[button]; }
     bool MouseUp(int button) const { return mouseUp[button]; }
 
-    double MouseX() const { return mx; }
-    double MouseY() const { return my; }
+    double MouseX() const;
+    double MouseY() const;
+
+    static void SWindowSize(GLFWwindow* w, int ww, int wh);
+    static void SFramebufferSize(GLFWwindow* w, int fw, int fh);
 
     int ScrollSteps() const { return scrollYSteps; }
 
