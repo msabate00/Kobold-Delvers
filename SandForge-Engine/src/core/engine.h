@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include "material.h"
+#include "level.h"
 #include "audio/audio.h"
 #include "render/sprite.h"
 #include "render/texture.h"
@@ -32,6 +33,15 @@ public:
     bool CleanUp();
 
     const uint8* GetFrontPlane() { return mFront.data(); };
+
+    int GridW() const { return gridW; }
+    int GridH() const { return gridH; }
+
+    void ExportLevel(Level& out) const;
+    bool ImportLevel(const Level& in);
+    bool SaveLevel(const char* path) const;
+    bool LoadLevel(const char* path);
+    void ClearWorld(uint8 fill = (uint8)Material::Empty);
 
 
     bool tryMove(int x0, int y0, int x1, int y1, const Cell& c);

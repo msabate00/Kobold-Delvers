@@ -1,12 +1,141 @@
-﻿#include "Engine.h" 
-#include "app/Module.h"  
+#include "engine.h"
 #include "app/app.h"
 #include "input.h"
 #include "ui/ui.h"
 #include "render/renderer.h"
+#include "level.h"
 
 Engine::Engine(App* app, bool start_enabled) : Module(app, start_enabled) {};
 Engine::~Engine() = default;
+
+
+void Engine::ClearWorld(uint8 fill)
+{
+    const size_t n = static_cast<size_t>(gridW) * static_cast<size_t>(gridH);
+    if (n == 0) return;
+
+    front.assign(n, Cell{ fill, 0 });
+    back.assign(n, Cell{ fill, 0 });
+    mFront.assign(n, fill);
+    mBack.assign(n, fill);
+    npcs.clear();
+    occ.assign(n, 0);
+
+    // Reset dirty/TTL
+    const size_t cn = static_cast<size_t>(chunksW) * static_cast<size_t>(chunksH);
+    chunkDirtyNow.assign(cn, 1);
+    chunkDirtyNext.assign(cn, 0);
+    chunkDirtyGPU.assign(cn, 1);
+    chunkTTL.assign(cn, 0);
+
+    elapsedTimeSinceStep = 0.0f;
+    parity = 0;
+    stepOnce = false;
+    npcDrawed = false;
+
+    RebuildOcc();
+}
+
+
+void Engine::ExportLevel(Level& out) const
+{
+    out.w = gridW;
+    out.h = gridH;
+    out.grid = mFront;
+
+    out.npcs.clear();
+    out.npcs.reserve(npcs.size());
+    for (const auto& n : npcs) {
+        LevelNPC ln{};
+        ln.x = n.x;
+        ln.y = n.y;
+        ln.w = n.w;
+        ln.h = n.h;
+        ln.dir = n.dir;
+        ln.alive = n.alive;
+        out.npcs.push_back(ln);
+    }
+}
+
+
+bool Engine::ImportLevel(const Level& in)
+{
+    if (!in.IsValid()) return false;
+
+    //Reset del grid
+    if ((in.w != gridW || in.h != gridH)) {
+        gridW = in.w;
+        gridH = in.h;
+        app->gridSize = { gridW, gridH };
+
+        chunksW = (gridW + CHUNK_SIZE - 1) / CHUNK_SIZE;
+        chunksH = (gridH + CHUNK_SIZE - 1) / CHUNK_SIZE;
+
+        const size_t n = static_cast<size_t>(gridW) * static_cast<size_t>(gridH);
+        front.assign(n, Cell{ (uint8)Material::Empty, 0 });
+        back.assign(n, Cell{ (uint8)Material::Empty, 0 });
+        mFront.assign(n, (uint8)Material::Empty);
+        mBack.assign(n, (uint8)Material::Empty);
+        occ.assign(n, 0);
+
+        const size_t cn = static_cast<size_t>(chunksW) * static_cast<size_t>(chunksH);
+        chunkDirtyNow.assign(cn, 1);
+        chunkDirtyNext.assign(cn, 0);
+        chunkDirtyGPU.assign(cn, 1);
+        chunkTTL.assign(cn, 0);
+    }
+
+    //Materiales
+    const size_t n = static_cast<size_t>(gridW) * static_cast<size_t>(gridH);
+    for (size_t i = 0; i < n; ++i) {
+        uint8 m = in.grid[i];
+        front[i].m = m;
+        back[i].m = m;
+        mFront[i] = m;
+        mBack[i] = m;
+    }
+
+    //Npcs
+    npcs.clear();
+    for (const auto& ln : in.npcs) {
+        if (!ln.alive) continue;
+        AddNPC(ln.x, ln.y, ln.w, ln.h, ln.dir);
+        npcs.back().alive = ln.alive;
+    }
+
+    //Chunks
+    std::fill(chunkDirtyNow.begin(), chunkDirtyNow.end(), 1);
+    std::fill(chunkDirtyNext.begin(), chunkDirtyNext.end(), 0);
+    std::fill(chunkDirtyGPU.begin(), chunkDirtyGPU.end(), 1);
+    std::fill(chunkTTL.begin(), chunkTTL.end(), 0);
+
+    elapsedTimeSinceStep = 0.0f;
+    npcDrawed = false;
+    RebuildOcc();
+
+    //Camera/rescale
+    app->SetCameraRect(app->camera.pos.x, app->camera.pos.y, app->camera.size.x, app->camera.size.y);
+ 
+    return true;
+}
+
+
+bool Engine::SaveLevel(const char* path) const
+{
+    if (!path || !path[0]) return false;
+    Level lvl;
+    ExportLevel(lvl);
+    return SaveLevelFile(path, lvl);
+}
+
+
+bool Engine::LoadLevel(const char* path)
+{
+    if (!path || !path[0]) return false;
+    Level lvl;
+    if (!LoadLevelFile(path, lvl)) return false;
+    return ImportLevel(lvl);
+}
 
 
 
@@ -334,8 +463,8 @@ void Engine::Paint(int cx, int cy, Material m, int r) {
 
     if (app->ui->ConsumedMouse()) return;
 
-    float vw = (float)std::max(1, app->framebufferSize.x);
-    float vh = (float)std::max(1, app->framebufferSize.y);
+    float vw = (float)std::fmax(1, app->framebufferSize.x);
+    float vh = (float)std::fmax(1, app->framebufferSize.y);
     float cw = std::fmax(1.0f, app->camera.size.x);
     float ch = std::fmax(1.0f, app->camera.size.y);
 
