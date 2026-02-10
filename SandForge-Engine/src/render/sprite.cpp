@@ -6,11 +6,10 @@
 #include <algorithm>
 
 static inline void rgba32_to_bytes(uint32 c, unsigned char* outRGBA) {
-
-    outRGBA[0] = (c >> 16) & 0xFF; 
+    outRGBA[0] = (c >> 0) & 0xFF;
     outRGBA[1] = (c >> 8) & 0xFF;
-    outRGBA[2] = (c >> 0) & 0xFF; 
-    outRGBA[3] = (c >> 24) & 0xFF; 
+    outRGBA[2] = (c >> 16) & 0xFF;
+    outRGBA[3] = (c >> 24) & 0xFF;
 }
 
 void SpriteBatch::Init() {

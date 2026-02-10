@@ -1,9 +1,11 @@
 #pragma once
 #include "app/module.h"
+#include "font.h"
 #include <vector>
 #include <cstdint>
 #include <core/material.h>
 #include <render/sprite.h>
+
 
 struct Vertex;
 
@@ -45,11 +47,13 @@ public:
     void Image(const Texture2D& t, float x, float y, float w, float h,
         uint32 tint = 0xFFFFFFFF);
 
+    void Text(float x, float y, const char* text, uint32 rgba, float scale = 1.0f);
+    void TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale = 1.0f);
+
+
 private:
 
     void Flush();
-
-
 
 public:
 
@@ -62,11 +66,12 @@ private:
     std::vector<Vertex> verts;
     int vw = 0, vh = 0;
 
-
-
     double mx = 0.0, my = 0.0; bool md = false, mdPrev = false;
     bool mouseConsumed = false;
     bool noRender = false;
+
+    FontTTF font;
+    bool fontReady = false;
 
 };
 

@@ -1,5 +1,7 @@
 ﻿#include "UI.h" 
 #include <glad/gl.h>
+#include <algorithm>
+#include <cstring>
 #include "app/Module.h"  
 #include "app/app.h"
 #include "core/utils.h"
@@ -39,8 +41,8 @@ bool UI::Awake() {
 
 }
 bool UI::Start() {
-
-    return true;
+	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 1024, 1024, true);
+	return true;
 }
 bool UI::PreUpdate() { return true; }
 
@@ -49,6 +51,8 @@ bool UI::Update(float dt) {
 }
 bool UI::PostUpdate() { return true; }
 bool UI::CleanUp() { 
+	font.Destroy();
+	fontReady = false;
 
 
 	if (vbo) glDeleteBuffers(1, &vbo);
@@ -181,10 +185,10 @@ void UI::RectBorders(float x, float y, float w, float h, float t, uint32 rgba)
 
 void UI::Image(const Texture2D& t, float x, float y, float w, float h, uint32 tint)
 {
+	if (noRender) return;
 	Sprite s{ &t, x,y,w,h, 0,0,1,1, tint, RenderLayer::UI };
 	app->renderer->Queue(s);
 }
-
 
 bool UI::Button(float x, float y, float w, float h,
 	uint32 c, uint32 cH, uint32 cA) {
@@ -192,12 +196,11 @@ bool UI::Button(float x, float y, float w, float h,
 	uint32 cc = hover ? (md ? cA : cH) : c;
 	Rect(x, y, w, h, cc);
 
-
 	bool clicked = hover && !md && mdPrev;
 	if (hover && (md || clicked)) {
 		mouseConsumed = true;
 	}
-	return clicked;
+	return noRender ? clicked : false;
 }
 
 
@@ -214,11 +217,15 @@ bool UI::Slider(float x, float y, float w, float h,
 
 
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
-	if (hover && md) { v = minv + float((mx - x) / w) * (maxv - minv); mouseConsumed = true; }
-	return hover && !md && mdPrev; // soltado sobre el slider
+	if (noRender) {
+		if (hover && md) { v = minv + float((mx - x) / w) * (maxv - minv); mouseConsumed = true; }
+		return hover && !md && mdPrev; // soltado sobre el slider
+	}
+	return false;
 }
 
 void UI::Circle(float cx, float cy, float r, uint32 c, int segments) {
+	if (noRender) return;
 
 	float rx = r * (float)app->windowSize.x / (float)app->camera.size.x;
 	float ry = r * (float)app->windowSize.y / (float)app->camera.size.y;
@@ -241,6 +248,7 @@ void UI::Circle(float cx, float cy, float r, uint32 c, int segments) {
 
 
 void UI::Ring(float cx, float cy, float r, float t, uint32 c, int segments) {
+	if (noRender) return;
 
 	float vw = (float)app->framebufferSize.x;
 	float vh = (float)app->framebufferSize.y;
@@ -270,3 +278,131 @@ void UI::Ring(float cx, float cy, float r, float t, uint32 c, int segments) {
 }
 
 
+void UI::Text(float x, float y, const char* text, uint32 rgba, float scale)
+{
+	if (noRender) return;
+	if (!text || !*text) return;
+
+	if (fontReady) {
+		float s = std::max(0.01f, scale);
+		
+		float penX = 0.0f;
+		float penY = font.AscentPx(); 
+		const float line = font.LineHeightPx();
+
+		auto utf8Next = [](const char*& p) -> uint32_t {
+			const unsigned char c0 = (unsigned char)*p++;
+			if (c0 < 0x80) return c0;
+			if ((c0 >> 5) == 0x6) { // 110xxxxx
+				const unsigned char c1 = (unsigned char)*p;
+				if ((c1 & 0xC0) != 0x80) return '?';
+				++p;
+				return ((uint32_t)(c0 & 0x1F) << 6) | (uint32_t)(c1 & 0x3F);
+			}
+			if ((c0 >> 4) == 0xE) { // 1110xxxx
+				const unsigned char c1 = (unsigned char)p[0];
+				const unsigned char c2 = (unsigned char)p[1];
+				if ((c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80) return '?';
+				p += 2;
+				return ((uint32_t)(c0 & 0x0F) << 12) | ((uint32_t)(c1 & 0x3F) << 6) | (uint32_t)(c2 & 0x3F);
+			}
+			if ((c0 >> 3) == 0x1E) { // 11110xxx
+				const unsigned char c1 = (unsigned char)p[0];
+				const unsigned char c2 = (unsigned char)p[1];
+				const unsigned char c3 = (unsigned char)p[2];
+				if ((c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80) return '?';
+				p += 3;
+				return ((uint32_t)(c0 & 0x07) << 18) | ((uint32_t)(c1 & 0x3F) << 12) | ((uint32_t)(c2 & 0x3F) << 6) | (uint32_t)(c3 & 0x3F);
+			}
+			return '?';
+		};
+
+		for (const char* p = text; *p;) {
+			uint32_t cp = utf8Next(p);
+			if (cp == '\n') {
+				penY += line;
+				penX = 0.0f;
+				continue;
+			}
+			if (cp == '\t') {
+				const int spaceIdx = font.GlyphIndex(' ');
+				if (spaceIdx >= 0) penX += font.Baked()[spaceIdx].xadvance * 4.0f;
+				continue;
+			}
+
+			int idx = font.GlyphIndex(cp);
+			if (idx < 0) idx = font.GlyphIndex('?');
+			if (idx < 0) continue;
+
+			float bx = penX;
+			float by = penY;
+			stbtt_aligned_quad q{};
+			stbtt_GetBakedQuad(font.Baked(), font.AtlasW(), font.AtlasH(), idx, &bx, &by, &q, 1);
+			penX = bx;
+			penY = by;
+
+			const float w = (q.x1 - q.x0) * s;
+			const float h = (q.y1 - q.y0) * s;
+			if (w <= 0.0f || h <= 0.0f) continue;
+
+			Sprite spr;
+			spr.tex = &font.Atlas();
+			spr.x = x + q.x0 * s;
+			spr.y = y + q.y0 * s;
+			spr.w = w;
+			spr.h = h;
+			spr.u0 = q.s0;
+			spr.v0 = q.t0;
+			spr.u1 = q.s1;
+			spr.v1 = q.t1;
+			spr.color = rgba;
+			spr.layer = RenderLayer::UI;
+			app->renderer->Queue(spr);
+		}
+		return;
+	}
+}
+
+void UI::TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale)
+{
+	if (noRender) return;
+	if (!text || !*text) return;
+
+	if (fontReady) {
+		float s = std::max(0.01f, scale);
+		float line = font.LineHeightPx() * s;
+
+		auto utf8Next = [](const char*& p) -> uint32_t {
+			const unsigned char c0 = (unsigned char)*p++;
+			if (c0 < 0x80) return c0;
+			if ((c0 >> 5) == 0x6) { const unsigned char c1 = (unsigned char)*p; if ((c1 & 0xC0) != 0x80) return '?'; ++p; return ((uint32_t)(c0 & 0x1F) << 6) | (uint32_t)(c1 & 0x3F); }
+			if ((c0 >> 4) == 0xE) { const unsigned char c1 = (unsigned char)p[0]; const unsigned char c2 = (unsigned char)p[1]; if ((c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80) return '?'; p += 2; return ((uint32_t)(c0 & 0x0F) << 12) | ((uint32_t)(c1 & 0x3F) << 6) | (uint32_t)(c2 & 0x3F); }
+			if ((c0 >> 3) == 0x1E) { const unsigned char c1 = (unsigned char)p[0]; const unsigned char c2 = (unsigned char)p[1]; const unsigned char c3 = (unsigned char)p[2]; if ((c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80) return '?'; p += 3; return ((uint32_t)(c0 & 0x07) << 18) | ((uint32_t)(c1 & 0x3F) << 12) | ((uint32_t)(c2 & 0x3F) << 6) | (uint32_t)(c3 & 0x3F); }
+			return '?';
+		};
+
+		float cur = 0.0f;
+		float maxW = 0.0f;
+		int lines = 1;
+		for (const char* p = text; *p;) {
+			uint32_t cp = utf8Next(p);
+			if (cp == '\n') { maxW = std::max(maxW, cur); cur = 0.0f; ++lines; continue; }
+			if (cp == '\t') {
+				const int spaceIdx = font.GlyphIndex(' ');
+				if (spaceIdx >= 0) cur += font.Baked()[spaceIdx].xadvance * s * 4.0f;
+				continue;
+			}
+			int idx = font.GlyphIndex(cp);
+			if (idx < 0) idx = font.GlyphIndex('?');
+			if (idx < 0) continue;
+			cur += font.Baked()[idx].xadvance * s;
+		}
+		maxW = std::max(maxW, cur);
+		float totalH = lines * line;
+
+		float tx = x + (w - maxW) * 0.5f;
+		float ty = y + (h - totalH) * 0.5f;
+		Text(tx, ty, text, rgba, s);
+		return;
+	}
+}

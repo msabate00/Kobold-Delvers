@@ -215,11 +215,17 @@ void Renderer::DrawGrid(const std::vector<uint8>& indices, int w, int h, int vie
     glBindTexture(GL_TEXTURE_2D, pingTex[horizontal ? 0 : 1]);
 
     drawFullscreen();
-    glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
+
+}
+
+void Renderer::FlushUI(int viewW, int viewH)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, viewW, viewH);
 
     sprites.Begin(viewW, viewH);
     sprites.Flush(RenderLayer::UI);
-
 }
 
 void Renderer::uploadFullCPU(const uint8* img, int w, int h) {

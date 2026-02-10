@@ -9,6 +9,7 @@
 #include "core/input.h"
 #include "render/renderer.h"
 #include "ui/ui.h"
+#include "game/scene_manager.h"
 
 
 // Constructor
@@ -19,6 +20,7 @@ App::App(int argc, char* args[]) : argc(argc), args(args)
 	input = new Input(this);
 	ui = new UI(this);
 	audio = new Audio(this);
+	scenes = new SceneManager(this);
 }
 
 
@@ -55,6 +57,7 @@ bool App::Awake()
 	Input::SFramebufferSize(window,framebufferSize.x, framebufferSize.y);
 
 	audio->Awake();
+	scenes->Awake();
 
 	
 
@@ -71,6 +74,7 @@ bool App::Start()
 	input->Start();
 	ui->Start();
 	audio->Start(); //se puede quitar
+	scenes->Start();
 
 	camera.pos.y = gridSize.y - camera.size.y;
 
@@ -79,8 +83,6 @@ bool App::Start()
 
 bool App::Update()
 {
-
-
 	Timer timer = Timer();
 	double fpsTimer = 0.0;
 	frames = 0;
@@ -88,43 +90,55 @@ bool App::Update()
 	Material brushMat = Material::Sand;
 	int brushSize = 2;
 
-	
-
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window) && !quitRequested)
+	{
 		glfwPollEvents();
 
 		dt = timer.Read();
 		timer.Start();
 
 		input->BeginFrame();
-		
+		scenes->BeginFrame();
 
-		//TODO - Mouse hide/show
-		if (input->MouseY() > 50) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		// Mouse hide/show solo en escenas de mundo
+		if (scenes->WorldActive()) {
+			if (input->MouseY() > 50) {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			} 
+			else {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}                  
 		}
 		else {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
+
 		ui->SetMouse(input->MouseX(), input->MouseY(), input->MouseDown(GLFW_MOUSE_BUTTON_1));
+
+		// UI logica
 		ui->SetNoRender(true);
 		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
-		ui->Draw(brushSize, brushMat);
+		scenes->DrawUI(brushSize, brushMat);
 		ui->End();
-		input->ProcessBindings(brushMat, brushSize);
 
+		scenes->BeginFrame();
+		scenes->Update(dt);
+		scenes->BeginFrame();
 
-
-		engine->Update(dt);
+		if (scenes->WorldActive()) {
+			input->ProcessBindings(brushMat, brushSize);
+			engine->Update(dt);
+		}
 
 		audio->Update(dt); //se puede quitar
-
 		renderer->Update(dt);
-		
+
+		// UI render
 		ui->SetNoRender(false);
 		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
-		ui->Draw(brushSize, brushMat);
+		scenes->DrawUI(brushSize, brushMat);
 		ui->End();
+		renderer->FlushUI(app->framebufferSize.x, app->framebufferSize.y);
 
 		input->EndFrame();
 
@@ -149,6 +163,7 @@ bool App::CleanUp()
 {
 	bool ret = true;
 
+	scenes->CleanUp();
 	ui->CleanUp();
 	input->CleanUp();
 	renderer->CleanUp();
@@ -156,6 +171,13 @@ bool App::CleanUp()
 	audio->CleanUp();
 
 	return ret;
+}
+
+
+void App::RequestQuit()
+{
+	quitRequested = true;
+	if (window) glfwSetWindowShouldClose(window, 1);
 }
 
 

@@ -2,6 +2,7 @@
 #include "../core/engine.h"
 #include "../core/material.h"
 #include "../app/app.h"
+#include "../ui/ui.h"
 #include <algorithm>
 
 Input::Input(App* app, bool start_enabled) : Module(app, start_enabled) {};
@@ -72,9 +73,11 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
 
 
-    if (this->MouseDown(GLFW_MOUSE_BUTTON_1)) {
-        app->engine->Paint(MouseX(), MouseY(), brushMat, brushSize);
-    }
+	if (this->MouseDown(GLFW_MOUSE_BUTTON_1)) {
+		if (!app->ui->ConsumedMouse()) {
+			app->engine->Paint(MouseX(), MouseY(), brushMat, brushSize);
+		}
+	}
     if (this->MouseUp(GLFW_MOUSE_BUTTON_1)) {
         app->engine->StopPaint();
         app->engine->npcDrawed = false;

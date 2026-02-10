@@ -461,7 +461,7 @@ bool Engine::PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh)
 void Engine::Paint(int cx, int cy, Material m, int r) {
 
 
-    if (app->ui->ConsumedMouse()) return;
+    //if (app->ui->ConsumedMouse()) return;
 
     float vw = (float)std::fmax(1, app->framebufferSize.x);
     float vh = (float)std::fmax(1, app->framebufferSize.y);

@@ -8,6 +8,7 @@ class Renderer;
 class Input;
 class UI;
 class Audio;
+class SceneManager;
 
 
 struct Camera2D { 
@@ -41,12 +42,15 @@ public:
 
 	void SetCameraRect(float x, float y, float w, float h);
 
+	void RequestQuit(); //Close app
+
 public:
 	Engine* engine;
 	Renderer* renderer;
 	Input* input;
 	UI* ui;
 	Audio* audio;
+	SceneManager* scenes;
 
 	int pixelsPerCell = 4;
 	Vec2<int> framebufferSize{ 1280, 720 };
@@ -66,6 +70,7 @@ private:
 	
 
 	GLFWwindow* window;
+	bool quitRequested = false;
 
 };
 

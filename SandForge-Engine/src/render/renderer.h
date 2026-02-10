@@ -26,6 +26,9 @@ public:
     void Draw(const uint8* planeM, int gridW, int gridH, int x0, int y0, int rw, int rh);
     void Queue(const Sprite& s);
 
+    //Solo afecta: RenderLayer::UI
+    void FlushUI(int viewW, int viewH);
+
 private:
 
     void DrawGrid(const std::vector<uint8>& indices, int w, int h, int viewW, int viewH);
