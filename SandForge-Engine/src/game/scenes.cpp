@@ -196,6 +196,9 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
     }
 
     if (!files.empty()) {
+        if (files.size() == selected) {
+            selected--;
+        }
         std::string show = std::filesystem::path(files[selected]).filename().string();
         if ((int)show.size() > 28) show = show.substr(0, 25) + "...";
 		ui->Text(148.0f, y + 10, show.c_str(), RGBAu32(240,240,240,220), 0.85f);
@@ -223,7 +226,17 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         }
 
         char ibuf[8];
-        std::snprintf(ibuf, sizeof(ibuf), "%d", i + 1);
+        auto pos = files[i].find("quick.lvl");
+        if (pos == std::string::npos) {
+            std::snprintf(ibuf, sizeof(ibuf), "%d", i + 1);
+        }
+        else {
+            std::snprintf(ibuf, sizeof(ibuf), "%s", "Q");
+        }
+
+            
+        
+        
 		ui->TextCentered(bx, by, cell, cell, ibuf, RGBAu32(250,250,250,220), 0.65f);
 
         if (i == selected) {
@@ -242,7 +255,7 @@ void Scene_Sandbox::ScanLevels()
     EnsureLevelsFolder();
 
     files.clear();
-    for (const auto& e : std::filesystem::directory_iterator("levels")) {
+    for (const auto& e : std::filesystem::directory_iterator("levels/custom")) {
         if (!e.is_regular_file()) continue;
         std::filesystem::path p = e.path();
         if (p.extension() == ".lvl") {
@@ -253,7 +266,7 @@ void Scene_Sandbox::ScanLevels()
     std::sort(files.begin(), files.end());
 
     if (files.empty()) {
-        files.push_back("levels/quick.lvl");
+        files.push_back("levels/custom/quick.lvl");
     }
 
     selected = std::clamp(selected, 0, (int)files.size() - 1);
@@ -271,6 +284,6 @@ std::string Scene_Sandbox::NextAutoName()
         selected = id;
     }
     char buf[64];
-    std::snprintf(buf, sizeof(buf), "levels/custom_%03d.lvl", maxId + 1);
+    std::snprintf(buf, sizeof(buf), "levels/custom/custom_%03d.lvl", maxId + 1);
     return std::string(buf);
 }

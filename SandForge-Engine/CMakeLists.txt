@@ -50,6 +50,11 @@ add_custom_command(TARGET FallingSand POST_BUILD
           "${CMAKE_SOURCE_DIR}/assets"
           "$<TARGET_FILE_DIR:FallingSand>/assets"
 )
+add_custom_command(TARGET FallingSand POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_SOURCE_DIR}/levels"
+          "$<TARGET_FILE_DIR:FallingSand>/levels"
+)
 
 set_target_properties(FallingSand PROPERTIES
   VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:FallingSand>"
