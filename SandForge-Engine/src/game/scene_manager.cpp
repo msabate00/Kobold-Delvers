@@ -8,10 +8,10 @@ bool SceneManager::Awake()
 {
     scenes[SCENE_MAINMENU] = new Scene_MainMenu(app, this);
     scenes[SCENE_LEVELSELECTOR] = new Scene_LevelSelector(app, this);
-    scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/tutorial.lvl");
+    scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/vanilla/level_003.lvl");
     scenes[SCENE_SANDBOX] = new Scene_Sandbox(app, this);
-    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/level1.lvl");
-    scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/level2.lvl");
+    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_001.lvl");
+    scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/vanilla/level_002.lvl");
 
     currentId = SCENE_MAINMENU;
     pendingId = currentId;
