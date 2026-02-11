@@ -122,10 +122,10 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 			int x, y, w, h;
 			app->engine->GetChunkRect(ci, x, y, w, h);
 
-			int rx = std::max(x, int(app->camera.pos.x));
-			int ry = std::max(y, int(app->camera.pos.y));
-			int rw = std::min(x + w, int(app->camera.pos.x + app->camera.size.x)) - rx;
-			int rh = std::min(y + h, int(app->camera.pos.y + app->camera.size.y)) - ry;
+			int rx = std::fmax(x, int(app->camera.pos.x));
+			int ry = std::fmax(y, int(app->camera.pos.y));
+			int rw = std::fmin(x + w, int(app->camera.pos.x + app->camera.size.x)) - rx;
+			int rh = std::fmin(y + h, int(app->camera.pos.y + app->camera.size.y)) - ry;
 			if (rw <= 0 || rh <= 0) continue;
 
 			float sx = ((rx - app->camera.pos.x) / app->camera.size.x) * app->windowSize.x;
@@ -312,7 +312,7 @@ void UI::Ring(float cx, float cy, float r, float t, uint32 c, int segments) {
 
 	float sxCell = floor(vw / cw);
 	float syCell = floor(vh / ch);
-	float s = std::max(1.0f, std::min(sxCell, syCell));
+	float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
 
 	float rp = r * s;
 
@@ -340,7 +340,7 @@ void UI::Text(float x, float y, const char* text, uint32 rgba, float scale)
 	if (!text || !*text) return;
 
 	if (fontReady) {
-		float s = std::max(0.01f, scale);
+		float s = std::fmax(0.01f, scale);
 		
 		float penX = 0.0f;
 		float penY = font.AscentPx(); 
@@ -425,7 +425,7 @@ void UI::TextCentered(float x, float y, float w, float h, const char* text, uint
 	if (!text || !*text) return;
 
 	if (fontReady) {
-		float s = std::max(0.01f, scale);
+		float s = std::fmax(0.01f, scale);
 		float line = font.LineHeightPx() * s;
 
 		auto utf8Next = [](const char*& p) -> uint32_t {
@@ -442,7 +442,7 @@ void UI::TextCentered(float x, float y, float w, float h, const char* text, uint
 		int lines = 1;
 		for (const char* p = text; *p;) {
 			uint32_t cp = utf8Next(p);
-			if (cp == '\n') { maxW = std::max(maxW, cur); cur = 0.0f; ++lines; continue; }
+			if (cp == '\n') { maxW = std::fmax(maxW, cur); cur = 0.0f; ++lines; continue; }
 			if (cp == '\t') {
 				const int spaceIdx = font.GlyphIndex(' ');
 				if (spaceIdx >= 0) cur += font.Baked()[spaceIdx].xadvance * s * 4.0f;
@@ -453,7 +453,7 @@ void UI::TextCentered(float x, float y, float w, float h, const char* text, uint
 			if (idx < 0) continue;
 			cur += font.Baked()[idx].xadvance * s;
 		}
-		maxW = std::max(maxW, cur);
+		maxW = std::fmax(maxW, cur);
 		float totalH = lines * line;
 
 		float tx = x + (w - maxW) * 0.5f;

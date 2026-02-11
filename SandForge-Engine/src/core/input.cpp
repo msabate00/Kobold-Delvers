@@ -85,19 +85,19 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
     if (this->ScrollSteps() != 0) {
         brushSize += this->ScrollSteps();
-        brushSize = std::max(1, std::min(64, brushSize));
+        brushSize = std::fmax(1, std::fmin(64, brushSize));
     }
 }
 
 double Input::MouseX() const {
-    int ww = std::max(1, app->windowSize.x);
-    int fw = std::max(1, app->framebufferSize.x);
+    int ww = std::fmax(1, app->windowSize.x);
+    int fw = std::fmax(1, app->framebufferSize.x);
     return mx * (double)fw / (double)ww;
 }
 
 double Input::MouseY() const {
-    int wh = std::max(1, app->windowSize.y);
-    int fh = std::max(1, app->framebufferSize.y);
+    int wh = std::fmax(1, app->windowSize.y);
+    int fh = std::fmax(1, app->framebufferSize.y);
     return my * (double)fh / (double)wh;
 }
 

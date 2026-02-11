@@ -209,7 +209,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
     float gy = 80.0f;
     float cell = 20.0f;
     float pad = 4.0f;
-    int perRow = (int)std::max(1.0f, std::floor((app->framebufferSize.x - gx) / (cell + pad)));
+    int perRow = (int)std::fmax(1.0f, std::floor((app->framebufferSize.x - gx) / (cell + pad)));
 
     for (int i = 0; i < (int)files.size(); ++i) {
         int row = i / perRow;
