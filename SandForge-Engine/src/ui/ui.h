@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <core/material.h>
 #include <render/sprite.h>
+#include <render/texture.h>
 
 
 struct Vertex;
@@ -34,6 +35,8 @@ public:
 
     bool Button(float x, float y, float w, float h,
         uint32 rgba, uint32 rgbaHover, uint32 rgbaActive);
+    bool ButtonAtlas(float x, float y, float w, float h,
+        int atlasIndex, uint32 rgba, uint32 rgbaHover, uint32 rgbaActive);
     bool Slider(float x, float y, float w, float h,
         float minv, float maxv, float& v, uint32 track, uint32 knob);
 
@@ -73,6 +76,9 @@ private:
     FontTTF font;
     bool fontReady = false;
 
+    Texture2D matAtlas;
+    bool matAtlasReady = false;
+
 };
 
 static inline uint32 RGBAu32(unsigned r, unsigned g, unsigned b, unsigned a = 255) {
@@ -88,3 +94,41 @@ static inline uint32 MulRGBA(uint32_t c, float m) {
     r = sat(int(r * m)); g = sat(int(g * m)); b = sat(int(b * m));
     return (r) | (g << 8) | (b << 16) | (a << 24);
 }
+
+
+struct AtlasRectPx { int x = 0, y = 0, w = 0, h = 0; };
+struct UVRect { float u0 = 0, v0 = 0, u1 = 1, v1 = 1; };
+
+static inline UVRect UVFromPx(const Texture2D& tex, const AtlasRectPx& r)
+{
+    const float invW = (tex.w > 0) ? (1.0f / (float)tex.w) : 0.0f;
+    const float invH = (tex.h > 0) ? (1.0f / (float)tex.h) : 0.0f;
+    return {
+        r.x * invW,
+        r.y * invH,
+        (r.x + r.w) * invW,
+        (r.y + r.h) * invH
+    };
+}
+
+static inline UVRect WhitePixelUV(const Texture2D& tex)
+{
+    const int px = (tex.w > 0) ? (tex.w - 1) : 0;
+    const int py = (tex.h > 0) ? (tex.h - 1) : 0;
+    const AtlasRectPx r{ px, py, 1, 1 };
+    return UVFromPx(tex, r);
+}
+
+static constexpr int kMatAtlasSize = 10;
+static constexpr AtlasRectPx kMatAtlasPx[kMatAtlasSize] = {
+    {  1,  2, 31, 28 }, // 0
+    { 32, 12, 32, 20 }, // 1
+    { 64, 21, 32, 10 }, // 2
+    { 97,  1, 30, 30 }, // 3
+    {129,  1, 30, 30 }, // 4
+    {167,  3, 18, 26 }, // 5
+    {192, 21, 32, 10 }, // 6
+    {226,  3, 29, 26 }, // 7
+    {258,  3, 29, 26 }, // 8
+    {298,  4, 13, 24 }, // 9
+};

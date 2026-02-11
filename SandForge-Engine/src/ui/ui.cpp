@@ -42,6 +42,7 @@ bool UI::Awake() {
 }
 bool UI::Start() {
 	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 1024, 1024, true);
+	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }
@@ -53,6 +54,8 @@ bool UI::PostUpdate() { return true; }
 bool UI::CleanUp() { 
 	font.Destroy();
 	fontReady = false;
+	matAtlas.Destroy();
+	matAtlasReady = false;
 
 
 	if (vbo) glDeleteBuffers(1, &vbo);
@@ -74,33 +77,36 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 
 
 	float pad = 8.0f, y = 8.0f, x = 8.0f, btn = 28.0f;
-	auto makeBtn = [&](uint32 base) {
-		uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-		bool clicked = Button(x, y, btn, btn, base, h, a);
-		x += btn + 6.0f; return clicked;
-		};
+	auto makeBtnColor = [&](uint32 base) {
+    uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+    bool clicked = Button(x, y, btn, btn, base, h, a);
+    x += btn + 6.0f; return clicked;
+    };
 
+	auto makeBtnMat = [&](uint32 base, int atlasIndex) {
+		uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+		bool clicked = ButtonAtlas(x, y, btn, btn, atlasIndex, base, h, a);
+		x += btn + 6.0f; return clicked;
+    };
 
 	for (int i = 0; i < 256; ++i) {
 		const MatProps& mp = matProps((uint8)i);
 
 		if (mp.name.length() > 0) {
 			uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
-			if (makeBtn(c)) brushMat = (Material)i;
+			if ((i <= (int)Material::NpcCell && matAtlasReady) ? makeBtnMat(c, i) : makeBtnColor(c)) brushMat = (Material)i;
 		}
 
 	}
 
-
-
 	x += 8.0f;
 
 	if (app->engine->paused) {
-		if (makeBtn(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
-		if (makeBtn(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
+		if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
+		if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
 	}
 	else {
-		if (makeBtn(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
+		if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
 	}
 
 
@@ -203,6 +209,56 @@ bool UI::Button(float x, float y, float w, float h,
 	return noRender ? clicked : false;
 }
 
+
+
+
+bool UI::ButtonAtlas(float x, float y, float w, float h,
+    int atlasIndex, uint32 c, uint32 cH, uint32 cA)
+{
+    const bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+    const uint32 bg = hover ? (md ? cA : cH) : c;
+    const bool clicked = hover && !md && mdPrev;
+
+    if (hover && (md || clicked)) mouseConsumed = true;
+
+    //Necesita mejorar en general esto de aqui
+    if (noRender && matAtlasReady && atlasIndex >= 0 && atlasIndex < 10) {
+
+		//background
+        const UVRect white = WhitePixelUV(matAtlas);
+        Sprite bgS{};
+        bgS.tex = &matAtlas;
+        bgS.x = x; bgS.y = y; bgS.w = w; bgS.h = h;
+        bgS.u0 = white.u0; bgS.v0 = white.v0;
+        bgS.u1 = white.u1; bgS.v1 = white.v1;
+        bgS.color = bg;
+        bgS.layer = RenderLayer::UI;
+        app->renderer->Queue(bgS);
+
+		//Image
+        const UVRect uv = UVFromPx(matAtlas, kMatAtlasPx[atlasIndex]);
+        const float iw = w * 0.75f;
+        const float ih = h * 0.75f;
+        const float ix = x + (w - iw) * 0.5f;
+        const float iy = y + (h - ih) * 0.5f;
+
+        Sprite ic{};
+        ic.tex = &matAtlas;
+        ic.x = ix; ic.y = iy; ic.w = iw; ic.h = ih;
+        ic.u0 = uv.u0; ic.v0 = uv.v0; ic.u1 = uv.u1; ic.v1 = uv.v1;
+        ic.color = 0xFFFFFFFF;
+        ic.layer = RenderLayer::UI;
+        app->renderer->Queue(ic);
+    }
+    else if (!noRender) {
+		//Dibujar un rect en caso de fallar algo
+        if (!(matAtlasReady && atlasIndex >= 0 && atlasIndex < kMatAtlasSize)) {
+            Rect(x, y, w, h, bg);
+        }
+    }
+
+    return noRender ? clicked : false;
+}
 
 bool UI::Slider(float x, float y, float w, float h,
 	float minv, float maxv, float& v,
