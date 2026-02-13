@@ -75,8 +75,12 @@ void SpriteBatch::Flush(RenderLayer layer) {
     if (tmp.empty()) return;
 
 
+    //Orden: sort -> tex
     std::stable_sort(tmp.begin(), tmp.end(),
-        [](const Sprite* a, const Sprite* b) { return a->tex < b->tex; });
+        [](const Sprite* a, const Sprite* b) {
+            if (a->sort != b->sort) return a->sort < b->sort;
+            return a->tex < b->tex;
+        });
 
     glUseProgram(prog);
     if (loc_uView >= 0) glUniform2f(loc_uView, (float)viewW, (float)viewH);

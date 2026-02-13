@@ -78,9 +78,9 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 
 	float pad = 8.0f, y = 8.0f, x = 8.0f, btn = 28.0f;
 	auto makeBtnColor = [&](uint32 base) {
-    uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-    bool clicked = Button(x, y, btn, btn, base, h, a);
-    x += btn + 6.0f; return clicked;
+		uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+		bool clicked = Button(x, y, btn, btn, base, h, a);
+		x += btn + 6.0f; return clicked;
     };
 
 	auto makeBtnMat = [&](uint32 base, int atlasIndex) {
@@ -221,10 +221,9 @@ bool UI::ButtonAtlas(float x, float y, float w, float h,
 
     if (hover && (md || clicked)) mouseConsumed = true;
 
-    //Necesita mejorar en general esto de aqui
+    
     if (noRender && matAtlasReady && atlasIndex >= 0 && atlasIndex < 10) {
-
-		//background
+        //Fondo
         const UVRect white = WhitePixelUV(matAtlas);
         Sprite bgS{};
         bgS.tex = &matAtlas;
@@ -235,7 +234,7 @@ bool UI::ButtonAtlas(float x, float y, float w, float h,
         bgS.layer = RenderLayer::UI;
         app->renderer->Queue(bgS);
 
-		//Image
+        //Icono
         const UVRect uv = UVFromPx(matAtlas, kMatAtlasPx[atlasIndex]);
         const float iw = w * 0.75f;
         const float ih = h * 0.75f;
@@ -251,8 +250,8 @@ bool UI::ButtonAtlas(float x, float y, float w, float h,
         app->renderer->Queue(ic);
     }
     else if (!noRender) {
-		//Dibujar un rect en caso de fallar algo
-        if (!(matAtlasReady && atlasIndex >= 0 && atlasIndex < kMatAtlasSize)) {
+        //Dibuja un rect en caso de no haber nada
+        if (!(matAtlasReady && atlasIndex >= 0 && atlasIndex < 10)) {
             Rect(x, y, w, h, bg);
         }
     }

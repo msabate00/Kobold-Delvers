@@ -166,7 +166,37 @@ bool Engine::Awake() {
 bool Engine::Start() {
 
 
-    npcTex.Load(SPRITE_DIR  "/SpritesTest.png");
+    //npcTex.Load(SPRITE_DIR  "/SpritesTest.png");
+    npcTex.Load(SPRITE_DIR  "/KoboldMiner.png");
+
+    // NPC animations
+    npcAnims.Clear();
+    {
+        auto& idle = npcAnims.Add("idle");
+        idle.defaultTex = &npcTex;
+        idle.fps = 6.0f;
+        idle.loop = AnimLoopMode::Loop;
+        idle.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
+
+
+        auto& walk = npcAnims.Add("walk");
+        walk.defaultTex = &npcTex;
+        walk.fps = 6.0f;
+        walk.loop = AnimLoopMode::Loop;
+        walk.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,12,12,12}, 0.1f));
+        walk.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,12,12,12}, 0.1f));
+        walk.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,12,12,12}, 0.1f));
+        walk.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,12,12,12}, 0.1f));
+        walk.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,12,12,12}, 0.1f));
+
+        auto& fall = npcAnims.Add("fall");
+        fall.defaultTex = &npcTex;
+        fall.fps = 6.0f;
+        fall.loop = AnimLoopMode::PingPong;
+        fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,24,12,12 }, 0.1f));
+        fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
+        fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
+    }
 
     return true; 
 }
@@ -196,23 +226,9 @@ bool Engine::Update(float dt) {
 
         if (paused) { stepOnce = false; break; }
     }
+    AnimateNPCs(dt);
 
     if (paused) elapsedTimeSinceStep = 0;
-
-    for (auto& n : npcs) {
-        float sx, sy, sw, sh;
-        if (!WorldRectToScreen((float)n.x, (float)n.y, (float)n.w, (float)n.h,
-            app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh))
-            continue;
-
-        n.sprite.x = std::floor(sx);
-        n.sprite.y = std::floor(sy);
-        n.sprite.w = std::floor(sw);
-        n.sprite.h = std::floor(sh);
-        n.sprite.layer = RenderLayer::WORLD;
-        app->renderer->Queue(n.sprite);
-    }
-
 
 	return true;
 }
@@ -543,11 +559,13 @@ bool Engine::randbit(int x, int y, int parity) {
 }
 
 void Engine::AddNPC(int x, int y, int w, int h, int dir) {
-    npcs.push_back(NPC{ x, y, w, h, dir, true });
 
-    Sprite s{};
-    s.tex = &npcTex;
-    npcs[npcs.size() - 1].sprite = s;
+    NPC npc{ x, y, w, h, dir, true };
+    npc.sprite.tex = &npcTex;
+    npc.anim.SetLibrary(&npcAnims);
+    npc.anim.Play("idle", true);
+    npc.anim.ApplyTo(npc.sprite, npc.dir < 0);
+    npcs.push_back(npc);
 
     MarkChunksInRect(x, y, w, h);
 }
@@ -579,6 +597,14 @@ bool Engine::RectFreeOnBack(int x, int y, int w, int h, int ignoreId) const {
 }
 
 void Engine::MoveNPCs() {
+
+    //Velocidad de movimiento
+    npcMoveAcc += fixedTimeStep;
+    const float npcMoveInterval = 1.0f / std::fmax(0.001f, npcCellsPerSec);
+    if (npcMoveAcc < npcMoveInterval) return;
+    npcMoveAcc -= npcMoveInterval;
+
+
     constexpr int kMaxStep = 1; 
     for (int i = 0; i < (int)npcs.size(); ++i) {
         auto& n = npcs[i];
@@ -586,12 +612,12 @@ void Engine::MoveNPCs() {
         int id = i + 1;
 
         //Caer
-        if (RectFreeOnBack(n.x, n.y + 1, n.w, n.h, id)) { n.y += 1; continue; }
+        if (RectFreeOnBack(n.x, n.y + 1, n.w, n.h, id)) { n.y += 1; n.anim.Play("fall", false); continue; }
 
         int nx = n.x + n.dir;
 
         //Horizontal
-        if (RectFreeOnBack(nx, n.y, n.w, n.h, id)) { n.x = nx; continue; }
+        if (RectFreeOnBack(nx, n.y, n.w, n.h, id)) { n.x = nx; n.anim.Play("walk", false); continue; }
 
         //Trepar
         auto solid = [&](int gx, int gy) {
@@ -608,6 +634,28 @@ void Engine::MoveNPCs() {
         }
         if (!climbed) n.dir = -n.dir;
     }
+}
+
+void Engine::AnimateNPCs(float dt)
+{
+    for (auto& n : npcs) {
+        
+        n.anim.Update(dt);
+        n.anim.ApplyTo(n.sprite, n.dir < 0);
+
+        float sx, sy, sw, sh;
+        if (!WorldRectToScreen((float)n.x, (float)n.y, (float)n.w, (float)n.h,
+            app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh))
+            continue;
+
+        n.sprite.x = std::floor(sx);
+        n.sprite.y = std::floor(sy);
+        n.sprite.w = std::floor(sw);
+        n.sprite.h = std::floor(sh);
+        n.sprite.layer = RenderLayer::WORLD;
+        app->renderer->Queue(n.sprite);
+    }
+
 }
 
  bool Engine::WorldRectToScreen(float x, float y, float w, float h,

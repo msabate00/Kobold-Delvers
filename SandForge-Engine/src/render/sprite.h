@@ -12,6 +12,7 @@ struct Sprite {
 	float u0 = 0, v0 = 0, u1 = 1, v1 = 1; 
 	uint32 color = 0xFFFFFFFF;     
 	RenderLayer layer = RenderLayer::WORLD;
+	int sort = 0;
 };
 
 class SpriteBatch {

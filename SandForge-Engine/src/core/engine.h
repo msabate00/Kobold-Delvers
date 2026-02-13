@@ -7,6 +7,7 @@
 #include "audio/audio.h"
 #include "render/sprite.h"
 #include "render/texture.h"
+#include "render/anim.h"
 
 
 
@@ -16,6 +17,7 @@ struct NPC {
     int dir = 1;
     bool alive = true;
     Sprite sprite;
+    SpriteAnimPlayer anim;
 };
 
 
@@ -63,7 +65,7 @@ public:
     void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h);
     bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh);
 
-    void AddNPC(int x, int y, int w = 2, int h = 4, int dir = 1);
+    void AddNPC(int x, int y, int w = 12, int h = 12, int dir = 1);
     const std::vector<NPC>& GetNPCs() const { return npcs; }
 
 private:
@@ -84,6 +86,7 @@ private:
     void RebuildOcc();
     bool RectFreeOnBack(int x, int y, int w, int h, int ignoreId) const;
     void MoveNPCs();
+    void AnimateNPCs(float dt);
     bool WorldRectToScreen(float x, float y, float w, float h, int vw, int vh, float& sx, float& sy, float& sw, float& sh);
 
 public:
@@ -113,10 +116,15 @@ private:
 
     AudioInstance paintInstance{};
 
-    
+    //NPCS y entidades externas
+
     std::vector<NPC> npcs;
     std::vector<int> occ;
 
     Texture2D npcTex;
+    SpriteAnimLibrary npcAnims;
+
+    float npcMoveAcc = 0.0f;
+    float npcCellsPerSec = 32.0f;
 
 };
