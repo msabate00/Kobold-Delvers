@@ -84,8 +84,31 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     }
 
     if (this->ScrollSteps() != 0) {
-        brushSize += this->ScrollSteps();
-        brushSize = std::fmax(1, std::fmin(64, brushSize));
+        const int steps = this->ScrollSteps();
+
+        //Para zoom de la camara
+        const bool ctrl = KeyRepeat(GLFW_KEY_LEFT_CONTROL);
+        if (ctrl) {
+            constexpr int kMinPpc = 1;
+            constexpr int kMaxPpc = 32;
+
+            //Mantener en el centro
+            const float cx = app->camera.pos.x + app->camera.size.x * 0.5f;
+            const float cy = app->camera.pos.y + app->camera.size.y * 0.5f;
+
+            //Aumentamos los pixeles
+            app->pixelsPerCell = std::clamp(app->pixelsPerCell + steps, kMinPpc, kMaxPpc);
+
+            //Ajustamos la resolu
+            const float camW = app->framebufferSize.x / (float)app->pixelsPerCell;
+            const float camH = app->framebufferSize.y / (float)app->pixelsPerCell;
+            app->SetCameraRect(cx - camW * 0.5f, cy - camH * 0.5f, camW, camH);
+        }
+        else {
+            
+            brushSize += steps;
+            brushSize = std::fmax(1, std::fmin(64, brushSize));
+        }
     }
 }
 
