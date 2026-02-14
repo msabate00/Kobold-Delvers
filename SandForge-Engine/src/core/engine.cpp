@@ -196,6 +196,19 @@ bool Engine::Start() {
         fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,24,12,12 }, 0.1f));
         fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
         fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
+
+
+        auto& die = npcAnims.Add("die");
+        die.defaultTex = &npcTex;
+        die.fps = 6.0f;
+        die.loop = AnimLoopMode::None;
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,36,12,12 }, 0.1f));
+        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,0,0 }, 0.1f));
     }
 
     return true; 
@@ -596,6 +609,38 @@ bool Engine::RectFreeOnBack(int x, int y, int w, int h, int ignoreId) const {
     return true;
 }
 
+bool Engine::CheckNPCDie(int x, int y, int w, int h) const
+{
+    auto isLava = [&](int gx, int gy) -> bool {
+        if (!InRange(gx, gy)) return false;
+        switch (back[LinearIndex(gx, gy)].m)
+        {
+        case (uint8)Material::Lava: return true;
+        case (uint8)Material::Fire: return true;
+        default:
+            return false;
+            break;
+        }
+    };
+
+    //Dentro
+    for (int yy = 0; yy < h; ++yy)
+        for (int xx = 0; xx < w; ++xx)
+            if (isLava(x + xx, y + yy)) return true;
+
+    //Alrededor
+    for (int xx = 0; xx < w; ++xx) {
+        if (isLava(x + xx, y - 1))   return true; // arriba
+        if (isLava(x + xx, y + h))   return true; // abajo
+    }
+    for (int yy = 0; yy < h; ++yy) {
+        if (isLava(x - 1, y + yy))   return true; // izquierda
+        if (isLava(x + w, y + yy))   return true; // derecha
+    }
+
+    return false;
+}
+
 void Engine::MoveNPCs() {
 
     //Velocidad de movimiento
@@ -609,7 +654,14 @@ void Engine::MoveNPCs() {
     for (int i = 0; i < (int)npcs.size(); ++i) {
         auto& n = npcs[i];
         if (!n.alive) continue;
+        if (n.anim.CurrentName() == "die") continue;
         int id = i + 1;
+
+        //Muerte
+        if (CheckNPCDie(n.x, n.y, n.w, n.h)) {
+            n.anim.Play("die", false);
+            continue;
+        }
 
         //Caer
         if (RectFreeOnBack(n.x, n.y + 1, n.w, n.h, id)) { n.y += 1; n.anim.Play("fall", false); continue; }
@@ -642,6 +694,10 @@ void Engine::AnimateNPCs(float dt)
         
         n.anim.Update(dt);
         n.anim.ApplyTo(n.sprite, n.dir < 0);
+
+        if (n.anim.CurrentName() == "die" && n.anim.IsFinished()) {
+            n.alive = false;
+        }
 
         float sx, sy, sw, sh;
         if (!WorldRectToScreen((float)n.x, (float)n.y, (float)n.w, (float)n.h,

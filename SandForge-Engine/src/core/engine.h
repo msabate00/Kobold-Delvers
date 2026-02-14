@@ -85,6 +85,9 @@ private:
 
     void RebuildOcc();
     bool RectFreeOnBack(int x, int y, int w, int h, int ignoreId) const;
+
+
+    bool CheckNPCDie(int x, int y, int w, int h) const;
     void MoveNPCs();
     void AnimateNPCs(float dt);
     bool WorldRectToScreen(float x, float y, float w, float h, int vw, int vh, float& sx, float& sy, float& sw, float& sh);
