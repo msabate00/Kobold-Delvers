@@ -4,6 +4,7 @@
 #include "app/defs.h"
 #include "core/engine.h"
 #include <core/utils.h>
+#include <algorithm>
 
 Audio::Audio(App* app, bool start_enabled) : Module(app, start_enabled) {};
 Audio::~Audio() = default;
@@ -171,12 +172,16 @@ void Audio::SetVoicePosition(const std::string& key, AudioInstance id, int x, in
 {
     if (!id.valid()) return;
     auto* v = GetVoice(key, id);
-    if (v) {
-       
-        float xf = (float)x/(float)app->gridSize.x;
-        float pan = xf * 2.0f - 1.0f;
-        ma_sound_set_pan(&v->snd, pan);
-    }
+    if (!v) return;
+
+    const float camX = app->camera.pos.x;
+    const float camW = std::fmax(1.0f, app->camera.size.x);
+
+    const float t = (((float)x + 0.5f) - camX) / camW;
+    float pan = t * 2.0f - 1.0f;
+    pan = std::clamp(pan, -1.0f, 1.0f);
+
+    ma_sound_set_pan(&v->snd, pan);
 }
 
 
