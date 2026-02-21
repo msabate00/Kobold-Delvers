@@ -55,7 +55,7 @@ public:
         return (InRange(x, y)) ? front[LinearIndex(x, y)] : Cell{ (uint8)Material::Null };
     }
 
-    void Paint(int cx, int cy, Material m, int r);
+    void Paint(int cx, int cy, Material m, int r, bool shift);
     void StopPaint();
 
     bool InRange(int x, int y) const { return x >= 0 && x < gridW && y >= 0 && y < gridH; }
@@ -91,6 +91,7 @@ private:
     void MoveNPCs();
     void AnimateNPCs(float dt);
     bool WorldRectToScreen(float x, float y, float w, float h, int vw, int vh, float& sx, float& sy, float& sw, float& sh);
+    bool ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const;
 
 public:
     bool paused = false;
@@ -119,8 +120,15 @@ private:
 
     AudioInstance paintInstance{};
 
-    //NPCS y entidades externas
+    //Pintado
+    enum class PaintAxis : uint8 { None, X, Y };
+    bool paintActive = false;
+    bool paintShiftPrev = false;
+    PaintAxis paintAxis = PaintAxis::None;
+    Vec2<int> paintAnchor{ 0,0 };
+    Vec2<int> paintLast{ 0,0 };
 
+    //NPCS y entidades externas
     std::vector<NPC> npcs;
     std::vector<int> occ;
 

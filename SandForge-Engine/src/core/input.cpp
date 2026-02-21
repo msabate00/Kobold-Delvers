@@ -73,9 +73,11 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
 
 
+	const bool shift = KeyRepeat(GLFW_KEY_LEFT_SHIFT) || KeyRepeat(GLFW_KEY_RIGHT_SHIFT);
+
 	if (this->MouseDown(GLFW_MOUSE_BUTTON_1)) {
 		if (!app->ui->ConsumedMouse()) {
-			app->engine->Paint(MouseX(), MouseY(), brushMat, brushSize);
+			app->engine->Paint((int)MouseX(), (int)MouseY(), brushMat, brushSize, shift);
 		}
 	}
     if (this->MouseUp(GLFW_MOUSE_BUTTON_1)) {

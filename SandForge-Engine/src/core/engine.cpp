@@ -4,6 +4,8 @@
 #include "ui/ui.h"
 #include "render/renderer.h"
 #include "level.h"
+#include <algorithm>
+#include <cmath>
 
 Engine::Engine(App* app, bool start_enabled) : Module(app, start_enabled) {};
 Engine::~Engine() = default;
@@ -487,63 +489,125 @@ bool Engine::PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh)
     return false;
 }
 
-void Engine::Paint(int cx, int cy, Material m, int r) {
+void Engine::Paint(int sx, int sy, Material m, int r, bool shift) {
 
+    int cx = 0, cy = 0;
+    if (!ScreenToWorldCell(sx, sy, cx, cy)) return;
 
-    //if (app->ui->ConsumedMouse()) return;
+    if (!paintActive) {
+        paintActive = true;
+        paintAnchor = { cx, cy };
+        paintLast = { cx, cy };
+        paintAxis = PaintAxis::None;
+        paintShiftPrev = shift;
+    }
 
-    float vw = (float)std::fmax(1, app->framebufferSize.x);
-    float vh = (float)std::fmax(1, app->framebufferSize.y);
-    float cw = std::fmax(1.0f, app->camera.size.x);
-    float ch = std::fmax(1.0f, app->camera.size.y);
+    if (shift && !paintShiftPrev) {
+        paintAnchor = paintLast;
+        paintAxis = PaintAxis::None;
+    }
 
-    float sxCell = std::floor(vw / cw);
-    float syCell = std::floor(vh / ch);
-    float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
-    float sizeW = cw * s;
-    float sizeH = ch * s;
-    float offX = (vw - sizeW) * 0.5f;
-    float offY = (vh - sizeH) * 0.5f;
+    int tx = cx, ty = cy;
+    if (shift) {
+        const int dx = tx - paintAnchor.x;
+        const int dy = ty - paintAnchor.y;
 
-    // Mouse dentro del área del mundo (letterbox)
-    float fx = (float)cx - offX;
-    float fy = (float)cy - offY;
-    if (fx < 0 || fy < 0 || fx >= sizeW || fy >= sizeH) return;
+        const int adx = std::abs(dx);
+        const int ady = std::abs(dy);
+        constexpr int kCommitCells = 4; //Distancia para decidir el eje
 
-    float u = fx / sizeW;
-    float v = fy / sizeH;
+        auto pickAxis = [&]() {
+            if (adx == 0 && ady == 0) return;
+            if (adx > ady) paintAxis = PaintAxis::X;
+            else if (ady > adx) paintAxis = PaintAxis::Y;
 
-    cx = (int)std::floor(app->camera.pos.x + u * cw);
-    cy = (int)std::floor(app->camera.pos.y + v * ch);
+        };
 
+        if (paintAxis == PaintAxis::None) {
+            pickAxis();
+        }
+
+        if (paintAxis == PaintAxis::X) ty = paintAnchor.y;
+        else if (paintAxis == PaintAxis::Y) tx = paintAnchor.x;
+    }
+    else {
+        paintAxis = PaintAxis::None;
+    }
+
+    //NPC
     if (m == Material::NpcCell) {
         if (!npcDrawed) {
-            AddNPC(cx, cy);
+            AddNPC(tx-5, ty-9);
             npcDrawed = true;
         }
-        
+        paintLast = { tx, ty };
+        paintShiftPrev = shift;
         return;
     }
 
+    
+    auto stampCircle = [&](int pcx, int pcy, int& minX, int& minY, int& maxX, int& maxY) {
+        const int rr = std::fmax(1, r);
+        const int r2 = rr * rr;
+        const int xmin = std::fmax(0, pcx - rr);
+        const int xmax = std::fmin(gridW - 1, pcx + rr);
+        const int ymin = std::fmax(0, pcy - rr);
+        const int ymax = std::fmin(gridH - 1, pcy + rr);
 
-    int r2 = r * r;
-    int xmin = std::fmax(0, cx - r), xmax = std::fmin(gridW - 1, cx + r);
-    int ymin = std::fmax(0, cy - r), ymax = std::fmin(gridH - 1, cy + r);
+        minX = std::fmin(minX, xmin);
+        minY = std::fmin(minY, ymin);
+        maxX = std::fmax(maxX, xmax);
+        maxY = std::fmax(maxY, ymax);
 
-
-
-    for (int y = ymin; y <= ymax; ++y)
-        for (int x = xmin; x <= xmax; ++x) {
-            int dx = x - cx, dy = y - cy;
-            if (dx * dx + dy * dy <= r2) {
-                int i = LinearIndex(x, y);
-                front[i].m = (uint8)m; 
-                mFront[i] = (uint8)m;    
-
+        for (int y = ymin; y <= ymax; ++y) {
+            for (int x = xmin; x <= xmax; ++x) {
+                const int dx = x - pcx;
+                const int dy = y - pcy;
+                if (dx * dx + dy * dy <= r2) {
+                    const int i = LinearIndex(x, y);
+                    front[i].m = (uint8)m;
+                    mFront[i] = (uint8)m;
+                }
             }
         }
-    MarkChunksInRect(xmin, ymin, xmax - xmin, ymax - ymin);
+    };
 
+    //El pintado mas clean
+    auto paintSegment = [&](int x0, int y0, int x1, int y1,
+        int& minX, int& minY, int& maxX, int& maxY)
+        {
+            const int rr = std::fmax(1, r);
+            const int stride = std::fmax(1, rr / 2);   
+
+            int dx = std::abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
+            int dy = -std::abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
+            int err = dx + dy;
+
+            int step = 0;
+            for (;;) {
+                if (step % stride == 0) {
+                    stampCircle(x0, y0, minX, minY, maxX, maxY);
+                }
+
+                if (x0 == x1 && y0 == y1) break;
+
+                const int e2 = 2 * err;
+                if (e2 >= dy) { err += dy; x0 += sx; }
+                if (e2 <= dx) { err += dx; y0 += sy; }
+                ++step;
+            }
+            stampCircle(x1, y1, minX, minY, maxX, maxY);
+        };
+
+    int minX = gridW, minY = gridH, maxX = 0, maxY = 0;
+    paintSegment(paintLast.x, paintLast.y, tx, ty, minX, minY, maxX, maxY);
+
+    if (minX <= maxX && minY <= maxY) {
+        MarkChunksInRect(minX, minY, (maxX - minX) + 1, (maxY - minY) + 1);
+    }
+
+    paintLast = { tx, ty };
+    paintShiftPrev = shift;
 
     if (!paintInstance) {
         paintInstance = app->audio->Play("paint", 0, 0, 1.0, true);
@@ -552,10 +616,8 @@ void Engine::Paint(int cx, int cy, Material m, int r) {
         if (!app->audio->IsPlaying("paint", paintInstance)) {
             app->audio->Resume("paint", paintInstance);
         }
-        app->audio->SetVoicePosition("paint", paintInstance, cx, 0);
+        app->audio->SetVoicePosition("paint", paintInstance, tx, 0);
     }
-    
-
 }
 
 void Engine::StopPaint()
@@ -563,6 +625,10 @@ void Engine::StopPaint()
     if (paintInstance && app->audio->IsPlaying("paint", paintInstance)) {
         app->audio->Pause("paint", paintInstance);
     }
+
+    paintActive = false;
+    paintShiftPrev = false;
+    paintAxis = PaintAxis::None;
 }
 
 bool Engine::randbit(int x, int y, int parity) {
@@ -719,30 +785,60 @@ void Engine::AnimateNPCs(float dt)
     float& sx, float& sy, float& sw, float& sh){
 
 
-     const float cx = app->camera.pos.x, cy = app->camera.pos.y;
-     const float cw = app->camera.size.x, ch = app->camera.size.y;
+    const float cx = app->camera.pos.x, cy = app->camera.pos.y;
+    const float cw = app->camera.size.x, ch = app->camera.size.y;
 
-     float rx = std::fmax(x, cx);
-     float ry = std::fmax(y, cy);
-     float rw = std::fmin(x + w, cx + cw) - rx;
-     float rh = std::fmin(y + h, cy + ch) - ry;
-     if (rw <= 0 || rh <= 0) return false;
+    float rx = std::fmax(x, cx);
+    float ry = std::fmax(y, cy);
+    float rw = std::fmin(x + w, cx + cw) - rx;
+    float rh = std::fmin(y + h, cy + ch) - ry;
+    if (rw <= 0 || rh <= 0) return false;
 
-     float sxCell = std::floor(vw / cw);
-     float syCell = std::floor(vh / ch);
-     float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
+    float sxCell = std::floor(vw / cw);
+    float syCell = std::floor(vh / ch);
+    float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
 
-     float sizeW = cw * s;
-     float sizeH = ch * s;
-     float offX = (vw - sizeW) * 0.5f;
-     float offY = (vh - sizeH) * 0.5f;
+    float sizeW = cw * s;
+    float sizeH = ch * s;
+    float offX = (vw - sizeW) * 0.5f;
+    float offY = (vh - sizeH) * 0.5f;
 
-     sx = offX + (rx - cx) * s;
-     sy = offY + (ry - cy) * s;
-     sw = rw * s;
-     sh = rh * s;
+    sx = offX + (rx - cx) * s;
+    sy = offY + (ry - cy) * s;
+    sw = rw * s;
+    sh = rh * s;
 
-     sx = std::floor(sx); sy = std::floor(sy);
-     sw = std::floor(sw); sh = std::floor(sh);
-     return true;
+    sx = std::floor(sx); sy = std::floor(sy);
+    sw = std::floor(sw); sh = std::floor(sh);
+    return true;
 }
+
+ bool Engine::ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const
+ {
+     
+    const float sxCell = std::floor(app->framebufferSize.x / app->camera.size.x);
+    const float syCell = std::floor(app->framebufferSize.y / app->camera.size.y);
+    const float s = std::fmax(1.0f, std::fmin(sxCell, syCell));
+
+    const float sizeW = app->camera.size.x * s;
+    const float sizeH = app->camera.size.y * s;
+    const float offX = (app->framebufferSize.x - sizeW) * 0.5f;
+    const float offY = (app->framebufferSize.y - sizeH) * 0.5f;
+
+    float fx = (float)inX - offX;
+    float fy = (float)inY - offY;
+
+    fx = std::clamp(fx, 0.0f, std::fmax(0.0f, sizeW - 1.0f));
+    fy = std::clamp(fy, 0.0f, std::fmax(0.0f, sizeH - 1.0f));
+
+    const float u = (sizeW > 0.0f) ? (fx / sizeW) : 0.0f;
+    const float v = (sizeH > 0.0f) ? (fy / sizeH) : 0.0f;
+
+    outX = (int)std::floor(app->camera.pos.x + u * app->camera.size.x);
+    outY = (int)std::floor(app->camera.pos.y + v * app->camera.size.y);
+    outX = std::clamp(outX, 0, gridW - 1);
+    outY = std::clamp(outY, 0, gridH - 1);
+
+    return true;
+         
+ }
