@@ -52,6 +52,8 @@ public:
 	Audio* audio;
 	SceneManager* scenes;
 
+	float screenFade = 0.0f;
+
 	int pixelsPerCell = 4;
 	Vec2<int> framebufferSize{ 1280, 720 };
 	Vec2<int> windowSize{ 1280, 720 };
@@ -60,6 +62,7 @@ public:
 	int frames; //para los randBit determinista y contador de fps
 	float dt;
 	uint8 showChunks = 0;
+	uint8 showHitbox = 0;
 
 	Camera2D camera;
 

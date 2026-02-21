@@ -5,10 +5,6 @@
 #include <vector>
 #include <cstdint>
 
-
-
-
-
 class Renderer : public Module {
 public:
     Renderer(App* app, bool start_enabled = true);
@@ -39,6 +35,8 @@ private:
     void ensureSceneTargets(int viewW, int viewH);
     void drawFullscreen();
 
+    void DrawFadeOverlay(int viewW, int viewH);
+
 public:
 
 private:
@@ -62,6 +60,11 @@ private:
     int loc_th_uScene = -1, loc_th_uThreshold = -1;
     int loc_bl_uTex = -1, loc_bl_uTexel = -1, loc_bl_uHorizontal = -1;
     int loc_cp_uScene = -1, loc_cp_uBloom = -1, loc_cp_uExposure = -1, loc_cp_uBloomStrength = -1;
+    int loc_cp_uFade = -1, loc_cp_uFadeEdge = -1;
+
+    //Fade
+    uint progFadeOverlay = 0;
+    int loc_fo_uFade = -1, loc_fo_uEdge = -1, loc_fo_uView = -1;
 
     uint sceneFBO = 0, sceneTex = 0;
     uint pingFBO[2] = { 0,0 }, pingTex[2] = { 0,0 };

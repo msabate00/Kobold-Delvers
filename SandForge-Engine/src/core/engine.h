@@ -14,6 +14,11 @@
 struct NPC {
     int x, y;
     int w = 2, h = 4;
+
+    //hitbox
+    int hbOffX = 0, hbOffY = 0;
+    int hbW = 2, hbH = 4;
+
     int dir = 1;
     bool alive = true;
     Sprite sprite;
@@ -65,7 +70,7 @@ public:
     void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h);
     bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh);
 
-    void AddNPC(int x, int y, int w = 12, int h = 12, int dir = 1);
+    void AddNPC(int x, int y, int dir = 1);
     const std::vector<NPC>& GetNPCs() const { return npcs; }
 
 private:

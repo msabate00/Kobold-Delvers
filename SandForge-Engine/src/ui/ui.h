@@ -48,6 +48,7 @@ public:
 
     void Rect(float x, float y, float w, float h, uint32 rgba);
     void RectBorders(float x, float y, float w, float h, float t, uint32 rgba);
+    void RectBordersWorld(int x, int y, int w, int h, float thickness, uint32 color);
 
     void Image(const Texture2D& t, float x, float y, float w, float h,
         uint32 tint = 0xFFFFFFFF);

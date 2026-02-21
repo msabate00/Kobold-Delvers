@@ -65,10 +65,12 @@ bool Renderer::Awake() {
     std::string fsThresh = ReadTextFile(SHADER_DIR "/post_threshold.fs.glsl");
     std::string fsBlur = ReadTextFile(SHADER_DIR "/post_blur.fs.glsl");
     std::string fsComp = ReadTextFile(SHADER_DIR "/post_composite.fs.glsl");
+    std::string fsFadeOverlay = ReadTextFile(SHADER_DIR "/fade_overlay.fs.glsl");
 
     progThresh = MakeProgram(vsPost.c_str(), fsThresh.c_str());
     progBlur = MakeProgram(vsPost.c_str(), fsBlur.c_str());
     progComposite = MakeProgram(vsPost.c_str(), fsComp.c_str());
+    progFadeOverlay = MakeProgram(vsPost.c_str(), fsFadeOverlay.c_str());
 
     loc_th_uScene = glGetUniformLocation(progThresh, "uScene");
     loc_th_uThreshold = glGetUniformLocation(progThresh, "uThreshold");
@@ -82,7 +84,12 @@ bool Renderer::Awake() {
     loc_cp_uExposure = glGetUniformLocation(progComposite, "uExposure");
     loc_cp_uBloomStrength = glGetUniformLocation(progComposite, "uBloomStrength");
 
+    loc_cp_uFade = glGetUniformLocation(progComposite, "uFade");
+    loc_cp_uFadeEdge = glGetUniformLocation(progComposite, "uFadeEdge");
 
+    loc_fo_uFade = glGetUniformLocation(progFadeOverlay, "uFade");
+    loc_fo_uEdge = glGetUniformLocation(progFadeOverlay, "uEdge");
+    loc_fo_uView = glGetUniformLocation(progFadeOverlay, "uView");
 
     return true;
 
@@ -209,6 +216,10 @@ void Renderer::DrawGrid(const std::vector<uint8>& indices, int w, int h, int vie
     glUniform1f(loc_cp_uExposure, 1.0f);
     glUniform1f(loc_cp_uBloomStrength, 0.7f);
 
+    //Fade al final de todo para que afecte a todo
+    if (loc_cp_uFade >= 0) glUniform1f(loc_cp_uFade, 0.0f);
+    if (loc_cp_uFadeEdge >= 0) glUniform1f(loc_cp_uFadeEdge, 0.08f);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sceneTex);
     glActiveTexture(GL_TEXTURE1);
@@ -226,6 +237,28 @@ void Renderer::FlushUI(int viewW, int viewH)
 
     sprites.Begin(viewW, viewH);
     sprites.Flush(RenderLayer::UI);
+
+    DrawFadeOverlay(viewW, viewH);
+}
+
+void Renderer::DrawFadeOverlay(int viewW, int viewH)
+{
+    const float f = app->screenFade;
+    if (f <= 0.001f) return;
+
+    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, viewW, viewH);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUseProgram(progFadeOverlay);
+    if (loc_fo_uFade >= 0) glUniform1f(loc_fo_uFade, f);
+    if (loc_fo_uEdge >= 0) glUniform1f(loc_fo_uEdge, 0.04f);
+    if (loc_fo_uView >= 0) glUniform2f(loc_fo_uView, (float)viewW, (float)viewH);
+
+    drawFullscreen();
 }
 
 void Renderer::uploadFullCPU(const uint8* img, int w, int h) {

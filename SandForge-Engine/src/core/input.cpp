@@ -59,6 +59,7 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     if (this->KeyDown(GLFW_KEY_N)) app->engine->stepOnce = true;
 
     if (this->KeyDown(GLFW_KEY_F1)) app->showChunks = ~app->showChunks;
+    if (this->KeyDown(GLFW_KEY_F2)) app->showHitbox = ~app->showHitbox;
 
     if (this->KeyDown(GLFW_KEY_F5)) app->engine->SaveLevel("levels/custom/quick.lvl");
     if (this->KeyDown(GLFW_KEY_F9)) app->engine->LoadLevel("levels/custom/quick.lvl");

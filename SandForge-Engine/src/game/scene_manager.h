@@ -1,7 +1,6 @@
 #pragma once
 #include "app/module.h"
 #include "scene.h"
-#include "render/anim.h"
 
 class SceneManager : public Module {
 public:
@@ -20,10 +19,11 @@ public:
     SceneId CurrentId() const { return currentId; }
     bool WorldActive() const;
 
+    float Fade() const { return fade; }
+
 private:
     void ApplyPending();
     void UpdateFade(float dt);
-    bool InitFadeSequence(const char* pathPattern, int count, float fps);
 
 private:
     Scene* scenes[SCENE_COUNT] = {};
@@ -31,11 +31,12 @@ private:
     SceneId pendingId = SCENE_MAINMENU;
     bool hasPending = false;
 
-    bool fadeEnabled = false;
+    bool fadeEnabled = true;
     enum class FadePhase : uint8 { None = 0, Out, In };
     FadePhase fadePhase = FadePhase::None;
-    SpriteAnimLibrary fadeLib;
-    SpriteAnimPlayer fadePlayer;
-    std::vector<Texture2D> fadeFrames;
-    Sprite fadeSprite;
+
+    //Fade config
+    float fade = 0.0f;
+    float fadeOutSec = 0.18f;
+    float fadeInSec  = 0.18f;
 };

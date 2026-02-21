@@ -101,7 +101,7 @@ bool Engine::ImportLevel(const Level& in)
     npcs.clear();
     for (const auto& ln : in.npcs) {
         if (!ln.alive) continue;
-        AddNPC(ln.x, ln.y, ln.w, ln.h, ln.dir);
+        AddNPC(ln.x, ln.y, ln.dir);
         npcs.back().alive = ln.alive;
     }
 
@@ -637,9 +637,24 @@ bool Engine::randbit(int x, int y, int parity) {
     return (h & 1u) != 0u;
 }
 
-void Engine::AddNPC(int x, int y, int w, int h, int dir) {
+void Engine::AddNPC(int x, int y, int dir) {
+
+    //Size
+    const int w = 12;
+    const int h = 12;
+
+    //hitbox
+    const int padX = 3;
+    const int padTop = 5;
+    const int padBottom = 0;
 
     NPC npc{ x, y, w, h, dir, true };
+
+    npc.hbOffX = std::clamp(padX, 0, (int)std::fmax(0, w - 1));
+    npc.hbOffY = std::clamp(padTop, 0, (int)std::fmax(0, h - 1));
+    npc.hbW = std::fmax(1, w - 2 * padX);
+    npc.hbH = std::fmax(1, h - padTop - padBottom);
+
     npc.sprite.tex = &npcTex;
     npc.anim.SetLibrary(&npcAnims);
     npc.anim.Play("idle", true);
@@ -654,9 +669,11 @@ void Engine::RebuildOcc() {
     for (int i = 0; i < (int)npcs.size(); ++i) {
         const auto& n = npcs[i];
         if (!n.alive) continue;
-        for (int yy = 0; yy < n.h; ++yy)
-            for (int xx = 0; xx < n.w; ++xx) {
-                int gx = n.x + xx, gy = n.y + yy;
+        const int bx = n.x + n.hbOffX;
+        const int by = n.y + n.hbOffY;
+        for (int yy = 0; yy < n.hbH; ++yy)
+            for (int xx = 0; xx < n.hbW; ++xx) {
+                int gx = bx + xx, gy = by + yy;
                 if (InRange(gx, gy)) occ[LinearIndex(gx, gy)] = i + 1;
             }
     }
@@ -723,19 +740,22 @@ void Engine::MoveNPCs() {
         if (n.anim.CurrentName() == "die") continue;
         int id = i + 1;
 
+        const int hbX = n.x + n.hbOffX;
+        const int hbY = n.y + n.hbOffY;
+
         //Muerte
-        if (CheckNPCDie(n.x, n.y, n.w, n.h)) {
+        if (CheckNPCDie(hbX, hbY, n.hbW, n.hbH)) {
             n.anim.Play("die", false);
             continue;
         }
 
         //Caer
-        if (RectFreeOnBack(n.x, n.y + 1, n.w, n.h, id)) { n.y += 1; n.anim.Play("fall", false); continue; }
+        if (RectFreeOnBack(hbX, hbY + 1, n.hbW, n.hbH, id)) { n.y += 1; n.anim.Play("fall", false); continue; }
 
         int nx = n.x + n.dir;
 
         //Horizontal
-        if (RectFreeOnBack(nx, n.y, n.w, n.h, id)) { n.x = nx; n.anim.Play("walk", false); continue; }
+        if (RectFreeOnBack(nx + n.hbOffX, hbY, n.hbW, n.hbH, id)) { n.x = nx; n.anim.Play("walk", false); continue; }
 
         //Trepar
         auto solid = [&](int gx, int gy) {
@@ -743,10 +763,11 @@ void Engine::MoveNPCs() {
             };
         bool climbed = false;
         for (int step = 1; step <= kMaxStep; ++step) {
-            if (!RectFreeOnBack(nx, n.y - step, n.w, n.h, id)) continue;
+            if (!RectFreeOnBack(nx + n.hbOffX, (n.y - step) + n.hbOffY, n.hbW, n.hbH, id)) continue;
             bool support = false;
-            for (int xx = 0; xx < n.w; ++xx)
-                support |= solid(nx + xx, (n.y - step) + n.h);
+            const int supY = (n.y - step) + n.hbOffY + n.hbH;
+            for (int xx = 0; xx < n.hbW; ++xx)
+                support |= solid((nx + n.hbOffX) + xx, supY);
             if (!support) continue;
             n.y -= step; n.x = nx; climbed = true; break;
         }

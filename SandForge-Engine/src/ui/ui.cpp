@@ -122,28 +122,29 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 			int x, y, w, h;
 			app->engine->GetChunkRect(ci, x, y, w, h);
 
-			int rx = std::fmax(x, int(app->camera.pos.x));
-			int ry = std::fmax(y, int(app->camera.pos.y));
-			int rw = std::fmin(x + w, int(app->camera.pos.x + app->camera.size.x)) - rx;
-			int rh = std::fmin(y + h, int(app->camera.pos.y + app->camera.size.y)) - ry;
-			if (rw <= 0 || rh <= 0) continue;
+			if (chunks[ci]) RectBordersWorld(x, y, w, h, 4.0f, RGBAu32(230, 130, 130, 200));
+			else            RectBordersWorld(x, y, w, h, 2.0f, RGBAu32(230, 230, 230, 100));
+		}
+	}
 
-			float sx = ((rx - app->camera.pos.x) / app->camera.size.x) * app->windowSize.x;
-			float sy = ((ry - app->camera.pos.y) / app->camera.size.y) * app->windowSize.y;
-			float sw = (rw / app->camera.size.x) * app->windowSize.x;
-			float sh = (rh / app->camera.size.y) * app->windowSize.y;
+	if (app->showHitbox) {
+		std::vector<NPC> npcs = app->engine->GetNPCs();
+		for(const NPC & n : npcs) {
+			if (!n.alive) continue;
 
-			if (chunks[ci]) RectBorders((int)sx, (int)sy, (int)sw, (int)sh, 4, RGBAu32(230, 130, 130, 200));
-			else            RectBorders((int)sx, (int)sy, (int)sw, (int)sh, 2, RGBAu32(230, 230, 230, 100));
+			RectBordersWorld(n.x, n.y, n.w, n.h, 2.0f, RGBAu32(80, 220, 80, 200));
 
+			int hx = n.x + n.hbOffX;
+			int hy = n.y + n.hbOffY;
+			RectBordersWorld(hx, hy, n.hbW, n.hbH, 2.0f, RGBAu32(230, 80, 80, 220));
 		}
 	}
 }
 
-void UI::End() { 
-	
+void UI::End() {
+
 	if (noRender) return;
-	Flush(); 
+	Flush();
 }
 
 void UI::SetMouse(double x, double y, bool down) {
@@ -182,11 +183,25 @@ void UI::RectBorders(float x, float y, float w, float h, float t, uint32 rgba)
 	if (noRender) return;
 	float tM = (t / 2);
 	Rect(x - tM, y - tM, w, tM, rgba);
-	Rect(x - tM, (y+h) - tM, w, tM, rgba);
+	Rect(x - tM, (y + h) - tM, w, tM, rgba);
 
 	Rect(x - tM, y - tM, tM, h, rgba);
-	Rect((x+w) - tM, y- tM, tM, h, rgba);
+	Rect((x + w) - tM, y - tM, tM, h, rgba);
 
+}
+void UI::RectBordersWorld(int x, int y, int w, int h, float thickness, uint32 color){
+	int rx = std::fmax(x, int(app->camera.pos.x));
+	int ry = std::fmax(y, int(app->camera.pos.y));
+	int rw = std::fmin(x + w, int(app->camera.pos.x + app->camera.size.x)) - rx;
+	int rh = std::fmin(y + h, int(app->camera.pos.y + app->camera.size.y)) - ry;
+	if (rw <= 0 || rh <= 0) return;
+
+	float sx = ((rx - app->camera.pos.x) / app->camera.size.x) * app->windowSize.x;
+	float sy = ((ry - app->camera.pos.y) / app->camera.size.y) * app->windowSize.y;
+	float sw = (rw / app->camera.size.x) * app->windowSize.x;
+	float sh = (rh / app->camera.size.y) * app->windowSize.y;
+
+	RectBorders((int)sx, (int)sy, (int)sw, (int)sh, thickness, color);
 }
 
 void UI::Image(const Texture2D& t, float x, float y, float w, float h, uint32 tint)
