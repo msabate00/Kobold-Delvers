@@ -16,8 +16,8 @@ void Engine::ClearWorld(uint8 fill)
     const size_t n = static_cast<size_t>(gridW) * static_cast<size_t>(gridH);
     if (n == 0) return;
 
-    front.assign(n, Cell{ fill, 0 });
-    back.assign(n, Cell{ fill, 0 });
+    front.assign(n, Cell{ fill });
+    back.assign(n, Cell{ fill });
     mFront.assign(n, fill);
     mBack.assign(n, fill);
     npcs.clear();
@@ -74,8 +74,8 @@ bool Engine::ImportLevel(const Level& in)
         chunksH = (gridH + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
         const size_t n = static_cast<size_t>(gridW) * static_cast<size_t>(gridH);
-        front.assign(n, Cell{ (uint8)Material::Empty, 0 });
-        back.assign(n, Cell{ (uint8)Material::Empty, 0 });
+        front.assign(n, Cell{ (uint8)Material::Empty});
+        back.assign(n, Cell{ (uint8)Material::Empty});
         mFront.assign(n, (uint8)Material::Empty);
         mBack.assign(n, (uint8)Material::Empty);
         occ.assign(n, 0);
@@ -150,8 +150,8 @@ bool Engine::Awake() {
     chunksW = (gridW + CHUNK_SIZE - 1) / CHUNK_SIZE;
     chunksH = (gridH + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
-	front.assign(gridW * gridH, Cell{ (uint8)Material::Empty,0 });
-	back.assign(gridW * gridH, Cell{ (uint8)Material::Null,0 });
+	front.assign(gridW * gridH, Cell{ (uint8)Material::Empty});
+	back.assign(gridW * gridH, Cell{ (uint8)Material::Null});
     mFront.assign(gridW * gridH, (uint8)Material::Empty);
     mBack.assign(gridW * gridH, (uint8)Material::Empty);
 
@@ -576,27 +576,20 @@ void Engine::Paint(int sx, int sy, Material m, int r, bool shift) {
     auto paintSegment = [&](int x0, int y0, int x1, int y1,
         int& minX, int& minY, int& maxX, int& maxY)
         {
-            const int rr = std::fmax(1, r);
-            const int stride = std::fmax(1, rr / 2);   
-
-            int dx = std::abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
-            int dy = -std::abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
-            int err = dx + dy;
-
-            int step = 0;
-            for (;;) {
-                if (step % stride == 0) {
-                    stampCircle(x0, y0, minX, minY, maxX, maxY);
-                }
-
+			int dx = std::abs(x1 - x0), sxp = x0 < x1 ? 1 : -1;
+            int dy = -std::abs(y1 - y0), syp = y0 < y1 ? 1 : -1; 
+            int err = dx + dy; 
+            for (;;) { 
+                stampCircle(x0, y0, minX, minY, maxX, maxY); 
                 if (x0 == x1 && y0 == y1) break;
-
-                const int e2 = 2 * err;
-                if (e2 >= dy) { err += dy; x0 += sx; }
-                if (e2 <= dx) { err += dx; y0 += sy; }
-                ++step;
+                const int e2 = 2 * err; 
+                if (e2 >= dy) { 
+                    err += dy; x0 += sxp; 
+                } 
+                if (e2 <= dx) { 
+                    err += dx; y0 += syp; 
+                } 
             }
-            stampCircle(x1, y1, minX, minY, maxX, maxY);
         };
 
     int minX = gridW, minY = gridH, maxX = 0, maxY = 0;

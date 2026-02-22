@@ -10,8 +10,6 @@ enum Material : uint8 { Null = -1, Empty = 0, Sand, Water, Stone, Wood, Fire, La
 
 struct Cell {
     uint8 m = (uint8)Material::Empty;
-    uint8  meta = 0;
-    int vx = 0, vy = 0;
 };
 
 struct MatProps {

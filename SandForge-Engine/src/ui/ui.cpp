@@ -196,10 +196,10 @@ void UI::RectBordersWorld(int x, int y, int w, int h, float thickness, uint32 co
 	int rh = std::fmin(y + h, int(app->camera.pos.y + app->camera.size.y)) - ry;
 	if (rw <= 0 || rh <= 0) return;
 
-	float sx = ((rx - app->camera.pos.x) / app->camera.size.x) * app->windowSize.x;
-	float sy = ((ry - app->camera.pos.y) / app->camera.size.y) * app->windowSize.y;
-	float sw = (rw / app->camera.size.x) * app->windowSize.x;
-	float sh = (rh / app->camera.size.y) * app->windowSize.y;
+	float sx = ((rx - app->camera.pos.x) / app->camera.size.x) * app->framebufferSize.x;
+	float sy = ((ry - app->camera.pos.y) / app->camera.size.y) * app->framebufferSize.y;
+	float sw = (rw / app->camera.size.x) * app->framebufferSize.x;
+	float sh = (rh / app->camera.size.y) * app->framebufferSize.y;
 
 	RectBorders((int)sx, (int)sy, (int)sw, (int)sh, thickness, color);
 }

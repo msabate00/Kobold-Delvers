@@ -248,6 +248,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
 void Scene_Sandbox::EnsureLevelsFolder()
 {
     std::filesystem::create_directories("levels");
+    std::filesystem::create_directories("levels/custom");
 }
 
 void Scene_Sandbox::ScanLevels()
