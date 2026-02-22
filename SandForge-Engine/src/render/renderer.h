@@ -65,7 +65,8 @@ private:
     //Fade
     uint progFadeOverlay = 0;
     int loc_fo_uFade = -1, loc_fo_uEdge = -1, loc_fo_uView = -1;
-
+    int loc_fo_uColor = -1, loc_fo_uCellPx = -1;
+       
     uint sceneFBO = 0, sceneTex = 0;
     uint pingFBO[2] = { 0,0 }, pingTex[2] = { 0,0 };
     int fboW = 0, fboH = 0;

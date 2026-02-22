@@ -37,6 +37,6 @@ private:
 
     //Fade config
     float fade = 0.0f;
-    float fadeOutSec = 0.18f;
-    float fadeInSec  = 0.18f;
+    float fadeOutSec = 0.2f;
+    float fadeInSec  = 0.2f;
 };

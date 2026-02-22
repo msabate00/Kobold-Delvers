@@ -90,6 +90,8 @@ bool Renderer::Awake() {
     loc_fo_uFade = glGetUniformLocation(progFadeOverlay, "uFade");
     loc_fo_uEdge = glGetUniformLocation(progFadeOverlay, "uEdge");
     loc_fo_uView = glGetUniformLocation(progFadeOverlay, "uView");
+    loc_fo_uColor = glGetUniformLocation(progFadeOverlay, "uColor");
+    loc_fo_uCellPx = glGetUniformLocation(progFadeOverlay, "uCellPx");
 
     return true;
 
@@ -257,6 +259,8 @@ void Renderer::DrawFadeOverlay(int viewW, int viewH)
     if (loc_fo_uFade >= 0) glUniform1f(loc_fo_uFade, f);
     if (loc_fo_uEdge >= 0) glUniform1f(loc_fo_uEdge, 0.04f);
     if (loc_fo_uView >= 0) glUniform2f(loc_fo_uView, (float)viewW, (float)viewH);
+    glUniform3f(loc_fo_uColor, 0.1f, 0.1f, 0.11f); //Color del fade to black
+    if (loc_fo_uCellPx >= 0) glUniform1f(loc_fo_uCellPx, app->pixelsPerCell); 
 
     drawFullscreen();
 }
