@@ -83,7 +83,6 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 	}
     if (this->MouseUp(GLFW_MOUSE_BUTTON_1)) {
         app->engine->StopPaint();
-        app->engine->npcDrawed = false;
     }
 
     if (this->ScrollSteps() != 0) {

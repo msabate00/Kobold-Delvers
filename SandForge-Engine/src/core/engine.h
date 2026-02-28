@@ -4,26 +4,10 @@
 #include <cstdint>
 #include "material.h"
 #include "level.h"
-#include "audio/audio.h"
-#include "render/sprite.h"
-#include "render/texture.h"
-#include "render/anim.h"
-
-
-
-struct NPC {
-    int x, y;
-    int w = 2, h = 4;
-
-    //hitbox
-    int hbOffX = 0, hbOffY = 0;
-    int hbW = 2, hbH = 4;
-
-    int dir = 1;
-    bool alive = true;
-    Sprite sprite;
-    SpriteAnimPlayer anim;
-};
+#include "worldsim.h"
+#include "paint_tool.h"
+#include "npc_system.h"
+#include "level_io.h"
 
 
 class Engine : public Module {
@@ -36,65 +20,46 @@ public:
     bool PreUpdate();
     bool Update(float dt);
     bool PostUpdate();
-
     bool CleanUp();
 
-    const uint8* GetFrontPlane() { return mFront.data(); };
+    //World
+    const uint8* GetFrontPlane() { return world.FrontPlane(); }
+    int GridW() const { return world.GridW(); }
+    int GridH() const { return world.GridH(); }
 
-    int GridW() const { return gridW; }
-    int GridH() const { return gridH; }
-
-    void ExportLevel(Level& out) const;
-    bool ImportLevel(const Level& in);
-    bool SaveLevel(const char* path) const;
-    bool LoadLevel(const char* path);
     void ClearWorld(uint8 fill = (uint8)Material::Empty);
 
+    bool InRange(int x, int y) const { return world.InRange(x, y); }
 
+    Cell GetCell(int x, int y) { return world.GetFrontCell(x, y); }
+
+    //Material rules
     bool tryMove(int x0, int y0, int x1, int y1, const Cell& c);
     bool trySwap(int x0, int y0, int x1, int y1, const Cell& c);
-
     void SetCell(int x, int y, uint8 m);
 
-    Cell GetCell(int x, int y) {
-        return (InRange(x, y)) ? front[LinearIndex(x, y)] : Cell{ (uint8)Material::Null };
-    }
-
-    void Paint(int cx, int cy, Material m, int r, bool shift);
-    void StopPaint();
-
-    bool InRange(int x, int y) const { return x >= 0 && x < gridW && y >= 0 && y < gridH; }
     bool randbit(int x, int y, int parity);
 
-    std::vector<uint> GetChunks() { return chunkDirtyNow; };
-    void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h);
-    bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh);
+    //Pintado
+    void Paint(int screenX, int screenY, Material m, int r, bool shift);
+    void StopPaint();
 
-    void AddNPC(int x, int y, int dir = 1);
-    const std::vector<NPC>& GetNPCs() const { return npcs; }
+    //Chunks
+    const std::vector<uint>& GetChunks() const { return world.ChunksDirtyNow(); }
+    void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h) { world.GetChunkRect(chunkIndex, x, y, w, h); }
+    bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh) { return world.PopChunkDirtyGPURect(x, y, rw, rh); }
 
-private:
+    //NPCs
+    NPC& AddNPC(int x, int y, int dir = 1) { return npcs.AddNPC(world, x, y, dir); }
+    const std::vector<NPC>& GetNPCs() const { return npcs.GetNPCs(); }
 
-    void Step();
+    //Levels
+    void ExportLevel(Level& out) const { levelio.ExportLevel(world, npcs, out); }
+    bool ImportLevel(const Level& in) { return levelio.ImportLevel(*this, world, npcs, in); }
+    bool SaveLevel(const char* path) const { return levelio.SaveLevel(world, npcs, path); }
+    bool LoadLevel(const char* path) { return levelio.LoadLevel(*this, world, npcs, path); }
 
-    int LinearIndex(int x, int y) const { return y * gridW + x; };
-    int ChunkLinearIndex(int x, int y) const { return y * chunksW + x; };
-
-    int ChunkIndexByCell(int x, int y) const;
-    void MarkChunkSim(int x, int y) { int ci = ChunkIndexByCell(x, y); if (ci >= 0) chunkDirtyNext[ci] = 1; }
-    void MarkChunkSim(int ci) { if (ci >= 0) chunkDirtyNext[ci] = 1; }
-    void MarkChunkGPU(int x, int y) { int ci = ChunkIndexByCell(x, y); if (ci >= 0) chunkDirtyGPU[ci] = 1; }
-    void MarkChunkGPU(int ci) { if (ci >= 0) chunkDirtyGPU[ci] = 1; }
-    void MarkChunksInRect(int x, int y, int w, int h);
-    void MarkChunksNeighborIfBorder(int x, int y);
-
-    void RebuildOcc();
-    bool RectFreeOnBack(int x, int y, int w, int h, int ignoreId) const;
-
-
-    bool CheckNPCDie(int x, int y, int w, int h) const;
-    void MoveNPCs();
-    void AnimateNPCs(float dt);
+    //Dimensiones
     bool WorldRectToScreen(float x, float y, float w, float h, int vw, int vh, float& sx, float& sy, float& sw, float& sh);
     bool ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const;
 
@@ -103,44 +68,9 @@ public:
     bool stepOnce = false;
     int parity = 0;
 
-    bool npcDrawed = false;
-     
 private:
-    std::vector<Cell> front, back;
-    std::vector<uint8> mFront, mBack;
-
-    std::vector<uint> chunkDirtyNow, chunkDirtyNext;
-    std::vector<uint> chunkDirtyGPU;
-    std::vector<uint8> chunkTTL;
-
-
-    int gridW, gridH;
-    int chunksW, chunksH;
-
-    float elapsedTimeSinceStep = 0;
-    static constexpr float fixedTimeStep = 1.f / 120.f;
-    static constexpr int CHUNK_SIZE = 16;
-    static constexpr uint8_t TTL_MIN = 2;         
-    static constexpr uint8_t TTL_VOL = 32;
-
-    AudioInstance paintInstance{};
-
-    //Pintado
-    enum class PaintAxis : uint8 { None, X, Y };
-    bool paintActive = false;
-    bool paintShiftPrev = false;
-    PaintAxis paintAxis = PaintAxis::None;
-    Vec2<int> paintAnchor{ 0,0 };
-    Vec2<int> paintLast{ 0,0 };
-
-    //NPCS y entidades externas
-    std::vector<NPC> npcs;
-    std::vector<int> occ;
-
-    Texture2D npcTex;
-    SpriteAnimLibrary npcAnims;
-
-    float npcMoveAcc = 0.0f;
-    float npcCellsPerSec = 32.0f;
-
+    WorldSim world;
+    PaintTool paint;
+    NPCSystem npcs;
+    LevelIO levelio;
 };
