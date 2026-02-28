@@ -41,7 +41,7 @@ public:
     bool randbit(int x, int y, int parity);
 
     //Pintado
-    void Paint(int screenX, int screenY, Material m, int r, bool shift);
+    void Paint(int screenX, int screenY, Material m, int r);
     void StopPaint();
 
     //Chunks

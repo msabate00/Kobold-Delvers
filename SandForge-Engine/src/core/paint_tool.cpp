@@ -16,7 +16,7 @@ void PaintTool::Clear()
 }
 
 void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
-    int screenX, int screenY, Material m, int r, bool shift)
+    int screenX, int screenY, Material m, int r)
 {
     int cx = 0, cy = 0;
     if (!engine.ScreenToWorldCell(screenX, screenY, cx, cy)) return;
@@ -26,17 +26,17 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
         paintAnchor = { cx, cy };
         paintLast = { cx, cy };
         paintAxis = PaintAxis::None;
-        paintShiftPrev = shift;
+        paintShiftPrev = app->shiftPressed;
         npcDrawed = false;
     }
 
-    if (shift && !paintShiftPrev) {
+    if (app->shiftPressed && !paintShiftPrev) {
         paintAnchor = paintLast;
         paintAxis = PaintAxis::None;
     }
 
     int tx = cx, ty = cy;
-    if (shift) {
+    if (app->shiftPressed) {
         const int dx = tx - paintAnchor.x;
         const int dy = ty - paintAnchor.y;
 
@@ -65,7 +65,7 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
             npcDrawed = true;
         }
         paintLast = { tx, ty };
-        paintShiftPrev = shift;
+        paintShiftPrev = app->shiftPressed;
         return;
     }
 
@@ -128,7 +128,7 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
     }
 
     paintLast = { tx, ty };
-    paintShiftPrev = shift;
+    paintShiftPrev = app->shiftPressed;
 
     //Sonido
     if (engine.app && engine.app->audio) {

@@ -63,6 +63,7 @@ public:
 	float dt;
 	uint8 showChunks = 0;
 	uint8 showHitbox = 0;
+	bool shiftPressed = false;
 
 	Camera2D camera;
 

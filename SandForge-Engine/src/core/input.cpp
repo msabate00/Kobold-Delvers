@@ -73,12 +73,11 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     if (KeyRepeat(GLFW_KEY_S)) app->SetCameraRect(app->camera.pos.x, app->camera.pos.y + sp, app->camera.size.x, app->camera.size.y);
 
 
-
-	const bool shift = KeyRepeat(GLFW_KEY_LEFT_SHIFT) || KeyRepeat(GLFW_KEY_RIGHT_SHIFT);
+    app->shiftPressed = KeyRepeat(GLFW_KEY_LEFT_SHIFT) || KeyRepeat(GLFW_KEY_RIGHT_SHIFT);
 
 	if (this->MouseDown(GLFW_MOUSE_BUTTON_1)) {
 		if (!app->ui->ConsumedMouse()) {
-			app->engine->Paint((int)MouseX(), (int)MouseY(), brushMat, brushSize, shift);
+			app->engine->Paint((int)MouseX(), (int)MouseY(), brushMat, brushSize);
 		}
 	}
     if (this->MouseUp(GLFW_MOUSE_BUTTON_1)) {

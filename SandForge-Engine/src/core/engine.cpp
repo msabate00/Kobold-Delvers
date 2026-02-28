@@ -79,9 +79,9 @@ void Engine::SetCell(int x, int y, uint8 m)
     world.SetCell(x, y, m);
 }
 
-void Engine::Paint(int screenX, int screenY, Material m, int r, bool shift)
+void Engine::Paint(int screenX, int screenY, Material m, int r)
 {
-    paint.Paint(*this, world, npcs, screenX, screenY, m, r, shift);
+    paint.Paint(*this, world, npcs, screenX, screenY, m, r);
 }
 
 void Engine::StopPaint()

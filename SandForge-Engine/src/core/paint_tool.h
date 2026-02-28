@@ -13,7 +13,7 @@ class PaintTool
 public:
     void Clear();
 
-    void Paint(Engine& engine, WorldSim& world, NPCSystem& npcs, int screenX, int screenY, Material m, int radius, bool shift);
+    void Paint(Engine& engine, WorldSim& world, NPCSystem& npcs, int screenX, int screenY, Material m, int radius);
     void StopPaint(Engine& engine);
 
 private:

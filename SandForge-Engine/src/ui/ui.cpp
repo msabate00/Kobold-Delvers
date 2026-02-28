@@ -139,6 +139,11 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 			RectBordersWorld(hx, hy, n.hbW, n.hbH, 2.0f, RGBAu32(230, 80, 80, 220));
 		}
 	}
+
+	if (app->shiftPressed && !md) {
+		Rect(mx-(app->framebufferSize.x * 1.5f), my, app->framebufferSize.x*3, 1, RGBAu32(220, 220, 220, 100));
+		Rect(mx, my-(app->framebufferSize.y * 1.5f), 1, app->framebufferSize.y * 3, RGBAu32(220, 220, 220, 100));
+	}
 }
 
 void UI::End() {
