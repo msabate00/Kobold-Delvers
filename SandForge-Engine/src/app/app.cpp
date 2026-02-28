@@ -26,7 +26,9 @@ App::App(int argc, char* args[]) : argc(argc), args(args)
 
 App::~App()
 {
-
+	if (engine || renderer || input || ui || audio || scenes || window) {
+		CleanUp();
+	}
 }
 
 
@@ -34,17 +36,18 @@ bool App::Awake()
 {
 	bool ret = true;
 
-	glfwInit();
+	if (!glfwInit()) return false;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(windowSize.x, windowSize.y, "SandForge Engine", nullptr, nullptr);
+	if (!window) { glfwTerminate(); return false; }
 	glfwMakeContextCurrent(window);
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	glfwGetFramebufferSize(window, &framebufferSize.x, &framebufferSize.y);
 
-	if (!gladLoadGL(glfwGetProcAddress)) return -1;
+	if (!gladLoadGL(glfwGetProcAddress)) return false;
 	glfwSwapInterval(1);
 
 	engine->Awake();
@@ -163,12 +166,15 @@ bool App::CleanUp()
 {
 	bool ret = true;
 
-	scenes->CleanUp();
-	ui->CleanUp();
-	input->CleanUp();
-	renderer->CleanUp();
-	engine->CleanUp();
-	audio->CleanUp();
+	if (scenes)  { scenes->CleanUp();  delete scenes;  scenes = nullptr; }
+	if (ui)      { ui->CleanUp();      delete ui;      ui = nullptr; }
+	if (input)   { input->CleanUp();   delete input;   input = nullptr; }
+	if (renderer){ renderer->CleanUp();delete renderer;renderer = nullptr; }
+	if (engine)  { engine->CleanUp();  delete engine;  engine = nullptr; }
+	if (audio)   { audio->CleanUp();   delete audio;   audio = nullptr; }
+
+	if (window)  { glfwDestroyWindow(window); window = nullptr; }
+	glfwTerminate();
 
 	return ret;
 }

@@ -2,7 +2,7 @@
 // Fast timer with milisecons precision
 // ----------------------------------------------------
 
-#include "Timer.h"
+#include "app/timer.h"
 
 
 // L1: DONE 1: Fill Start(), Read(), ReadSec() methods
@@ -16,7 +16,8 @@ Timer::Timer() : started(false) // Inicializa el indicador started
 void Timer::Start(uint32 startingMS)
 {
     started = true;
-    startTime = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    startTime = now - std::chrono::milliseconds(startingMS);
 }
 
 void Timer::Stop()
@@ -26,13 +27,13 @@ void Timer::Stop()
 
 float Timer::Read() const
 {
-    return started ? std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - startTime).count() : 0;
+    return started ? std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count() : 0;
 }
 
 uint32 Timer::CountDown(int total) const
 {
     if (started) {
-        total = total - std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - startTime).count();
+        total = total - std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count();
         if (total <= 0) {
             total = 0;
         }

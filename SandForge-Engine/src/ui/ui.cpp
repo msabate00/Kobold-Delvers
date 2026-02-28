@@ -1,8 +1,8 @@
-﻿#include "UI.h" 
+﻿#include "ui/ui.h" 
 #include <glad/gl.h>
 #include <algorithm>
 #include <cstring>
-#include "app/Module.h"  
+#include "app/module.h"  
 #include "app/app.h"
 #include "core/utils.h"
 #include "core/engine.h"
@@ -297,8 +297,8 @@ bool UI::Slider(float x, float y, float w, float h,
 void UI::Circle(float cx, float cy, float r, uint32 c, int segments) {
 	if (noRender) return;
 
-	float rx = r * (float)app->windowSize.x / (float)app->camera.size.x;
-	float ry = r * (float)app->windowSize.y / (float)app->camera.size.y;
+	float rx = r * (float)app->framebufferSize.x / (float)app->camera.size.x;
+	float ry = r * (float)app->framebufferSize.y / (float)app->camera.size.y;
 
 	if (rx <= 0 || ry <= 0) return;
 

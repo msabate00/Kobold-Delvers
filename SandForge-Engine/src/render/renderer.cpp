@@ -1,6 +1,6 @@
-﻿#include "Renderer.h" 
-#include "sprite.h"
-#include "app/Module.h"  
+﻿#include "render/renderer.h" 
+#include "render/sprite.h"
+#include "app/module.h"  
 #include "core/engine.h"
 #include "app/app.h"
 #include "core/utils.h"
@@ -123,7 +123,43 @@ bool Renderer::Update(float dt) {
     return true;
 }
 bool Renderer::PostUpdate() { return true; }
-bool Renderer::CleanUp() { return true; }
+bool Renderer::CleanUp() {
+
+    sprites.Shutdown();
+
+    if (sceneTex) { glDeleteTextures(1, &sceneTex); sceneTex = 0; }
+    if (pingTex[0]) { glDeleteTextures(1, &pingTex[0]); pingTex[0] = 0; }
+    if (pingTex[1]) { glDeleteTextures(1, &pingTex[1]); pingTex[1] = 0; }
+    if (sceneFBO) { glDeleteFramebuffers(1, &sceneFBO); sceneFBO = 0; }
+    if (pingFBO[0]) { glDeleteFramebuffers(1, &pingFBO[0]); pingFBO[0] = 0; }
+    if (pingFBO[1]) { glDeleteFramebuffers(1, &pingFBO[1]); pingFBO[1] = 0; }
+    fboW = fboH = 0;
+
+    if (paletteUBO) { glDeleteBuffers(1, &paletteUBO); paletteUBO = 0; }
+
+    if (pbo[0] || pbo[1]) {
+        glDeleteBuffers(2, pbo);
+        pbo[0] = pbo[1] = 0;
+    }
+    pboIdx = 0;
+    pboCapacity = 0;
+
+    if (tex) { glDeleteTextures(1, &tex); tex = 0; }
+    if (vao) { glDeleteVertexArrays(1, &vao); vao = 0; }
+
+    if (progGrid) { glDeleteProgram(progGrid); progGrid = 0; }
+    if (progThresh) { glDeleteProgram(progThresh); progThresh = 0; }
+    if (progBlur) { glDeleteProgram(progBlur); progBlur = 0; }
+    if (progComposite) { glDeleteProgram(progComposite); progComposite = 0; }
+    if (progFadeOverlay) { glDeleteProgram(progFadeOverlay); progFadeOverlay = 0; }
+
+    texW = texH = 0;
+    texValid = false;
+    scratch.clear();
+    scratchRect.clear();
+
+    return true;
+}
 
 void Renderer::Draw(const uint8* planeM, int gridW, int gridH, int x0, int y0, int rw, int rh)
 {

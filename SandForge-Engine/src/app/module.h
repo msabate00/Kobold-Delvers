@@ -7,6 +7,7 @@ class App;
 class Module
 {
 public:
+	virtual ~Module() = default;
 
 	App* app;
 
