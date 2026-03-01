@@ -31,6 +31,9 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
 )
 
 add_executable(FallingSand ${SRC})
+set_target_properties(FallingSand PROPERTIES
+    OUTPUT_NAME "SandForge Engine"
+)
 target_include_directories(FallingSand PRIVATE src)
 
 find_package(OpenGL REQUIRED)
