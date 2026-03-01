@@ -1,5 +1,4 @@
-#<img width="1063" height="503" alt="sandforge_logo" src="https://github.com/user-attachments/assets/74311002-bf4f-4506-8a66-a225a65b5d6b" />
- SandForge Engine
+<img width="1063" height="503" alt="sSandForge Engine Logo" src="https://github.com/user-attachments/assets/74311002-bf4f-4506-8a66-a225a65b5d6b"/>
 
 **SandForge** is a lightweight **falling-sand simulation engine** written in **C++17** with **OpenGL 3.3 Core**.
 It provides a grid-based material simulation (cellular automata style), chunk-based updates, GPU rendering, basic UI/input, audio, and level I/O.
