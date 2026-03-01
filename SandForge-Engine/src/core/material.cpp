@@ -13,13 +13,16 @@ static void SandUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.tryMove(x, y, 0, +1, self)) return; // caer
 
 
-    if (E.InRange(x, y + 1) && E.GetCell(x, y + 1).m == (uint8)Material::Water && E.trySwap(x, y, 0, +1, self)) return;
+    if (E.InRange(x, y + 1) && (E.GetCell(x, y + 1).m == (uint8)Material::Water) && E.trySwap(x, y, 0, +1, self)) return;
+    if (E.InRange(x, y + 1) && (E.GetCell(x, y + 1).m == (uint8)Material::Lava) && E.trySwap(x, y, 0, +1, self)) return;
 
     bool leftFirst = E.randbit(x, y, 0);;
     int da = leftFirst ? -1 : +1, db = -da;
 
     if ((Material)E.GetCell(x + da, y + 1).m == Material::Water && E.trySwap(x, y, da, +1, self)) return;
+    if ((Material)E.GetCell(x + da, y + 1).m == Material::Lava && E.trySwap(x, y, da, +1, self)) return;
     if ((Material)E.GetCell(x + db, y + 1).m == Material::Water && E.trySwap(x, y, db, +1, self)) return;
+    if ((Material)E.GetCell(x + db, y + 1).m == Material::Lava && E.trySwap(x, y, db, +1, self)) return;
 
     if (E.tryMove(x, y, da, +1, self)) return;
     E.tryMove(x, y, db, +1, self);
@@ -181,7 +184,7 @@ void registerDefaultMaterials() {
     g_mat[(uint8)Material::Stone] = { "Stone",    {128,128,140,255, 1},   255,              &SolidUpdate };
     g_mat[(uint8)Material::Wood] = { "Wood",     {142,86,55,255, 1},     255,                &WoodUpdate };
     g_mat[(uint8)Material::Fire] = { "Fire",     {255,35,1,255, 5.5f},      255,              &FireUpdate };
-    g_mat[(uint8)Material::Lava] = { "Lava",     {205,15,1,255, 15.5f},      255,              &LavaUpdate };
+    g_mat[(uint8)Material::Lava] = { "Lava",     {205,15,1,255, 15.5f},      2,              &LavaUpdate };
     g_mat[(uint8)Material::Smoke] = { "Smoke",    {28,13,2,255, 1},       255,                &SmokeUpdate };
     g_mat[(uint8)Material::Steam] = { "Steam",    {200,200,200,255, 1},   255,               &SteamUpdate };
 
