@@ -1,12 +1,16 @@
 #include "worldsim.h"
 #include "app/app.h"
 #include "engine.h" 
+#include "app/log.h"
 #include <algorithm>
 #include <cmath>
 
 bool WorldSim::Awake(App* app)
 {
-    if (!app) return false;
+    if (!app) {
+        LOG("ERROR: WorldSim::Awake called with null App*");
+        return false;
+    }
     Resize(app, app->gridSize.x, app->gridSize.y);
     return true;
 }
@@ -33,6 +37,8 @@ void WorldSim::Resize(App* app, int w, int h)
     chunkTTL.assign(cn, 0);
 
     elapsedTimeSinceStep = 0.0f;
+
+    LOG("World resized to %dx%d (chunks %dx%d)", gridW, gridH, chunksW, chunksH);
 }
 
 void WorldSim::ResetDirtyAll()

@@ -18,6 +18,7 @@ App* app = nullptr;
 
 int main(int argc, char* args[]) {
 
+	LOG_INIT("engine.log");
 	LOG("Engine starting ...");
 
 	MainState state = CREATE;
@@ -97,5 +98,6 @@ int main(int argc, char* args[]) {
 		}
 	}
 
-
+	LOG_SHUTDOWN();
+	return result;
 }

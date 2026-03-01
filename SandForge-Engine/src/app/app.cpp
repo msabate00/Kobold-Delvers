@@ -10,6 +10,7 @@
 #include "render/renderer.h"
 #include "ui/ui.h"
 #include "game/scene_manager.h"
+#include "app/log.h"
 
 
 // Constructor
@@ -36,30 +37,51 @@ bool App::Awake()
 {
 	bool ret = true;
 
-	if (!glfwInit()) return false;
+	if (!glfwInit()) {
+		LOG("ERROR: glfwInit() failed");
+		return false;
+	}
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(windowSize.x, windowSize.y, "SandForge Engine", nullptr, nullptr);
-	if (!window) { glfwTerminate(); return false; }
+	if (!window) {
+		LOG("ERROR: glfwCreateWindow(%d,%d) failed", windowSize.x, windowSize.y);
+		glfwTerminate();
+		return false;
+	}
 	glfwMakeContextCurrent(window);
 
 	glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
 	glfwGetFramebufferSize(window, &framebufferSize.x, &framebufferSize.y);
 
-	if (!gladLoadGL(glfwGetProcAddress)) return false;
+	if (!gladLoadGL(glfwGetProcAddress)) {
+		LOG("ERROR: gladLoadGL() failed");
+		return false;
+	}
 	glfwSwapInterval(1);
 
+	LOG("OpenGL initialized. Vendor=%s | Renderer=%s | Version=%s",
+		(const char*)glGetString(GL_VENDOR),
+		(const char*)glGetString(GL_RENDERER),
+		(const char*)glGetString(GL_VERSION));
+
+	LOG("Awake: Engine");
 	engine->Awake();
 	registerDefaultMaterials();
+	LOG("Awake: Renderer");
 	renderer->Awake();
+	LOG("Awake: UI");
 	ui->Awake();
 
+	LOG("Awake: Input");
 	input->Awake();
 	input->SetupWindow(window);
 	Input::SFramebufferSize(window,framebufferSize.x, framebufferSize.y);
 
+	LOG("Awake: Audio");
 	audio->Awake();
+	LOG("Awake: SceneManager");
 	scenes->Awake();
 
 	
@@ -71,12 +93,17 @@ bool App::Awake()
 bool App::Start()
 {
 	bool ret = true;
-
+	LOG("Start: Engine");
 	engine->Start();
+	LOG("Start: Renderer");
 	renderer->Start();
+	LOG("Start: Input");
 	input->Start();
+	LOG("Start: UI");
 	ui->Start();
+	LOG("Start: Audio");
 	audio->Start(); //se puede quitar
+	LOG("Start: SceneManager");
 	scenes->Start();
 
 	camera.pos.y = gridSize.y - camera.size.y;

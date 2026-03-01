@@ -2,12 +2,16 @@
 #include "texture.h"
 #include "../../third_party/stb/stb_image.h"
 #include <glad/gl.h>
+#include "app/log.h"
 
 bool Texture2D::Load(const char* path) {
     int ch = 0;
     stbi_set_flip_vertically_on_load(0);
     unsigned char* px = stbi_load(path, &w, &h, &ch, 4);
-    if (!px) return false;
+    if (!px) {
+        LOG("ERROR: Texture load failed '%s'", path ? path : "<null>");
+        return false;
+    }
 
     if (!id) glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -18,6 +22,7 @@ bool Texture2D::Load(const char* path) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0,
         GL_RGBA, GL_UNSIGNED_BYTE, px);
     stbi_image_free(px);
+    LOG("Loaded texture '%s' (%dx%d)", path ? path : "<null>", w, h);
     return true;
 }
 

@@ -4,6 +4,7 @@
 #include "worldsim.h"
 #include "npc_system.h"
 #include "app/app.h"
+#include "app/log.h"
 
 #include <algorithm>
 #include <cstring>
@@ -35,7 +36,10 @@ void LevelIO::ExportLevel(const WorldSim& world, const NPCSystem& npcs, Level& o
 
 bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const Level& in)
 {
-    if (!in.IsValid()) return false;
+    if (!in.IsValid()) {
+        LOG("ERROR: ImportLevel failed (invalid level)");
+        return false;
+    }
 
     //mundo
     if (in.w != world.GridW() || in.h != world.GridH()) {
@@ -82,16 +86,31 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
 
 bool LevelIO::SaveLevel(const WorldSim& world, const NPCSystem& npcs, const char* path) const
 {
-    if (!path || !path[0]) return false;
+    if (!path || !path[0]) {
+        LOG("ERROR: SaveLevel called with empty path");
+        return false;
+    }
     Level lvl;
     ExportLevel(world, npcs, lvl);
-    return SaveLevelFile(path, lvl);
+    const bool ok = SaveLevelFile(path, lvl);
+    if (!ok) LOG("ERROR: SaveLevelFile failed for '%s'", path);
+    else LOG("Saved level '%s' (%dx%d, npcs=%zu)", path, lvl.w, lvl.h, lvl.npcs.size());
+    return ok;
 }
 
 bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const char* path)
 {
-    if (!path || !path[0]) return false;
+    if (!path || !path[0]) {
+        LOG("ERROR: LoadLevel called with empty path");
+        return false;
+    }
     Level lvl;
-    if (!LoadLevelFile(path, lvl)) return false;
-    return ImportLevel(engine, world, npcs, lvl);
+    if (!LoadLevelFile(path, lvl)) {
+        LOG("ERROR: LoadLevelFile failed for '%s'", path);
+        return false;
+    }
+    const bool ok = ImportLevel(engine, world, npcs, lvl);
+    if (!ok) LOG("ERROR: ImportLevel failed for '%s'", path);
+    else LOG("Loaded level '%s' (%dx%d, npcs=%zu)", path, lvl.w, lvl.h, lvl.npcs.size());
+    return ok;
 }

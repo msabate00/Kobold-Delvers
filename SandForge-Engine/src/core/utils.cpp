@@ -1,11 +1,15 @@
 #include "utils.h"
+#include "app/log.h"
 #include <fstream>
 #include <sstream>
 #include <vector>
 
 std::string ReadTextFile(const char* path) {
     std::ifstream f(path, std::ios::in);
-    if (!f) return {};
+    if (!f) {
+        LOG("ERROR: ReadTextFile failed '%s'", path ? path : "<null>");
+        return {};
+    }
     std::ostringstream ss;
     ss << f.rdbuf();
     return ss.str();
@@ -20,10 +24,14 @@ uint MakeShader(unsigned int type, const char* src) {
     return s;
 }
 uint MakeProgram(const char* vs, const char* fs) {
+    if (!vs || !vs[0] || !fs || !fs[0]) {
+        LOG("ERROR: MakeProgram called with empty shader source");
+    }
     unsigned int v = MakeShader(GL_VERTEX_SHADER, vs);
     unsigned int f = MakeShader(GL_FRAGMENT_SHADER, fs);
     unsigned int p = glCreateProgram();
     glAttachShader(p, v); glAttachShader(p, f); glLinkProgram(p);
+    LogProgram(p);
     glDeleteShader(v); glDeleteShader(f);
     return p;
 }
@@ -34,7 +42,7 @@ static void LogShader(GLuint s) {
         GLint n = 0; glGetShaderiv(s, GL_INFO_LOG_LENGTH, &n);
         std::vector<char> log(n > 0 ? n : 1);
         GLsizei out = 0; glGetShaderInfoLog(s, n, &out, log.data());
-        std::fprintf(stderr, "[GL] Shader compile error:\n%.*s\n", out, log.data());
+        LOG("[GL] Shader compile error: %.*s", out, log.data());
     }
 }
 
@@ -44,6 +52,6 @@ static void LogProgram(GLuint p) {
         GLint n = 0; glGetProgramiv(p, GL_INFO_LOG_LENGTH, &n);
         std::vector<char> log(n > 0 ? n : 1);
         GLsizei out = 0; glGetProgramInfoLog(p, n, &out, log.data());
-        std::fprintf(stderr, "[GL] Program link error:\n%.*s\n", out, log.data());
+        LOG("[GL] Program link error: %.*s", out, log.data());
     }
 }

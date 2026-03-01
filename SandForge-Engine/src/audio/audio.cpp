@@ -5,6 +5,7 @@
 #include "core/engine.h"
 #include <core/utils.h>
 #include <algorithm>
+#include "app/log.h"
 
 Audio::Audio(App* app, bool start_enabled) : Module(app, start_enabled) {};
 Audio::~Audio() = default;
@@ -12,10 +13,15 @@ Audio::~Audio() = default;
 
 bool Audio::Awake() {
 
-	bool ret = (ma_engine_init(NULL, &ma_eng) == MA_SUCCESS);
-	
-    LoadAudiosInMemory();
-	
+	ma_result r = ma_engine_init(NULL, &ma_eng);
+	bool ret = (r == MA_SUCCESS);
+	if (!ret) {
+		LOG("ERROR: ma_engine_init failed (%d). Audio disabled.", (int)r);
+		return false;
+	}
+
+	LoadAudiosInMemory();
+	LOG("Audio initialized (sample_rate=%u)", (unsigned)ma_engine_get_sample_rate(&ma_eng));
 	return ret;
 
 }
@@ -194,7 +200,10 @@ void Audio::LoadAudiosInMemory()
 
 bool Audio::Load(const std::string& key, const char* path, int voices)
 {
-    if ( !path || voices <= 0) return false;
+    if (!path || voices <= 0) {
+        LOG("ERROR: Audio::Load invalid args key='%s' path=%s voices=%d", key.c_str(), path ? path : "<null>", voices);
+        return false;
+    }
 
     auto itOld = sfx.find(key);
     if (itOld != sfx.end()) Unload(key);
@@ -206,7 +215,7 @@ bool Audio::Load(const std::string& key, const char* path, int voices)
     for (int i = 0; i < voices; ++i) {
         ma_result r = ma_sound_init_from_file(&ma_eng, path, 0, nullptr, nullptr, &s.voices[i].snd);
         if (r != MA_SUCCESS) {
-            
+            LOG("ERROR: ma_sound_init_from_file failed key='%s' path='%s' (%d)", key.c_str(), path, (int)r);
             for (int j = 0; j < i; ++j) ma_sound_uninit(&s.voices[j].snd);
             return false;
         }
@@ -237,6 +246,7 @@ bool Audio::Load(const std::string& key, const char* path, int voices)
 
 
     sfx.emplace(key, std::move(s));
+    LOG("Loaded audio '%s' (%d voices) from '%s'", key.c_str(), voices, path);
     return true;
 }
 
