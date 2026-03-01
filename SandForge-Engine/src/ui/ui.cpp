@@ -241,37 +241,37 @@ bool UI::ButtonAtlas(float x, float y, float w, float h,
 
     if (hover && (md || clicked)) mouseConsumed = true;
 
-    
-    if (noRender && matAtlasReady && atlasIndex >= 0 && atlasIndex < 10) {
-        //Fondo
-        const UVRect white = WhitePixelUV(matAtlas);
-        Sprite bgS{};
-        bgS.tex = &matAtlas;
-        bgS.x = x; bgS.y = y; bgS.w = w; bgS.h = h;
-        bgS.u0 = white.u0; bgS.v0 = white.v0;
-        bgS.u1 = white.u1; bgS.v1 = white.v1;
-        bgS.color = bg;
-        bgS.layer = RenderLayer::UI;
-        app->renderer->Queue(bgS);
+    // Render pass only
+    if (!noRender) {
+        if (matAtlasReady && atlasIndex >= 0 && atlasIndex < 10) {
+            // Fondo
+            const UVRect white = WhitePixelUV(matAtlas);
+            Sprite bgS{};
+            bgS.tex = &matAtlas;
+            bgS.x = x; bgS.y = y; bgS.w = w; bgS.h = h;
+            bgS.u0 = white.u0; bgS.v0 = white.v0;
+            bgS.u1 = white.u1; bgS.v1 = white.v1;
+            bgS.color = bg;
+            bgS.layer = RenderLayer::UI;
+            app->renderer->Queue(bgS);
 
-        //Icono
-        const UVRect uv = UVFromPx(matAtlas, kMatAtlasPx[atlasIndex]);
-        const float iw = w * 0.75f;
-        const float ih = h * 0.75f;
-        const float ix = x + (w - iw) * 0.5f;
-        const float iy = y + (h - ih) * 0.5f;
+            // Icono
+            const UVRect uv = UVFromPx(matAtlas, kMatAtlasPx[atlasIndex]);
+            const float iw = w * 0.75f;
+            const float ih = h * 0.75f;
+            const float ix = x + (w - iw) * 0.5f;
+            const float iy = y + (h - ih) * 0.5f;
 
-        Sprite ic{};
-        ic.tex = &matAtlas;
-        ic.x = ix; ic.y = iy; ic.w = iw; ic.h = ih;
-        ic.u0 = uv.u0; ic.v0 = uv.v0; ic.u1 = uv.u1; ic.v1 = uv.v1;
-        ic.color = 0xFFFFFFFF;
-        ic.layer = RenderLayer::UI;
-        app->renderer->Queue(ic);
-    }
-    else if (!noRender) {
-        //Dibuja un rect en caso de no haber nada
-        if (!(matAtlasReady && atlasIndex >= 0 && atlasIndex < 10)) {
+            Sprite ic{};
+            ic.tex = &matAtlas;
+            ic.x = ix; ic.y = iy; ic.w = iw; ic.h = ih;
+            ic.u0 = uv.u0; ic.v0 = uv.v0; ic.u1 = uv.u1; ic.v1 = uv.v1;
+            ic.color = 0xFFFFFFFF;
+            ic.layer = RenderLayer::UI;
+            app->renderer->Queue(ic);
+        }
+        else {
+            // Fallback: rect simple si no hay atlas/índice válido
             Rect(x, y, w, h, bg);
         }
     }

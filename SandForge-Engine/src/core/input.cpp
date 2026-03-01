@@ -90,8 +90,8 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
         //Para zoom de la camara
         const bool ctrl = KeyRepeat(GLFW_KEY_LEFT_CONTROL);
         if (ctrl) {
-            constexpr int kMinPpc = 1;
-            constexpr int kMaxPpc = 32;
+            constexpr int kMinPpc = 3;
+            constexpr int kMaxPpc = 10;
 
             //Mantener en el centro
             const float cx = app->camera.pos.x + app->camera.size.x * 0.5f;
@@ -99,6 +99,7 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
             //Aumentamos los pixeles
             app->pixelsPerCell = std::clamp(app->pixelsPerCell + steps, kMinPpc, kMaxPpc);
+            printf("%d", app->pixelsPerCell);
 
             //Ajustamos la resolu
             const float camW = app->framebufferSize.x / (float)app->pixelsPerCell;

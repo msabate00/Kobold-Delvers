@@ -95,6 +95,20 @@ bool Engine::randbit(int x, int y, int parity)
     h ^= h >> 13; h *= 1274126177u; h ^= h >> 16;
     return (h & 1u) != 0u;
 }
+uint32_t Engine::randu32(int x, int y, int parity, uint32_t salt)
+{
+    uint32_t h = (uint32_t)(x * 374761393u) ^ (uint32_t)(y * 668265263u)
+        ^ (uint32_t)(parity * 0x9E3779B9u) ^ (uint32_t)(salt * 0x85EBCA6Bu);
+    h ^= h >> 13; h *= 1274126177u; h ^= h >> 16;
+    return h;
+}
+
+int Engine::randrange(int x, int y, int parity, int mod, uint32_t salt)
+{
+    if (mod <= 0) return 0;
+    return (int)(randu32(x, y, parity, salt) % (uint32_t)mod);
+}
+
 
 bool Engine::WorldRectToScreen(float x, float y, float w, float h,
     int vw, int vh,

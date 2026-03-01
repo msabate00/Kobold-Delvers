@@ -1,20 +1,27 @@
 #pragma once
-#include <windows.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
-#define LOG(format, ...) Log(__FILE__, __LINE__, format, __VA_ARGS__)
+#if defined(_WIN32)
+    #include <windows.h>
+#endif
 
-void Log(const char file[], int line, const char* format, ...) {
-	static char tmpString1[4096];
-	static char tmpString2[4096];
-	static va_list ap;
+inline void LogImpl(const char* file, int line, const char* format, ...)
+{
+    char msg[4096];
+    va_list ap;
+    va_start(ap, format);
+    std::vsnprintf(msg, sizeof(msg), format, ap);
+    va_end(ap);
 
-	// Construct the string from variable arguments
-	va_start(ap, format);
-	vsprintf_s(tmpString1, 4096, format, ap);
-	va_end(ap);
-	sprintf_s(tmpString2, 4096, "\n%s(%d) : %s", file, line, tmpString1);
-	printf("%s\n", tmpString1);
-	OutputDebugString(tmpString2);
+    std::printf("%s\n", msg);
+
+#if defined(_WIN32)
+    char dbg[4096];
+    std::snprintf(dbg, sizeof(dbg), "\n%s(%d) : %s", file, line, msg);
+    OutputDebugStringA(dbg);
+#endif
 }
 
+// Allows: LOG("hello"); or LOG("x=%d", x);
+#define LOG(...) LogImpl(__FILE__, __LINE__, __VA_ARGS__)

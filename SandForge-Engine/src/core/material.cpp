@@ -28,31 +28,50 @@ static void SandUpdate(Engine& E, int x, int y, const Cell& self) {
 static void WaterUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.tryMove(x, y, 0, +1, self)) return;
 
-    bool leftFirst = E.randbit(x, y , app->frames);
+    bool leftFirst = E.randbit(x, y, app->frames);
     int da = leftFirst ? -1 : +1, db = -da;
 
-    //Diagonal
+    auto passable = [&](int px, int py) -> bool {
+        const uint8 m = E.GetCell(px, py).m;
+        return m == (uint8)Material::Empty || m == (uint8)Material::Water;
+    };
+
+    // Diagonal
     if (E.GetCell(x + da, y + 1).m == (uint8)Material::Empty && E.tryMove(x, y, da, +1, self)) return;
     if (E.GetCell(x + db, y + 1).m == (uint8)Material::Empty && E.tryMove(x, y, db, +1, self)) return;
 
-    //Horizontal
+    // Horizontal
     if (E.GetCell(x + da, y).m == (uint8)Material::Empty && E.tryMove(x, y, da, 0, self)) return;
     if (E.GetCell(x + db, y).m == (uint8)Material::Empty && E.tryMove(x, y, db, 0, self)) return;
 
     //Doble Diagonal
-    if (E.GetCell(x + da*2, y +2).m == (uint8)Material::Empty && E.GetCell(x + da * 1, y + 1).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) && E.tryMove(x, y, da*2, +2, self)) return;
-    if (E.GetCell(x + db*2, y +2).m == (uint8)Material::Empty && E.GetCell(x + db * 1, y + 1).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) &&  E.tryMove(x, y, db*2, +2, self)) return;
+    if (E.GetCell(x + da * 2, y + 2).m == (uint8)Material::Empty &&
+        passable(x + da, y + 1) &&
+        E.tryMove(x, y, da * 2, +2, self)) return;
+
+    if (E.GetCell(x + db * 2, y + 2).m == (uint8)Material::Empty &&
+        passable(x + db, y + 1) &&
+        E.tryMove(x, y, db * 2, +2, self)) return;
 
     //Semi doble diagonal
-    if (E.GetCell(x + da*2, y + 1).m == (uint8)Material::Empty && E.GetCell(x + da * 1, y).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) && E.tryMove(x, y, da*2, +1, self)) return;
-    if (E.GetCell(x + db*2, y + 1).m == (uint8)Material::Empty && E.GetCell(x + db * 1, y).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) && E.tryMove(x, y, db*2, +1, self)) return;
+    if (E.GetCell(x + da * 2, y + 1).m == (uint8)Material::Empty &&
+        passable(x + da, y) &&
+        E.tryMove(x, y, da * 2, +1, self)) return;
+
+    if (E.GetCell(x + db * 2, y + 1).m == (uint8)Material::Empty &&
+        passable(x + db, y) &&
+        E.tryMove(x, y, db * 2, +1, self)) return;
 
     //Doble horizontal
-    if (E.GetCell(x + da * 2, y).m == (uint8)Material::Empty && E.GetCell(x + da * 1, y).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) && E.tryMove(x, y, da * 2, 0, self)) return;
-    if (E.GetCell(x + db * 2, y).m == (uint8)Material::Empty && E.GetCell(x + db * 1, y).m == ((uint8)Material::Empty || E.GetCell(x + db * 1, y).m == (uint8)Material::Water) && E.tryMove(x, y, db * 2, 0, self)) return;
+    if (E.GetCell(x + da * 2, y).m == (uint8)Material::Empty &&
+        passable(x + da, y) &&
+        E.tryMove(x, y, da * 2, 0, self)) return;
 
-    
+    if (E.GetCell(x + db * 2, y).m == (uint8)Material::Empty &&
+        passable(x + db, y) &&
+        E.tryMove(x, y, db * 2, 0, self)) return;
 }
+
 
 static void WoodUpdate(Engine& E, int x, int y, const Cell& self) {
     static const int8 dirs[4][2] = {
@@ -72,13 +91,13 @@ static void WoodUpdate(Engine& E, int x, int y, const Cell& self) {
 }
 
 static void FireUpdate(Engine& E, int x, int y, const Cell& self) {
-    if ((rand() % 100) < 5) {
+    if (E.randrange(x, y, app->frames, 100, 1) < 5) {
         E.SetCell(x, y, (uint8)Material::Empty);
         return;
-    }
+    } 
 
     if (E.InRange(x, y - 1) && E.GetCell(x, y - 1).m == (uint8)Material::Empty) {
-        if ((rand() % 100) < 20) {
+        if (E.randrange(x, y, app->frames, 100, 2) < 20) {
             E.SetCell(x, y, (uint8)Material::Smoke);
         }
     }
@@ -111,7 +130,7 @@ static void LavaUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.GetCell(x + db, y).m == (uint8)Material::Empty && E.tryMove(x, y, db, 0, self)) return;
 
     if (E.GetCell(x, y - 1).m == (uint8)Material::Empty) {
-        if ((rand() % 100) < 1) {
+        if (E.randrange(x, y, app->frames, 100, 3) < 1) {
             E.SetCell(x, y - 1, (uint8)Material::Fire);
         }
     }
@@ -126,7 +145,7 @@ static void SmokeUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.tryMove(x, y, dxa, -1, self)) return;
     if (E.tryMove(x, y, dxb, -1, self)) return;
 
-    if ((rand() % 100) < 2) {
+    if (E.randrange(x, y, app->frames, 100, 4) < 2) {
         E.SetCell(x, y, (uint8)Material::Empty);
     }
 }
@@ -140,8 +159,8 @@ static void SteamUpdate(Engine& E, int x, int y, const Cell& self) {
 
     if (E.tryMove(x, y, 0, -1, self)) return;
 
-    if ((rand() % 100) < 2) {
-        if ((rand() % 100) < 90) {
+    if (E.randrange(x, y, app->frames, 100, 5) < 2) {
+        if (E.randrange(x, y, app->frames, 100, 6) < 90) {
             E.SetCell(x, y, (uint8)Material::Empty);
         }
         else {
@@ -150,7 +169,7 @@ static void SteamUpdate(Engine& E, int x, int y, const Cell& self) {
     }
 }
 
-static void SolidUpdate(Engine&, int, int, const Cell&) { /* inmóvil */ }
+static void SolidUpdate(Engine&, int, int, const Cell&) { /* inmvil */ }
 
 
 void registerDefaultMaterials() {

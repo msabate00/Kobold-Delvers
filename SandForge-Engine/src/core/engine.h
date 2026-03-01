@@ -38,7 +38,10 @@ public:
     bool trySwap(int x0, int y0, int x1, int y1, const Cell& c);
     void SetCell(int x, int y, uint8 m);
 
+    //RNG Determinsita
     bool randbit(int x, int y, int parity);
+    uint32_t randu32(int x, int y, int parity, uint32_t salt = 0);
+    int randrange(int x, int y, int parity, int mod, uint32_t salt = 0);
 
     //Pintado
     void Paint(int screenX, int screenY, Material m, int r);
