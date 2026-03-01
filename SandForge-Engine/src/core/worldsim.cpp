@@ -18,8 +18,8 @@ bool WorldSim::Awake(App* app)
 void WorldSim::Resize(App* app, int w, int h)
 {
     (void)app;
-    gridW = std::max(0, w);
-    gridH = std::max(0, h);
+    gridW = std::fmax(0, w);
+    gridH = std::fmax(0, h);
 
     chunksW = (gridW + CHUNK_SIZE - 1) / CHUNK_SIZE;
     chunksH = (gridH + CHUNK_SIZE - 1) / CHUNK_SIZE;
@@ -270,10 +270,10 @@ void WorldSim::MarkChunksInRect(int x, int y, int w, int h)
     int maxCX = (maxX + CHUNK_SIZE - 1) / CHUNK_SIZE;
     int maxCY = (maxY + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
-    minCX = std::max(0, minCX);
-    minCY = std::max(0, minCY);
-    maxCX = std::min(chunksW, maxCX);
-    maxCY = std::min(chunksH, maxCY);
+    minCX = std::fmax(0, minCX);
+    minCY = std::fmax(0, minCY);
+    maxCX = std::fmin(chunksW, maxCX);
+    maxCY = std::fmin(chunksH, maxCY);
 
     for (int cy = minCY; cy < maxCY; cy++) {
         for (int cx = minCX; cx < maxCX; cx++) {
