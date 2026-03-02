@@ -4,6 +4,7 @@
 #include "render/sprite.h"
 #include "render/texture.h"
 #include "render/atlas.h"
+#include <ui/ui.h>
 #include <vector>
 
 // Example (burst):

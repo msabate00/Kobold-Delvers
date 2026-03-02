@@ -4,7 +4,6 @@
 #include "render/renderer.h"
 #include <algorithm>
 #include <cmath>
-#include <ui/ui.h>
 
 static inline float DegToRad(float d) { return d * 0.01745329251994329577f; }
 static inline float LerpF(float a, float b, float t) { return a + (b - a) * t; }
