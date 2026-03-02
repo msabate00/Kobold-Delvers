@@ -12,6 +12,7 @@ enum SceneId : int {
     SCENE_SANDBOX,
     SCENE_LEVEL1,
     SCENE_LEVEL2,
+    SCENE_SETTINGS,
     SCENE_COUNT
 };
 

@@ -10,10 +10,15 @@
 
 struct Vertex;
 
+enum class AudioBus : uint8_t {
+    Sfx = 0,
+    Music
+};
 struct Voice {
     ma_sound snd{};
     bool inited = false;
     bool loop = false;
+    float baseVolume = 1.0f;
     uint16 generation = 0; 
     uint64 ticket = 0;
 };
@@ -21,6 +26,7 @@ struct Voice {
 
 struct SFX {
     std::vector<Voice> voices;
+    AudioBus bus = AudioBus::Sfx;
     ma_uint32 sampleRate = 0;
     double lengthSec = 0.0;
 };
@@ -47,7 +53,7 @@ public:
 
     bool CleanUp();
 
-    bool Load(const std::string& key, const char* path, int voices = 8);
+    bool Load(const std::string& key, const char* path, int voices = 8, AudioBus bus = AudioBus::Sfx);
     void Unload(const std::string& key);
     void UnloadAll();
 
@@ -72,11 +78,17 @@ public:
     void SetLoop(const std::string& key, AudioInstance id, bool loop);
     void SetVolume(const std::string& key, AudioInstance id, float volume);
     void SetGlobalVolume(float volume);
+    void SetMusicVolume(float volume);
+    void SetSfxVolume(float volume);
+    float MusicVolume() const { return musicVolume; }
+    float SfxVolume() const { return sfxVolume; }
     void SetVoicePosition(const std::string& key, AudioInstance id, int x, int y);
 
 
 private:
 
+    float BusVolume(AudioBus b) const;
+    void ReapplyBusVolumes(AudioBus b);
     void LoadAudiosInMemory();
     AudioInstance Play(const std::string& key, float vol = 1.0f, bool loop = false);
 
@@ -98,4 +110,6 @@ private:
     uint64 ticket = 0;
     std::unordered_map<std::string, SFX> sfx;
 
+    float musicVolume = 1.0f;
+    float sfxVolume = 1.0f;
 };

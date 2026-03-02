@@ -56,7 +56,8 @@ AudioInstance Audio::Play(const std::string& key, float vol, bool loop)
     
     (void)ma_sound_stop(&v.snd);
     (void)ma_sound_seek_to_pcm_frame(&v.snd, 0);
-    ma_sound_set_volume(&v.snd, vol);
+    ma_sound_set_volume(&v.snd, vol * BusVolume(s->bus));
+    v.baseVolume = vol;
     ma_sound_set_looping(&v.snd, loop ? MA_TRUE : MA_FALSE);
     v.loop = loop;
     v.ticket = ++ticket;
@@ -166,12 +167,45 @@ void Audio::SetLoop(const std::string& key, AudioInstance id, bool loop)
 void Audio::SetVolume(const std::string& key, AudioInstance id, float volume)
 {
     Voice* v = GetVoice(key, id); if (!v) return;
-    ma_sound_set_volume(&v->snd, volume);
+    v->baseVolume = volume;
+    const SFX* s = FindSfxConst(key);
+    ma_sound_set_volume(&v->snd, volume * (s ? BusVolume(s->bus) : 1.0f));
 }
 
 void Audio::SetGlobalVolume(float volume)
 {
     ma_engine_set_volume(&ma_eng, volume);
+}
+
+
+float Audio::BusVolume(AudioBus b) const
+{
+    return (b == AudioBus::Music) ? musicVolume : sfxVolume;
+}
+
+
+void Audio::ReapplyBusVolumes(AudioBus b)
+{
+    const float bv = BusVolume(b);
+    for (auto& kv : sfx) {
+        if (kv.second.bus != b) continue;
+        for (auto& v : kv.second.voices) {
+            if (!v.inited) continue;
+            ma_sound_set_volume(&v.snd, v.baseVolume * bv);
+        }
+    }
+}
+
+void Audio::SetMusicVolume(float volume)
+{
+    musicVolume = std::clamp(volume, 0.0f, 1.0f);
+    ReapplyBusVolumes(AudioBus::Music);
+}
+
+void Audio::SetSfxVolume(float volume)
+{
+    sfxVolume = std::clamp(volume, 0.0f, 1.0f);
+    ReapplyBusVolumes(AudioBus::Sfx);
 }
 
 void Audio::SetVoicePosition(const std::string& key, AudioInstance id, int x, int y)
@@ -198,7 +232,7 @@ void Audio::LoadAudiosInMemory()
 	Load("paint", AUDIO_DIR  "/paint.wav", 8);
 }
 
-bool Audio::Load(const std::string& key, const char* path, int voices)
+bool Audio::Load(const std::string& key, const char* path, int voices, AudioBus bus)
 {
     if (!path || voices <= 0) {
         LOG("ERROR: Audio::Load invalid args key='%s' path=%s voices=%d", key.c_str(), path ? path : "<null>", voices);
@@ -210,6 +244,7 @@ bool Audio::Load(const std::string& key, const char* path, int voices)
 
 
     SFX s; s.voices.resize(static_cast<size_t>(voices));
+    s.bus = bus;
 
 
     for (int i = 0; i < voices; ++i) {
@@ -223,8 +258,9 @@ bool Audio::Load(const std::string& key, const char* path, int voices)
         s.voices[i].generation = 1;
         s.voices[i].ticket = 0;
         s.voices[i].loop = false;
+        s.voices[i].baseVolume = 1.0f;
 
-        ma_sound_set_volume(&s.voices[i].snd, 1.0f);
+        ma_sound_set_volume(&s.voices[i].snd, s.voices[i].baseVolume * BusVolume(bus));
         ma_sound_set_looping(&s.voices[i].snd, MA_FALSE);
     }
 

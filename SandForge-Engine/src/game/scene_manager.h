@@ -16,6 +16,8 @@ public:
     void DrawUI(int& brushSize, Material& brushMat);
 
     void Request(SceneId id);
+    void OpenSettings(SceneId returnTo);
+    SceneId SettingsReturnTo() const { return settingsReturnTo; }
     SceneId CurrentId() const { return currentId; }
     bool WorldActive() const;
 
@@ -39,4 +41,5 @@ private:
     float fade = 0.0f;
     float fadeOutSec = 0.2f;
     float fadeInSec  = 0.2f;
+    SceneId settingsReturnTo = SCENE_MAINMENU;
 };

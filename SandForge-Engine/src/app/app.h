@@ -8,6 +8,7 @@ class Renderer;
 class Input;
 class UI;
 class Audio;
+class Settings;
 class SceneManager;
 
 
@@ -44,12 +45,15 @@ public:
 
 	void RequestQuit(); //Close app
 
+	GLFWwindow* GetWindow() const { return window; }
+
 public:
 	Engine* engine;
 	Renderer* renderer;
 	Input* input;
 	UI* ui;
 	Audio* audio;
+	Settings* settings;
 	SceneManager* scenes;
 
 	float screenFade = 0.0f;

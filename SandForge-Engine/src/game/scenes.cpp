@@ -9,8 +9,6 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <cstdlib>
-#include <cstdio>
 
 static uint32_t Hash32(const std::string& s)
 {
@@ -82,6 +80,11 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     ui->TextCentered(cx, cy, bw, bh, "SANDBOX", RGBAu32(240, 240, 240, 230), 1.0f);
 
     cy += bh + spacing;
+    uint32 cSet = RGBAu32(70, 90, 140, 220);
+    if (ui->Button(cx, cy, bw, bh, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) mgr->OpenSettings(SCENE_MAINMENU);
+    ui->TextCentered(cx, cy, bw, bh, "SETTINGS", RGBAu32(240, 240, 240, 230), 1.0f);
+
+    cy += bh + spacing;
     if (ui->Button(cx, cy, bw, bh, RGBAu32(120, 70, 70, 220), RGBAu32(150, 90, 90, 230), RGBAu32(100, 60, 60, 220))) app->RequestQuit();
     ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
 }
@@ -103,7 +106,7 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
     float bw = 240.0f;
     float bh = 48.0f;
     float cx = (vw - bw) * 0.5f;
-    float cy = (vh - (bh * 4 + 16.0f * 3)) * 0.5f;
+    float cy = (vh - (bh * 5 + 16.0f * 4)) * 0.5f;
 
     uint32 cTut = RGBAu32(70, 90, 140, 220);
     uint32 cL1  = RGBAu32(80, 120, 80, 220);
@@ -118,6 +121,12 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
     if (ui->Button(cx, cy, bw, bh, cL2, MulRGBA(cL2, 1.15f), MulRGBA(cL2, 0.85f))) mgr->Request(SCENE_LEVEL2);
 	ui->TextCentered(cx, cy, bw, bh, "LEVEL 2", RGBAu32(240,240,240,230), 1.0f);
     cy += bh + 16.0f;
+
+    uint32 cSet = RGBAu32(70, 90, 140, 220);
+    if (ui->Button(cx, cy, bw, bh, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) mgr->OpenSettings(SCENE_LEVELSELECTOR);
+	ui->TextCentered(cx, cy, bw, bh, "SETTINGS", RGBAu32(240,240,240,230), 1.0f);
+    cy += bh + 16.0f;
+
     if (ui->Button(cx, cy, bw, bh, RGBAu32(120, 70, 70, 220), RGBAu32(150, 90, 90, 230), RGBAu32(100, 60, 60, 220))) mgr->Request(SCENE_MAINMENU);
 	ui->TextCentered(cx, cy, bw, bh, "BACK", RGBAu32(240,240,240,230), 1.0f);
 }
@@ -151,6 +160,15 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         mgr->Request(SCENE_LEVELSELECTOR);
     }
 	app->ui->TextCentered(x, y, s, s, "<", RGBAu32(250,250,250,240), 0.85f);
+
+
+    //Settings
+    float sx = x - 34.0f;
+    uint32 cSet = RGBAu32(70, 90, 140, 220);
+    if (app->ui->Button(sx, y, s, s, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) {
+        mgr->OpenSettings(GetId());
+    }
+    app->ui->TextCentered(sx, y, s, s, "S", RGBAu32(250,250,250,240), 0.85f);
 }
 
 Scene_Sandbox::Scene_Sandbox(App* app, SceneManager* mgr)
@@ -194,10 +212,20 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         return clicked;
     };
 
-    if (app->ui->Button((float)app->framebufferSize.x - 36.0f, 8.0f, 28.0f, 28.0f, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
+    // Back
+    const float bxBack = (float)app->framebufferSize.x - 36.0f;
+    if (app->ui->Button(bxBack, 8.0f, 28.0f, 28.0f, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
         mgr->Request(SCENE_MAINMENU);
     }
-    app->ui->TextCentered((float)app->framebufferSize.x - 36.0f, 8.0f, 28.0f, 28.0f, "<", RGBAu32(250, 250, 250, 240), 0.85f);
+    app->ui->TextCentered(bxBack, 8.0f, 28.0f, 28.0f, "<", RGBAu32(250, 250, 250, 240), 0.85f);
+
+    // Settings
+    const float bxSet = bxBack - 34.0f;
+    uint32 cSet = RGBAu32(70, 90, 140, 220);
+    if (app->ui->Button(bxSet, 8.0f, 28.0f, 28.0f, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) {
+        mgr->OpenSettings(SCENE_SANDBOX);
+    }
+    app->ui->TextCentered(bxSet, 8.0f, 28.0f, 28.0f, "S", RGBAu32(250, 250, 250, 240), 0.85f);
 
     //Load
     if (btn3(RGBAu32(80, 120, 80, 230), "L")) {

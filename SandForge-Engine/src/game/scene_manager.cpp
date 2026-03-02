@@ -1,5 +1,6 @@
 #include "scene_manager.h"
 #include "scenes.h"
+#include "scene_settings.h"
 #include "app/app.h"
 #include "render/renderer.h"
 #include <cmath>
@@ -16,6 +17,7 @@ bool SceneManager::Awake()
     scenes[SCENE_SANDBOX] = new Scene_Sandbox(app, this);
     scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_001.lvl");
     scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/vanilla/level_002.lvl");
+    scenes[SCENE_SETTINGS] = new Scene_Settings(app, this);
 
     currentId = SCENE_MAINMENU;
     pendingId = currentId;
@@ -74,6 +76,12 @@ void SceneManager::Request(SceneId id)
     if (fadeEnabled && fadePhase == FadePhase::None) {
         fadePhase = FadePhase::Out;
     }
+}
+
+void SceneManager::OpenSettings(SceneId returnTo)
+{
+    settingsReturnTo = returnTo;
+    Request(SCENE_SETTINGS);
 }
 
 bool SceneManager::WorldActive() const

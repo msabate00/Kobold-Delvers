@@ -10,7 +10,9 @@
 #include "render/renderer.h"
 #include "ui/ui.h"
 #include "game/scene_manager.h"
+#include "app/settings.h"
 #include "app/log.h"
+
 
 
 // Constructor
@@ -21,13 +23,14 @@ App::App(int argc, char* args[]) : argc(argc), args(args)
 	input = new Input(this);
 	ui = new UI(this);
 	audio = new Audio(this);
+	settings = new Settings(this);
 	scenes = new SceneManager(this);
 }
 
 
 App::~App()
 {
-	if (engine || renderer || input || ui || audio || scenes || window) {
+	if (engine || renderer || input || ui || audio || settings || scenes || window) {
 		CleanUp();
 	}
 }
@@ -44,6 +47,13 @@ bool App::Awake()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	if (settings) {
+		settings->Load();
+		windowSize.x = std::fmax(64, settings->data.windowW);
+		windowSize.y = std::fmax(64, settings->data.windowH);
+	}
+
 	window = glfwCreateWindow(windowSize.x, windowSize.y, "SandForge Engine", nullptr, nullptr);
 	if (!window) {
 		LOG("ERROR: glfwCreateWindow(%d,%d) failed", windowSize.x, windowSize.y);
@@ -59,7 +69,9 @@ bool App::Awake()
 		LOG("ERROR: gladLoadGL() failed");
 		return false;
 	}
-	glfwSwapInterval(1);
+
+	LOG("Awake: Settings");
+	if (settings) settings->Awake();
 
 	LOG("OpenGL initialized. Vendor=%s | Renderer=%s | Version=%s",
 		(const char*)glGetString(GL_VENDOR),
@@ -81,6 +93,7 @@ bool App::Awake()
 
 	LOG("Awake: Audio");
 	audio->Awake();
+	if (settings) settings->ApplyAudio();
 	LOG("Awake: SceneManager");
 	scenes->Awake();
 
@@ -93,6 +106,8 @@ bool App::Awake()
 bool App::Start()
 {
 	bool ret = true;
+	LOG("Start: Settings");
+	if (settings) settings->Start();
 	LOG("Start: Engine");
 	engine->Start();
 	LOG("Start: Renderer");
@@ -194,6 +209,7 @@ bool App::CleanUp()
 	bool ret = true;
 
 	if (scenes)  { scenes->CleanUp();  delete scenes;  scenes = nullptr; }
+	if (settings){ settings->CleanUp();delete settings;settings = nullptr; }
 	if (ui)      { ui->CleanUp();      delete ui;      ui = nullptr; }
 	if (input)   { input->CleanUp();   delete input;   input = nullptr; }
 	if (renderer){ renderer->CleanUp();delete renderer;renderer = nullptr; }
