@@ -7,6 +7,7 @@
 #include "app/timer.h"
 #include "core/engine.h"
 #include "core/input.h"
+#include "core/particles.h"
 #include "render/renderer.h"
 #include "ui/ui.h"
 #include "game/scene_manager.h"
@@ -25,12 +26,13 @@ App::App(int argc, char* args[]) : argc(argc), args(args)
 	audio = new Audio(this);
 	settings = new Settings(this);
 	scenes = new SceneManager(this);
+	particles = new Particles(this);
 }
 
 
 App::~App()
 {
-	if (engine || renderer || input || ui || audio || settings || scenes || window) {
+	if (engine || renderer || input || ui || audio || settings || scenes || particles || window) {
 		CleanUp();
 	}
 }
@@ -96,9 +98,8 @@ bool App::Awake()
 	if (settings) settings->ApplyAudio();
 	LOG("Awake: SceneManager");
 	scenes->Awake();
-
-	
-
+	LOG("Awake: Particles");
+	particles->Awake();
 
 	return ret;
 }
@@ -120,6 +121,8 @@ bool App::Start()
 	audio->Start(); //se puede quitar
 	LOG("Start: SceneManager");
 	scenes->Start();
+	LOG("Start: Particles");
+	particles->Start();
 
 	camera.pos.y = gridSize.y - camera.size.y;
 
@@ -176,6 +179,7 @@ bool App::Update()
 		}
 
 		audio->Update(dt); //se puede quitar
+		particles->Update(dt);
 		renderer->Update(dt);
 
 		// UI render
@@ -215,6 +219,7 @@ bool App::CleanUp()
 	if (renderer){ renderer->CleanUp();delete renderer;renderer = nullptr; }
 	if (engine)  { engine->CleanUp();  delete engine;  engine = nullptr; }
 	if (audio)   { audio->CleanUp();   delete audio;   audio = nullptr; }
+	if (particles){ particles->CleanUp(); delete particles; particles = nullptr; }
 
 	if (window)  { glfwDestroyWindow(window); window = nullptr; }
 	glfwTerminate();
