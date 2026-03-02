@@ -29,8 +29,8 @@ void Scene_Settings::DrawUI(int&, Material&)
 
     ui->Rect(0, 0, vw, vh, RGBAu32(18, 18, 22, 255));
 
-    const float panelW = std::fmin(640.0f, vw * 0.92f);
-    const float panelH = std::fmin(520.0f, vh * 0.92f);
+    const float panelW = std::fmin(740.0f, vw * 0.92f);
+    const float panelH = std::fmin(620.0f, vh * 0.92f);
     const float px = (vw - panelW) * 0.5f;
     const float py = (vh - panelH) * 0.5f;
 
@@ -69,7 +69,7 @@ void Scene_Settings::DrawUI(int&, Material&)
         }
 
         char buf[16]; pctText(v, buf, (int)sizeof(buf));
-        ui->Text(x + labelW + sliderW + 12.0f, y + 6.0f, buf, RGBAu32(235, 235, 235, 210), 0.9f);
+        ui->Text(x + labelW + sliderW + 22.0f, y + 3.0f, buf, RGBAu32(235, 235, 235, 210), 0.9f);
         y += rowH;
     }
 
@@ -86,7 +86,7 @@ void Scene_Settings::DrawUI(int&, Material&)
         }
 
         char buf[16]; pctText(v, buf, (int)sizeof(buf));
-        ui->Text(x + labelW + sliderW + 12.0f, y + 6.0f, buf, RGBAu32(235, 235, 235, 210), 0.9f);
+        ui->Text(x + labelW + sliderW + 22.0f, y + 3.0f, buf, RGBAu32(235, 235, 235, 210), 0.9f);
         y += rowH;
     }
 
