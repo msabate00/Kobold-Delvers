@@ -54,7 +54,7 @@ bool App::Awake()
 		windowSize.y = std::fmax(64, settings->data.windowH);
 	}
 
-	window = glfwCreateWindow(windowSize.x, windowSize.y, "SandForge Engine", nullptr, nullptr);
+	window = glfwCreateWindow(windowSize.x, windowSize.y, "Kobold Delvers", nullptr, nullptr);
 	if (!window) {
 		LOG("ERROR: glfwCreateWindow(%d,%d) failed", windowSize.x, windowSize.y);
 		glfwTerminate();
@@ -192,7 +192,7 @@ bool App::Update()
 		if (fpsTimer >= 1.0) {
 			double fps = frames / fpsTimer;
 			char buf[128];
-			std::snprintf(buf, sizeof(buf), "SandForge Engine - %.1f FPS", fps);
+			std::snprintf(buf, sizeof(buf), "Kobold Delvers - %.1f FPS", fps);
 			glfwSetWindowTitle(window, buf);
 			fpsTimer = 0.0;
 			frames = 0;

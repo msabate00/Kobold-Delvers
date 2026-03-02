@@ -128,7 +128,7 @@ bool Settings::Save(const char* path)
     std::ofstream o(path, std::ios::out | std::ios::trunc);
     if (!o) return false;
 
-    o << "# SandForge settings\n";
+    o << "# Kobold Delvers settings\n";
     o << "musicVolume=" << data.musicVolume << "\n";
     o << "sfxVolume=" << data.sfxVolume << "\n";
     o << "vsync=" << (data.vsync ? 1 : 0) << "\n";
