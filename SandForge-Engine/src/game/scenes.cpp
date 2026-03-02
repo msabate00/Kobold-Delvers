@@ -37,26 +37,53 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     float vw = (float)app->framebufferSize.x;
     float vh = (float)app->framebufferSize.y;
 
-    // Background
     ui->Rect(0, 0, vw, vh, RGBAu32(20, 20, 24, 255));
 
+    // Logo
+    static Texture2D sLogo;
+    static bool sLogoLoaded = false;
+    if (!sLogoLoaded) {
+        sLogoLoaded = sLogo.Load("assets/sprites/sandforge_logo.png");
+    }
+
+    float logoW = 1063.0f;
+    float logoH = 503.0f;
+
+    float maxW = vw * 0.60f;
+    if (logoW > maxW) {
+        float sc = maxW / logoW;
+        logoW *= sc;
+        logoH *= sc;
+    }
+
+    float logoX = (vw - logoW) * 0.5f;
+    float logoY = 40.0f;
+
+    if (sLogoLoaded) {
+        ui->Image(sLogo, logoX, logoY, logoW, logoH, 0xFFFFFFFF);
+    }
+
+    //Botones
     float bw = 240.0f;
     float bh = 48.0f;
+    float spacing = 16.0f;
     float cx = (vw - bw) * 0.5f;
-    float cy = (vh - (bh * 3 + 16.0f * 2)) * 0.5f;
+    float cy = logoY + logoH + 28.0f;
 
     uint32 base = RGBAu32(80, 80, 90, 220);
     uint32 hover = MulRGBA(base, 1.15f);
     uint32 act = MulRGBA(base, 0.85f);
 
     if (ui->Button(cx, cy, bw, bh, base, hover, act)) mgr->Request(SCENE_LEVELSELECTOR);
-	ui->TextCentered(cx, cy, bw, bh, "LEVELS", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
+    ui->TextCentered(cx, cy, bw, bh, "LEVELS", RGBAu32(240, 240, 240, 230), 1.0f);
+
+    cy += bh + spacing;
     if (ui->Button(cx, cy, bw, bh, RGBAu32(70, 90, 70, 220), RGBAu32(90, 120, 90, 230), RGBAu32(60, 80, 60, 220))) mgr->Request(SCENE_SANDBOX);
-	ui->TextCentered(cx, cy, bw, bh, "SANDBOX", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
+    ui->TextCentered(cx, cy, bw, bh, "SANDBOX", RGBAu32(240, 240, 240, 230), 1.0f);
+
+    cy += bh + spacing;
     if (ui->Button(cx, cy, bw, bh, RGBAu32(120, 70, 70, 220), RGBAu32(150, 90, 90, 230), RGBAu32(100, 60, 60, 220))) app->RequestQuit();
-	ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240,240,240,230), 1.0f);
+    ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
 }
 
 void Scene_LevelSelector::Update(float)
