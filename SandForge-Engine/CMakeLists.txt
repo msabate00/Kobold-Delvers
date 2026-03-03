@@ -40,6 +40,24 @@ target_include_directories(FallingSand PRIVATE src)
 
 set_target_properties(FallingSand PROPERTIES OUTPUT_NAME "SandForge_Engine")
 
+# === Release sin consola (Windows) ===
+if (WIN32)
+  # Aplica a configs "release-like"
+  set(_NO_CONSOLE_CFG $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>)
+
+  if (MSVC)
+    target_link_options(FallingSand PRIVATE
+      $<${_NO_CONSOLE_CFG}:/SUBSYSTEM:WINDOWS>
+      $<${_NO_CONSOLE_CFG}:/ENTRY:mainCRTStartup>
+    )
+  else()
+    # MinGW / GCC / Clang en Windows
+    target_link_options(FallingSand PRIVATE
+      $<${_NO_CONSOLE_CFG}:-mwindows>
+    )
+  endif()
+endif()
+
 find_package(OpenGL REQUIRED)
 target_link_libraries(FallingSand PRIVATE
   glfw
