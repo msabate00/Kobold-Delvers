@@ -7,3 +7,24 @@ cd build
 cmake .. -G "Visual Studio 17 2022"
 
 4 - Abrir desde la carpeta o ejecutando la sln
+
+Instrucciones update del motor en el juego:
+
+cd E:\_GITHUB\Kobold-Delvers
+
+# 1) Asegúrate de no tener cambios sin commitear
+git status
+
+# 2) Mira tu rama actual (normalmente main o master)
+git branch --show-current
+
+# 3) Trae refs del motor (upstream)
+git fetch upstream
+
+# 4) Mezcla la rama del motor en tu rama actual (elige UNA)
+git merge upstream/main
+# o si el motor usa master:
+# git merge upstream/master
+
+# 5) Sube al repo del juego
+git push origin HEAD
