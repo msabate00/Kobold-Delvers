@@ -41,13 +41,13 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     static Texture2D sLogo;
     static bool sLogoLoaded = false;
     if (!sLogoLoaded) {
-        sLogoLoaded = sLogo.Load("assets/sprites/sandforge_logo.png");
+        sLogoLoaded = sLogo.Load("assets/sprites/logo.png");
     }
 
-    float logoW = 1063.0f;
-    float logoH = 503.0f;
+    float logoW = 768.0f;
+    float logoH = 498.0f;
 
-    float maxW = vw * 0.60f;
+    float maxW = vw * 0.40f;
     if (logoW > maxW) {
         float sc = maxW / logoW;
         logoW *= sc;
