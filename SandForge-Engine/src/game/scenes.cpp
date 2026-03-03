@@ -35,7 +35,8 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     float vw = (float)app->framebufferSize.x;
     float vh = (float)app->framebufferSize.y;
 
-    ui->Rect(0, 0, vw, vh, RGBAu32(20, 20, 24, 255));
+    //bACKGROUND
+    ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
 
     // Logo
     static Texture2D sLogo;
