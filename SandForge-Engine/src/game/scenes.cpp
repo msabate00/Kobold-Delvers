@@ -89,48 +89,6 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
 }
 
-void Scene_LevelSelector::Update(float)
-{
-    // ESC -> menu
-    if (app->input->KeyDown(GLFW_KEY_ESCAPE)) mgr->Request(SCENE_MAINMENU);
-}
-
-void Scene_LevelSelector::DrawUI(int&, Material&)
-{
-    UI* ui = app->ui;
-    float vw = (float)app->framebufferSize.x;
-    float vh = (float)app->framebufferSize.y;
-
-    ui->Rect(0, 0, vw, vh, RGBAu32(24, 24, 28, 255));
-
-    float bw = 240.0f;
-    float bh = 48.0f;
-    float cx = (vw - bw) * 0.5f;
-    float cy = (vh - (bh * 5 + 16.0f * 4)) * 0.5f;
-
-    uint32 cTut = RGBAu32(70, 90, 140, 220);
-    uint32 cL1  = RGBAu32(80, 120, 80, 220);
-    uint32 cL2  = RGBAu32(150, 120, 70, 220);
-
-    if (ui->Button(cx, cy, bw, bh, cTut, MulRGBA(cTut, 1.15f), MulRGBA(cTut, 0.85f))) mgr->Request(SCENE_TUTORIAL);
-	ui->TextCentered(cx, cy, bw, bh, "TUTORIAL", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
-    if (ui->Button(cx, cy, bw, bh, cL1, MulRGBA(cL1, 1.15f), MulRGBA(cL1, 0.85f))) mgr->Request(SCENE_LEVEL1);
-	ui->TextCentered(cx, cy, bw, bh, "LEVEL 1", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
-    if (ui->Button(cx, cy, bw, bh, cL2, MulRGBA(cL2, 1.15f), MulRGBA(cL2, 0.85f))) mgr->Request(SCENE_LEVEL2);
-	ui->TextCentered(cx, cy, bw, bh, "LEVEL 2", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
-
-    uint32 cSet = RGBAu32(70, 90, 140, 220);
-    if (ui->Button(cx, cy, bw, bh, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) mgr->OpenSettings(SCENE_LEVELSELECTOR);
-	ui->TextCentered(cx, cy, bw, bh, "SETTINGS", RGBAu32(240,240,240,230), 1.0f);
-    cy += bh + 16.0f;
-
-    if (ui->Button(cx, cy, bw, bh, RGBAu32(120, 70, 70, 220), RGBAu32(150, 90, 90, 230), RGBAu32(100, 60, 60, 220))) mgr->Request(SCENE_MAINMENU);
-	ui->TextCentered(cx, cy, bw, bh, "BACK", RGBAu32(240,240,240,230), 1.0f);
-}
-
 void Scene_Level::OnEnter()
 {
 	app->engine->paused = false;

@@ -1,6 +1,7 @@
 #include "scene_manager.h"
 #include "scenes.h"
 #include "scene_settings.h"
+#include "scene_levelSelector.h"
 #include "app/app.h"
 #include "render/renderer.h"
 #include <cmath>
@@ -13,10 +14,23 @@ bool SceneManager::Awake()
 {
     scenes[SCENE_MAINMENU] = new Scene_MainMenu(app, this);
     scenes[SCENE_LEVELSELECTOR] = new Scene_LevelSelector(app, this);
-    scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/vanilla/level_003.lvl");
+    scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/vanilla/tutorial.lvl");
     scenes[SCENE_SANDBOX] = new Scene_Sandbox(app, this);
-    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_001.lvl");
-    scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/vanilla/level_002.lvl");
+    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_01.lvl");
+    scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/vanilla/level_02.lvl");
+    scenes[SCENE_LEVEL3]  = new Scene_Level(app, this, SCENE_LEVEL3,  "levels/vanilla/level_03.lvl");
+    scenes[SCENE_LEVEL4]  = new Scene_Level(app, this, SCENE_LEVEL4,  "levels/vanilla/level_04.lvl");
+    scenes[SCENE_LEVEL5]  = new Scene_Level(app, this, SCENE_LEVEL5,  "levels/vanilla/level_05.lvl");
+    scenes[SCENE_LEVEL6]  = new Scene_Level(app, this, SCENE_LEVEL6,  "levels/vanilla/level_06.lvl");
+    scenes[SCENE_LEVEL7]  = new Scene_Level(app, this, SCENE_LEVEL7,  "levels/vanilla/level_07.lvl");
+    scenes[SCENE_LEVEL8]  = new Scene_Level(app, this, SCENE_LEVEL8,  "levels/vanilla/level_08.lvl");
+    scenes[SCENE_LEVEL9]  = new Scene_Level(app, this, SCENE_LEVEL9,  "levels/vanilla/level_09.lvl");
+    scenes[SCENE_LEVEL10] = new Scene_Level(app, this, SCENE_LEVEL10, "levels/vanilla/level_10.lvl");
+    scenes[SCENE_LEVEL11] = new Scene_Level(app, this, SCENE_LEVEL11, "levels/vanilla/level_11.lvl");
+    scenes[SCENE_LEVEL12] = new Scene_Level(app, this, SCENE_LEVEL12, "levels/vanilla/level_12.lvl");
+    scenes[SCENE_LEVEL13] = new Scene_Level(app, this, SCENE_LEVEL13, "levels/vanilla/level_13.lvl");
+    scenes[SCENE_LEVEL14] = new Scene_Level(app, this, SCENE_LEVEL14, "levels/vanilla/level_14.lvl");
+    scenes[SCENE_LEVEL15] = new Scene_Level(app, this, SCENE_LEVEL15, "levels/vanilla/level_15.lvl");
     scenes[SCENE_SETTINGS] = new Scene_Settings(app, this);
 
     currentId = SCENE_MAINMENU;
