@@ -1,5 +1,6 @@
 ﻿#include "input.h"
 #include "../core/engine.h"
+#include "../core/particles.h"
 #include "../core/material.h"
 #include "../app/app.h"
 #include "../ui/ui.h"
@@ -74,6 +75,29 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
 
     app->shiftPressed = KeyRepeat(GLFW_KEY_LEFT_SHIFT) || KeyRepeat(GLFW_KEY_RIGHT_SHIFT);
+
+    //Paricles test (borrar)
+    if (this->KeyDown(GLFW_KEY_O) && app->particles) {
+        int wx = 0, wy = 0;
+        if (app->engine->ScreenToWorldCell((int)MouseX(), (int)MouseY(), wx, wy)) {
+            auto d = Particles::PresetConfettiUI();
+            app->particles->EmitBurst(d, (float)wx + 0.5f, (float)wy + 0.5f, 24);
+        }
+    }
+    if (this->KeyDown(GLFW_KEY_I) && app->particles) {
+        int wx = 0, wy = 0;
+        if (app->engine->ScreenToWorldCell((int)MouseX(), (int)MouseY(), wx, wy)) {
+            auto h = app->particles->CreateEmitter(Particles::PresetFire(), wx, wy);
+            app->particles->SetEmitterEnabled(h, true);
+        }
+    }
+    if (this->KeyDown(GLFW_KEY_P) && app->particles) {
+        int wx = 0, wy = 0;
+        if (app->engine->ScreenToWorldCell((int)MouseX(), (int)MouseY(), wx, wy)) {
+            auto d = Particles::PresetShockwave();
+            app->particles->EmitBurst(d, (float)wx + 0.5f, (float)wy + 0.5f, 24);
+        }
+    }
 
 	if (this->MouseDown(GLFW_MOUSE_BUTTON_1)) {
 		if (!app->ui->ConsumedMouse()) {

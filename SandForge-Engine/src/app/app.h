@@ -10,6 +10,7 @@ class UI;
 class Audio;
 class Settings;
 class SceneManager;
+class Particles;
 
 
 struct Camera2D { 
@@ -55,6 +56,7 @@ public:
 	Audio* audio;
 	Settings* settings;
 	SceneManager* scenes;
+	Particles* particles;
 
 	float screenFade = 0.0f;
 

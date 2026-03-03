@@ -8,20 +8,25 @@ include(FetchContent)
 
 # === GLFW ===
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_INSTALL  OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-FetchContent_Declare(glfw
+FetchContent_Declare(
+  glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.3.8
 )
 FetchContent_MakeAvailable(glfw)
 
 # === GLAD ===
-add_library(glad_gl_core_33 STATIC third_party/glad2/src/gl.c)
-target_include_directories(glad_gl_core_33 PUBLIC third_party/glad2/include)
+add_library(glad_gl_core_33 STATIC
+  third_party/glad2/src/gl.c
+)
+target_include_directories(glad_gl_core_33 PUBLIC
+  third_party/glad2/include
+)
 
 # === Ejecutable ===
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
@@ -31,13 +36,34 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
 )
 
 add_executable(FallingSand ${SRC})
-set_target_properties(FallingSand PROPERTIES
-    OUTPUT_NAME "Kobold Delvers"
-)
 target_include_directories(FallingSand PRIVATE src)
 
+set_target_properties(FallingSand PROPERTIES OUTPUT_NAME "Kobold_Delvers")
+
+# === Release sin consola (Windows) ===
+if (WIN32)
+  # Aplica a configs "release-like"
+  set(_NO_CONSOLE_CFG $<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>)
+
+  if (MSVC)
+    target_link_options(FallingSand PRIVATE
+      $<${_NO_CONSOLE_CFG}:/SUBSYSTEM:WINDOWS>
+      $<${_NO_CONSOLE_CFG}:/ENTRY:mainCRTStartup>
+    )
+  else()
+    # MinGW / GCC / Clang en Windows
+    target_link_options(FallingSand PRIVATE
+      $<${_NO_CONSOLE_CFG}:-mwindows>
+    )
+  endif()
+endif()
+
 find_package(OpenGL REQUIRED)
-target_link_libraries(FallingSand PRIVATE glfw glad_gl_core_33 OpenGL::GL)
+target_link_libraries(FallingSand PRIVATE
+  glfw
+  glad_gl_core_33
+  OpenGL::GL
+)
 
 # === Rutas SIEMPRE relativas al exe ===
 target_compile_definitions(FallingSand PRIVATE
