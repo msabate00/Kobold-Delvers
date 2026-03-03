@@ -1,4 +1,4 @@
-﻿#include "ui/ui.h" 
+#include "ui/ui.h" 
 #include <glad/gl.h>
 #include <algorithm>
 #include <cstring>
@@ -8,6 +8,15 @@
 #include "core/engine.h"
 #include "render/renderer.h"
 #include "app/defs.h"
+
+
+static inline void PushTri(std::vector<Vertex>& v,
+    float x0, float y0, float x1, float y1, float x2, float y2, uint32 c)
+{
+    v.push_back({ x0, y0, c });
+    v.push_back({ x1, y1, c });
+    v.push_back({ x2, y2, c });
+}
 
 
 UI::UI(App* app, bool start_enabled) : Module(app, start_enabled) {};
@@ -350,6 +359,44 @@ void UI::Ring(float cx, float cy, float r, float t, uint32 c, int segments) {
 		verts.push_back({ p0x,p0y,c }); verts.push_back({ x1,y1,c });   verts.push_back({ x0,y0,c });
 		p0x = x0; p0y = y0; p1x = x1; p1y = y1;
 	}
+}
+
+
+void UI::Star(float cx, float cy, float r, uint32 c)
+{
+    if (noRender) return;
+    if (r <= 0.0f) return;
+
+    constexpr int spikes = 5;
+    const float outer = r;
+    const float inner = r * 0.5f;
+    const float PI = 3.1415926535f;
+
+    float ang = -PI * 0.5f;
+    const float step = PI / (float)spikes;
+
+    float px[spikes * 2];
+    float py[spikes * 2];
+
+    for (int i = 0; i < spikes * 2; ++i) {
+        const float rr = (i % 2 == 0) ? outer : inner;
+        px[i] = cx + std::cos(ang) * rr;
+        py[i] = cy + std::sin(ang) * rr;
+        ang += step;
+    }
+
+    // Triangle fan
+    for (int i = 0; i < spikes * 2; ++i) {
+        const int j = (i + 1) % (spikes * 2);
+        PushTri(verts, cx, cy, px[i], py[i], px[j], py[j], c);
+    }
+}
+
+void UI::StarOutline(float cx, float cy, float r, uint32 outline, uint32 fill)
+{
+    if (noRender) return;
+    Star(cx, cy, r, outline);
+    Star(cx, cy, r * 0.70f, fill);
 }
 
 

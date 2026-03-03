@@ -1,5 +1,6 @@
 #pragma once
 #include "app/defs.h"
+#include "app/game_progress.h"
 
 class GLFWwindow;
 
@@ -58,6 +59,7 @@ public:
 	SceneManager* scenes;
 	Particles* particles;
 
+	GameProgress progress;
 	float screenFade = 0.0f;
 
 	int pixelsPerCell = 4;

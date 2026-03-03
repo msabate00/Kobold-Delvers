@@ -119,6 +119,7 @@ bool App::Start()
 	ui->Start();
 	LOG("Start: Audio");
 	audio->Start(); //se puede quitar
+	progress.Load();
 	LOG("Start: SceneManager");
 	scenes->Start();
 	LOG("Start: Particles");
@@ -212,6 +213,7 @@ bool App::CleanUp()
 {
 	bool ret = true;
 
+	progress.Save();
 	if (scenes)  { scenes->CleanUp();  delete scenes;  scenes = nullptr; }
 	if (settings){ settings->CleanUp();delete settings;settings = nullptr; }
 	if (ui)      { ui->CleanUp();      delete ui;      ui = nullptr; }

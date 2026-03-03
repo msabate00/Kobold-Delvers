@@ -45,6 +45,10 @@ public:
     void Circle(float cx, float cy, float r, uint32 c, int segments = 0);
     void Ring(float cx, float cy, float r, float t, uint32 c, int segments = 0);
 
+    // Icons
+    void Star(float cx, float cy, float r, uint32 rgba);
+    void StarOutline(float cx, float cy, float r, uint32 outline, uint32 fill);
+
 
     void Rect(float x, float y, float w, float h, uint32 rgba);
     void RectBorders(float x, float y, float w, float h, float t, uint32 rgba);
