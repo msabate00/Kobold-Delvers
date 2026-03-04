@@ -218,14 +218,14 @@ void UI::RectBordersWorld(int x, int y, int w, int h, float thickness, uint32 co
 	RectBorders((int)sx, (int)sy, (int)sw, (int)sh, thickness, color);
 }
 
-void UI::Image(const Texture2D& t, float x, float y, float w, float h, uint32 tint)
+void UI::Image(const Texture2D& t, float x, float y, float w, float h, uint32 tint, int sort)
 {
 	if (noRender) return;
-	Sprite s{ &t, x,y,w,h, 0,0,1,1, tint, RenderLayer::UI };
+	Sprite s{ &t, x,y,w,h, 0,0,1,1, tint, RenderLayer::UI, sort };
 	app->renderer->Queue(s);
 }
 
-bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive)
+bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort)
 {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
 
@@ -236,7 +236,7 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uin
 	}
 	if (noRender) return clicked;
 
-	Sprite s{ &t, x,y,w,h, 0,0,1,1, cc, RenderLayer::UI };
+	Sprite s{ &t, x,y,w,h, 0,0,1,1, cc, RenderLayer::UI, sort };
 	app->renderer->Queue(s);
 
 	return false;

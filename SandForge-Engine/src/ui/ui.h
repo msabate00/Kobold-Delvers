@@ -54,9 +54,8 @@ public:
     void RectBorders(float x, float y, float w, float h, float t, uint32 rgba);
     void RectBordersWorld(int x, int y, int w, int h, float thickness, uint32 color);
 
-    void Image(const Texture2D& t, float x, float y, float w, float h,
-        uint32 tint = 0xFFFFFFFF);
-    bool ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive);
+    void Image(const Texture2D& t, float x, float y, float w, float h, uint32 tint = 0xFFFFFFFF, int sort = 0);
+    bool ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort = 0);
 
     void Text(float x, float y, const char* text, uint32 rgba, float scale = 1.0f);
     void TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale = 1.0f);
