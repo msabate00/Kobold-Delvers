@@ -236,6 +236,25 @@ void App::RequestQuit()
 	if (window) glfwSetWindowShouldClose(window, 1);
 }
 
+void App::ResetCamera()
+{
+	const int fw = std::fmax(1, framebufferSize.x);
+	const int fh = std::fmax(1, framebufferSize.y);
+
+	int ppcX = fw / 320;
+	int ppcY = fh / 180;
+	int ppc = std::fmax(1, std::fmin(ppcX, ppcY));
+
+	ppc = std::clamp(ppc, 3, 10);
+
+	pixelsPerCell = ppc;
+
+	const float camW = fw / (float)ppc;
+	const float camH = fh / (float)ppc;
+
+	SetCameraRect(0.0f, gridSize.y-camH , camW, camH);
+}
+
 
 void App::SetCameraRect(float x, float y, float w, float h) {
 	camera.size.x = std::fmax(1.f, w);

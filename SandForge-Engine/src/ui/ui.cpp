@@ -85,39 +85,7 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	const MatProps actualMat = matProps((uint8)brushMat);
 
 
-	float pad = 8.0f, y = 8.0f, x = 8.0f, btn = 28.0f;
-	auto makeBtnColor = [&](uint32 base) {
-		uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-		bool clicked = Button(x, y, btn, btn, base, h, a);
-		x += btn + 6.0f; return clicked;
-    };
-
-	auto makeBtnMat = [&](uint32 base, int atlasIndex) {
-		uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-		bool clicked = ButtonAtlas(x, y, btn, btn, atlasIndex, base, h, a);
-		x += btn + 6.0f; return clicked;
-    };
-
-	for (int i = 0; i < 256; ++i) {
-		const MatProps& mp = matProps((uint8)i);
-
-		if (mp.name.length() > 0) {
-			uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
-			if ((i <= (int)Material::NpcCell && matAtlasReady) ? makeBtnMat(c, i) : makeBtnColor(c)) brushMat = (Material)i;
-		}
-
-	}
-
-	x += 8.0f;
-
-	if (app->engine->paused) {
-		if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
-		if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
-	}
-	else {
-		if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
-	}
-
+	float pad = 8.0f, y = 8.0f, x = 550.0f, btn = 28.0f;
 
 	x += 12.0f; float bx = x, bw = 200.0f, bh = 20.0f; float v = (float)brushSize;
 	Slider(bx, y + 4.0f, bw, bh, 1.0f, 64.0f, v, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
@@ -127,26 +95,58 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 
 	if (app->showChunks) {
 		std::vector<uint> chunks = app->engine->GetChunks();
-		for (int ci = 0; ci < chunks.size(); ci++) {
+		for (int ci = 0; ci < (int)chunks.size(); ++ci) {
 			int x, y, w, h;
 			app->engine->GetChunkRect(ci, x, y, w, h);
 
-			if (chunks[ci]) RectBordersWorld(x, y, w, h, 4.0f, RGBAu32(230, 130, 130, 200));
-			else            RectBordersWorld(x, y, w, h, 2.0f, RGBAu32(230, 230, 230, 100));
+			float sx, sy, sw, sh;
+			if (!app->engine->WorldRectToScreen(
+				(float)x, (float)y, (float)w, (float)h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+				continue;
+
+			if (chunks[ci]) RectBorders(sx, sy, sw, sh, 4.0f, RGBAu32(230, 130, 130, 200));
+			else            RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(230, 230, 230, 100));
 		}
 	}
 
 	if (app->showHitbox) {
 		std::vector<NPC> npcs = app->engine->GetNPCs();
-		for(const NPC & n : npcs) {
+		for (const NPC& n : npcs) {
 			if (!n.alive) continue;
 
-			RectBordersWorld(n.x, n.y, n.w, n.h, 2.0f, RGBAu32(80, 220, 80, 200));
+			// Caja NPC
+			{
+				float sx, sy, sw, sh;
+				if (app->engine->WorldRectToScreen(
+					(float)n.x, (float)n.y, (float)n.w, (float)n.h,
+					app->framebufferSize.x, app->framebufferSize.y,
+					sx, sy, sw, sh))
+				{
+					RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(80, 220, 80, 200));
+				}
+			}
 
-			int hx = n.x + n.hbOffX;
-			int hy = n.y + n.hbOffY;
-			RectBordersWorld(hx, hy, n.hbW, n.hbH, 2.0f, RGBAu32(230, 80, 80, 220));
+			// Hitbox
+			{
+				int hx = n.x + n.hbOffX;
+				int hy = n.y + n.hbOffY;
+
+				float sx, sy, sw, sh;
+				if (app->engine->WorldRectToScreen(
+					(float)hx, (float)hy, (float)n.hbW, (float)n.hbH,
+					app->framebufferSize.x, app->framebufferSize.y,
+					sx, sy, sw, sh))
+				{
+					RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(230, 80, 80, 220));
+				}
+			}
 		}
+	}
+
+	if (app->showGridBounds) {
+		RectBordersWorld(0, 0, app->gridSize.x, app->gridSize.y, 2.0f, RGBAu32(120, 220, 255, 200));
 	}
 
 	if (app->shiftPressed && !md) {

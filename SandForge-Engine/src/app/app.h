@@ -48,6 +48,7 @@ public:
 	void RequestQuit(); //Close app
 
 	GLFWwindow* GetWindow() const { return window; }
+	void ResetCamera();
 
 public:
 	Engine* engine;
@@ -71,6 +72,7 @@ public:
 	float dt;
 	uint8 showChunks = 0;
 	uint8 showHitbox = 0;
+	uint8 showGridBounds = 0;
 	bool shiftPressed = false;
 
 	Camera2D camera;

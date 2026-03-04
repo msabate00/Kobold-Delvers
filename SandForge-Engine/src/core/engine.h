@@ -26,6 +26,7 @@ public:
     const uint8* GetFrontPlane() { return world.FrontPlane(); }
     int GridW() const { return world.GridW(); }
     int GridH() const { return world.GridH(); }
+    void ResizeGrid(int w, int h, bool keepContent = false);
 
     void ClearWorld(uint8 fill = (uint8)Material::Empty);
 

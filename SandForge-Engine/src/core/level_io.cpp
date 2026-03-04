@@ -42,12 +42,15 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
     }
 
     //mundo
-    if (in.w != world.GridW() || in.h != world.GridH()) {
+    /*if (in.w != world.GridW() || in.h != world.GridH()) {
         if (engine.app) {
             engine.app->gridSize = { in.w, in.h };
         }
         world.Resize(engine.app, in.w, in.h);
         npcs.Awake(world);
+    }*/
+    if (in.w != world.GridW() || in.h != world.GridH()) {
+        engine.ResizeGrid(in.w, in.h, false);
     }
 
     //materiales
@@ -112,5 +115,8 @@ bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const 
     const bool ok = ImportLevel(engine, world, npcs, lvl);
     if (!ok) LOG("ERROR: ImportLevel failed for '%s'", path);
     else LOG("Loaded level '%s' (%dx%d, npcs=%zu)", path, lvl.w, lvl.h, lvl.npcs.size());
+
+    app->ResetCamera();
+
     return ok;
 }

@@ -15,11 +15,24 @@ bool WorldSim::Awake(App* app)
     return true;
 }
 
-void WorldSim::Resize(App* app, int w, int h)
+void WorldSim::Resize(App* app, int w, int h, bool keepContent)
 {
     (void)app;
-    gridW = std::fmax(0, w);
-    gridH = std::fmax(0, h);
+
+    const int oldW = gridW;
+    const int oldH = gridH;
+
+    gridW = std::fmax(CHUNK_SIZE, w);
+    gridH = std::fmax(CHUNK_SIZE, h);
+
+    std::vector<Cell> oldFront;
+    std::vector<uint8> oldMFront;
+
+    if (keepContent && oldW > 0 && oldH > 0 && !front.empty() && !mFront.empty()) {
+        oldFront = std::move(front);
+        oldMFront = std::move(mFront);
+    }
+
 
     chunksW = (gridW + CHUNK_SIZE - 1) / CHUNK_SIZE;
     chunksH = (gridH + CHUNK_SIZE - 1) / CHUNK_SIZE;
@@ -29,6 +42,20 @@ void WorldSim::Resize(App* app, int w, int h)
     back.assign(n, Cell{ (uint8)Material::Null});
     mFront.assign(n, (uint8)Material::Empty);
     mBack.assign(n, (uint8)Material::Empty);
+
+
+    if (!oldFront.empty() && !oldMFront.empty()) {
+        const int cw = std::fmin(oldW, gridW);
+        const int ch = std::fmin(oldH, gridH);
+        for (int y = 0; y < ch; ++y) {
+            for (int x = 0; x < cw; ++x) {
+                const int oi = y * oldW + x;
+                const int ni = y * gridW + x;
+                front[ni] = oldFront[oi];
+                mFront[ni] = oldMFront[oi];
+            }
+        }
+    }
 
     const size_t cn = static_cast<size_t>(chunksW) * static_cast<size_t>(chunksH);
     chunkDirtyNow.assign(cn, 1);
