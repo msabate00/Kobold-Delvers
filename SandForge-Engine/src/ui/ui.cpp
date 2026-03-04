@@ -236,7 +236,7 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uin
 	}
 	if (noRender) return clicked;
 
-	Sprite s{ &t, x,y,w,h, 0,0,1,1, cc, RenderLayer::UI, sort };
+	Sprite s{ &t, x,y,w,h, 0,0,1,1, cc, RenderLayer::UI, sort  };
 	app->renderer->Queue(s);
 
 	return false;
