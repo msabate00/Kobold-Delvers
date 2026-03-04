@@ -121,14 +121,6 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 	const float tileH = (gridH - gap * (rows - 1)) / rows;
 
 	//Mouse for hover and click on images
-	float mx = (float)app->input->MouseX();
-	float my = (float)app->input->MouseY();
-	if (app->windowSize.x > 0 && app->windowSize.y > 0) {
-		mx *= (vw / (float)app->windowSize.x);
-		my *= (vh / (float)app->windowSize.y);
-	}
-	const bool md = app->input->MouseDown(GLFW_MOUSE_BUTTON_1);
-
 	const SceneId levelScenes[LEVEL_COUNT] = {
 		SCENE_LEVEL1, SCENE_LEVEL2, SCENE_LEVEL3, SCENE_LEVEL4, SCENE_LEVEL5,
 		SCENE_LEVEL6, SCENE_LEVEL7, SCENE_LEVEL8, SCENE_LEVEL9, SCENE_LEVEL10,
@@ -144,20 +136,14 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 
 		const bool unlocked = app->progress.IsLevelUnlocked(i);
 
-		
-		const bool hoverTile = (mx >= x && mx <= x + tileW && my >= y && my <= y + tileH);
-
 		// Panel image
 		if (sPanelLevel.id != 0) {
 			uint32 tint = unlocked ? RGBAu32(235, 235, 235, 255) : RGBAu32(255, 255, 255, 90);
-			if (unlocked && hoverTile) tint = md ? RGBAu32(210, 210, 210, 255) : RGBAu32(255, 255, 255, 255);
-			ui->Image(sPanelLevel, x, y, tileW, tileH, tint);
-		}
-
-		// Button panel
-		const bool clicked = ui->Button(x, y, tileW, tileH,
-			RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0));
-		if (clicked && unlocked) mgr->Request(levelScenes[i]);
+			uint32 hover = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 90);
+			uint32 active = unlocked ? RGBAu32(210, 210, 210, 255) : RGBAu32(255, 255, 255, 90);
+			const bool clicked = ui->ImageButton(sPanelLevel, x, y, tileW, tileH, tint, hover, active);
+			if (clicked && unlocked) mgr->Request(levelScenes[i]);
+		}		
 
 		//Thumb panel
 		if (!sThumbTried[i]) {
@@ -187,8 +173,6 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		const float ty = frameY + inner;
 		const float tw = frameW - inner * 2.0f;
 		const float th = frameH - inner * 2.0f;
-
-		
 
 		// Thumbnail image
 		if (sThumb[i].id != 0) {

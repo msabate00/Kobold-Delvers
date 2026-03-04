@@ -28,3 +28,24 @@ git merge upstream/main
 
 # 5) Sube al repo del juego
 git push origin HEAD
+
+
+Instrucciones si se desvincula con el motor
+
+# 1) Ver remotos actuales
+git remote -v
+
+# 2) Re-añadir upstream (motor)
+git remote add upstream https://github.com/msabate00/SandForge-Engine.git
+
+# 3) Comprobar
+git remote -v
+
+# 4) Traer cambios del motor
+git fetch upstream
+
+# 5) Mezclar motor -> juego
+git merge upstream/main
+
+# 6) Subir al repo del juego
+git push origin main
