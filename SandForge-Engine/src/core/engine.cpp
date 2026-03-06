@@ -52,6 +52,46 @@ bool Engine::Update(float dt)
 bool Engine::PostUpdate() { return true; }
 bool Engine::CleanUp() { return true; }
 
+void Engine::ResizeGrid(int w, int h, bool keepContent)
+{
+    w = std::fmax(16, w);
+    h = std::fmax(16, h);
+
+    const int oldW = world.GridW();
+    const int oldH = world.GridH();
+    if (w == oldW && h == oldH) return;
+
+    StopPaint();
+
+    //Camara
+    const float oldCamW = app->camera.size.x;
+    const float oldCamH = app->camera.size.y;
+    const float oldCenterX = app->camera.pos.x + oldCamW * 0.5f;
+    const float oldCenterY = app->camera.pos.y + oldCamH * 0.5f;
+
+    const bool wasFit =
+        std::fabs(oldCamW - (float)oldW) < 0.01f &&
+        std::fabs(oldCamH - (float)oldH) < 0.01f;
+
+    //Resize
+    app->gridSize = { w, h };
+    world.Resize(app, w, h, keepContent);
+
+    parity = 0;
+    stepOnce = false;
+    world.StepAccumulator() = 0.0f;
+
+    npcs.RebuildOcc(world);
+
+    // Camara
+    if (wasFit) {
+        app->SetCameraRect(oldCenterX - w * 0.5f, oldCenterY - h * 0.5f, (float)w, (float)h);
+    }
+    else {
+        app->SetCameraRect(app->camera.pos.x, app->camera.pos.y, app->camera.size.x, app->camera.size.y);
+    }
+}
+
 void Engine::ClearWorld(uint8 fill)
 {
     world.Clear(fill);

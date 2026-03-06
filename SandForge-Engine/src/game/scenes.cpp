@@ -99,6 +99,7 @@ void Scene_Level::OnEnter()
     if (!levelPath.empty()) {
         app->engine->LoadLevel(levelPath.c_str());
     }
+    app->ResetCamera();
 }
 
 void Scene_Level::Update(float)
@@ -140,6 +141,8 @@ void Scene_Sandbox::OnEnter()
 	app->engine->paused = false;
 	app->engine->stepOnce = false;
     requestRescan = true;
+
+    app->ResetCamera();
 }
 
 void Scene_Sandbox::Update(float)
@@ -247,15 +250,66 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         else {
             std::snprintf(ibuf, sizeof(ibuf), "%s", "Q");
         }
-
-            
-        
         
 		ui->TextCentered(bx, by, cell, cell, ibuf, RGBAu32(250,250,250,220), 0.65f);
 
         if (i == selected) {
             ui->RectBorders(bx, by, cell, cell, 2.0f, RGBAu32(240, 240, 240, 180));
         }
+    }
+
+    //Sliders Grid
+    const float sx = 600 + 36.0f;
+    const float sw = 600 - 44.0f;
+    const float sh = 16.0f;
+    float sW = (float)app->gridSize.x;
+    float sH = (float)app->gridSize.y;
+
+    ui->Text(600 + 10.0f, 30 + 28.0f, "W", RGBAu32(235, 235, 235, 230), 0.9f);
+    ui->Text(600 + 10.0f, 30 + 50.0f, "H", RGBAu32(235, 235, 235, 230), 0.9f);
+
+    ui->Slider(sx, 30 + 26.0f, sw, sh, 64.0f, 2048.0f, sW, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+    ui->Slider(sx, 30 + 48.0f, sw, sh, 64.0f, 1024.0f, sH, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+
+    const int newW = std::fmax(1, (int)(sW + 0.5f));
+    const int newH = std::fmax(1, (int)(sH + 0.5f));
+
+    // Aplica solo si cambia el entero (durante drag, esto corre en el pass noRender)
+    if (newW != app->gridSize.x || newH != app->gridSize.y) {
+        app->engine->ResizeGrid(newW, newH, true);
+    }
+
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%d", app->gridSize.x);
+    ui->Text(600 + 100 - 50.0f, 30 + 28.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+    std::snprintf(buf, sizeof(buf), "%d", app->gridSize.y);
+    ui->Text(600 + 100 - 50.0f, 30 + 50.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+
+    //Materiales
+    pad = 8.0f, y = 8.0f, x = 8.0f, btn = 28.0f;
+    auto makeBtnColor = [&](uint32 base) {
+        uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+        bool clicked = ui->Button(x, y, btn, btn, base, h, a);
+        x += btn + 6.0f; return clicked;
+        };
+
+    for (int i = 0; i < 256; ++i) {
+        const MatProps& mp = matProps((uint8)i);
+
+        if (mp.name.length() > 0) {
+            uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
+            if (makeBtnColor(c)) brushMat = (Material)i;
+        }
+    }
+
+    x += 8.0f;
+
+    if (app->engine->paused) {
+        if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
+        if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
+    }
+    else {
+        if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
     }
 }
 

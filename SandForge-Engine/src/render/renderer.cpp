@@ -197,8 +197,37 @@ void Renderer::DrawGrid(const std::vector<uint8>& indices, int w, int h, int vie
     //Grid → HDR scene
     glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
     glViewport(0, 0, viewW, viewH);
-    glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
+    const float outR = 0.02f, outG = 0.02f, outB = 0.03f; // fuera (bandas "negras")
+    const float inR = 0.06f, inG = 0.06f, inB = 0.08f; // dentro (zona grid)
+
+    const float cw = std::fmax(1.0f, app->camera.size.x);
+    const float ch = std::fmax(1.0f, app->camera.size.y);
+
+    int sxCell = (int)((float)viewW / cw); if (sxCell < 1) sxCell = 1;
+    int syCell = (int)((float)viewH / ch); if (syCell < 1) syCell = 1;
+    int s = (sxCell < syCell) ? sxCell : syCell; if (s < 1) s = 1;
+
+    int sizeW = (int)(cw * (float)s);
+    int sizeH = (int)(ch * (float)s);
+    if (sizeW > viewW) sizeW = viewW;
+    if (sizeH > viewH) sizeH = viewH;
+
+    int offX = (viewW - sizeW) / 2;
+    int offY = (viewH - sizeH) / 2;
+    if (offX < 0) offX = 0;
+    if (offY < 0) offY = 0;
+
+    //Color de fuera
+    glDisable(GL_SCISSOR_TEST);
+    glClearColor(outR, outG, outB, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    //Color Dentro
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(offX, offY, sizeW, sizeH);
+    glClearColor(inR, inG, inB, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
 
     sprites.Begin(viewW, viewH);
     sprites.Flush(RenderLayer::BG);

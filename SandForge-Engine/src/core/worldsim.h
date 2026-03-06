@@ -11,7 +11,7 @@ class WorldSim
 public:
     bool Awake(App* app);
 
-    void Resize(App* app, int w, int h);
+    void Resize(App* app, int w, int h, bool keepContent = false);
 
     void Clear(uint8 fill = (uint8)Material::Empty);
 
