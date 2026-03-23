@@ -112,10 +112,49 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     //CAMBIAR LA UI A UNA MAS MODULAR PARA LOS NIVELES
     app->ui->Draw(brushSize, brushMat);
 
-    //Back
-    float x = (float)app->framebufferSize.x - 36.0f;
-    float y = 8.0f;
+    float x = (float)app->framebufferSize.x* 0.20 - 36.0f;
+    float y = app->framebufferSize.y - 120;
     float s = 28.0f;
+    //Down Materials
+    {
+        //background
+        app->ui->Rect(0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, RGBAu32(24, 24, 24, 255));
+
+        auto makeBtnColor = [&](uint32 base) {
+            uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+            bool clicked = app->ui->Button(x, y, 32, 32, base, h, a);
+            x += 32 + 6.0f; return clicked;
+            };
+
+        for (int i = 0; i < 256; ++i) {
+            const MatProps& mp = matProps((uint8)i);
+
+            if (mp.name.length() > 0) {
+                uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
+                if (makeBtnColor(c)) brushMat = (Material)i;
+            }
+        }
+
+        x += 8.0f;
+
+        if (app->engine->paused) {
+            if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
+            if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
+        }
+        else {
+            if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
+        }
+
+
+    }
+   
+
+
+
+    //Back
+    x = (float)app->framebufferSize.x - 36.0f;
+    y = 8.0f;
+    s = 28.0f;
     if (app->ui->Button(x, y, s, s, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
         mgr->Request(SCENE_LEVELSELECTOR);
     }
@@ -260,7 +299,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
 
     //Sliders Grid
     const float sx = 600 + 36.0f;
-    const float sw = 600 - 44.0f;
+    const float sw = 1200 - 44.0f;
     const float sh = 16.0f;
     float sW = (float)app->gridSize.x;
     float sH = (float)app->gridSize.y;

@@ -1,6 +1,7 @@
-#include "ui/ui.h" 
+﻿#include "ui/ui.h" 
 #include <glad/gl.h>
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include "app/module.h"  
 #include "app/app.h"
@@ -143,6 +144,46 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				}
 			}
 		}
+
+		const auto& spawners = app->engine->GetSpawners();
+		for (const NPCSpawner& sp : spawners) {
+			float sx, sy, sw, sh;
+			if (app->engine->WorldRectToScreen(
+				(float)sp.x, (float)sp.y, (float)sp.w, (float)sp.h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+			{
+				RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(80, 220, 255, 220));
+			}
+		}
+
+		const auto& goalsDbg = app->engine->GetGoals();
+		for (const NPCGoal& g : goalsDbg) {
+			float sx, sy, sw, sh;
+			if (app->engine->WorldRectToScreen(
+				(float)g.x, (float)g.y, (float)g.w, (float)g.h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+			{
+				RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(255, 220, 80, 220));
+			}
+		}
+	}
+
+	const auto& goals = app->engine->GetGoals();
+	for (const NPCGoal& g : goals) {
+		if (g.capturedCount <= 0) continue;
+
+		float sx, sy, sw, sh;
+		if (!app->engine->WorldRectToScreen(
+			(float)g.x, (float)g.y, (float)g.w, (float)g.h,
+			app->framebufferSize.x, app->framebufferSize.y,
+			sx, sy, sw, sh))
+			continue;
+
+		char buf[32];
+		std::snprintf(buf, sizeof(buf), "%d", g.capturedCount);
+		TextCentered(sx, sy - 14.0f, sw, 12.0f, buf, RGBAu32(255, 245, 180, 240), 0.65f);
 	}
 
 	if (app->showGridBounds) {

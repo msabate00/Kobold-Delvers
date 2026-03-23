@@ -53,9 +53,14 @@ public:
     void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h) { world.GetChunkRect(chunkIndex, x, y, w, h); }
     bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh) { return world.PopChunkDirtyGPURect(x, y, rw, rh); }
 
-    //NPCs
+    //Entidades
     NPC& AddNPC(int x, int y, int dir = 1) { return npcs.AddNPC(world, x, y, dir); }
+    NPCSpawner& AddSpawner(int x, int y) { return npcs.AddSpawner(world, x, y); }
+    NPCGoal& AddGoal(int x, int y) { return npcs.AddGoal(world, x, y); }
+
     const std::vector<NPC>& GetNPCs() const { return npcs.GetNPCs(); }
+    const std::vector<NPCSpawner>& GetSpawners() const { return npcs.GetSpawners(); }
+    const std::vector<NPCGoal>& GetGoals() const { return npcs.GetGoals(); }
 
     //Levels
     void ExportLevel(Level& out) const { levelio.ExportLevel(world, npcs, out); }

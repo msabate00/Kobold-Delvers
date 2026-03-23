@@ -58,10 +58,32 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
         paintAxis = PaintAxis::None;
     }
 
-    //NPC
+    // NPC manual
     if (m == Material::NpcCell) {
         if (!npcDrawed) {
             npcs.AddNPC(world, tx - 5, ty - 9);
+            npcDrawed = true;
+        }
+        paintLast = { tx, ty };
+        paintShiftPrev = app->shiftPressed;
+        return;
+    }
+
+    // Spawner
+    if (m == Material::NpcSpawnerCell) {
+        if (!npcDrawed) {
+            npcs.AddSpawner(world, tx - 6, ty - 6);
+            npcDrawed = true;
+        }
+        paintLast = { tx, ty };
+        paintShiftPrev = app->shiftPressed;
+        return;
+    }
+
+    // Goal
+    if (m == Material::NpcGoalCell) {
+        if (!npcDrawed) {
+            npcs.AddGoal(world, tx - 6, ty - 6);
             npcDrawed = true;
         }
         paintLast = { tx, ty };

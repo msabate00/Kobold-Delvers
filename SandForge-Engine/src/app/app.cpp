@@ -149,9 +149,9 @@ bool App::Update()
 		input->BeginFrame();
 		scenes->BeginFrame();
 
-		// Mouse hide/show solo en escenas de mundo
+		// Mouse hide/show solo en escenas de mundo //FIX TODO
 		if (scenes->WorldActive()) {
-			if (input->MouseY() > 50) {
+			if (input->MouseY() < framebufferSize.y - 150) {
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 			} 
 			else {

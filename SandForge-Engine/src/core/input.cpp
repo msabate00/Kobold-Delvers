@@ -54,7 +54,10 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     if (this->KeyDown(GLFW_KEY_4)) brushMat = Material::Wood;
     if (this->KeyDown(GLFW_KEY_5)) brushMat = Material::Fire;
     if (this->KeyDown(GLFW_KEY_6)) brushMat = Material::Smoke;
-    if (this->KeyDown(GLFW_KEY_9)) brushMat = Material::Empty;
+    if (this->KeyDown(GLFW_KEY_7)) brushMat = Material::NpcCell;
+    if (this->KeyDown(GLFW_KEY_8)) brushMat = Material::NpcSpawnerCell;
+    if (this->KeyDown(GLFW_KEY_9)) brushMat = Material::NpcGoalCell;
+    if (this->KeyDown(GLFW_KEY_0)) brushMat = Material::Empty;
 
     if (this->KeyDown(GLFW_KEY_P)) app->engine->paused = !app->engine->paused;
     if (this->KeyDown(GLFW_KEY_N)) app->engine->stepOnce = true;
