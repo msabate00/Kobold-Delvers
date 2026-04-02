@@ -34,6 +34,7 @@ public:
     uint8 BackMatAtIndex(int i) const { return back[i].m; }
 
     void SetFrontCell(int x, int y, uint8 m);
+    void SetFrontCell(int x, int y, const Cell& c);
 
     void Step(Engine& engine, int parity);
 

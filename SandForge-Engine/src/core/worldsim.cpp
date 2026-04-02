@@ -107,16 +107,30 @@ void WorldSim::SwapBuffers()
 
 Cell WorldSim::GetFrontCell(int x, int y) const
 {
-    return (InRange(x, y)) ? front[LinearIndex(x, y)] : Cell{ (uint8)Material::Null };
+    return (InRange(x, y)) ? front[LinearIndex(x, y)] : Cell{ (uint8)Material::Null, 0 };
 }
 
 void WorldSim::SetFrontCell(int x, int y, uint8 m)
 {
     if (!InRange(x, y)) return;
     const int i = LinearIndex(x, y);
-    if (front[i].m == m) return;
-    front[i].m = m;
-    mFront[i] = m;
+
+    Cell c = front[i];
+    c.m = m;
+    if (m == (uint8)Material::Empty) c.fromLevel = 0;
+
+    if (front[i].m == c.m && front[i].fromLevel == c.fromLevel) return;
+    front[i] = c;
+    mFront[i] = c.m;
+}
+
+void WorldSim::SetFrontCell(int x, int y, const Cell& c)
+{
+    if (!InRange(x, y)) return;
+    const int i = LinearIndex(x, y);
+    if (front[i].m == c.m && front[i].fromLevel == c.fromLevel) return;
+    front[i] = c;
+    mFront[i] = c.m;
 }
 
 bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std::vector<int>& occ)
@@ -134,7 +148,7 @@ bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std:
     back[ni] = c;
     mBack[ni] = c.m;
     if (back[si].m == front[si].m) {
-        back[si].m = (uint8)Material::Empty;
+        back[si] = Cell{ (uint8)Material::Empty, 0 };
         mBack[si] = (uint8)Material::Empty;
     }
 
@@ -189,10 +203,15 @@ void WorldSim::SetCell(int x, int y, uint8 m)
 {
     if (!InRange(x, y)) return;
     const int i = LinearIndex(x, y);
-    if (back[i].m == m) return;
 
-    back[i].m = m;
-    mBack[i] = m;
+    Cell c = back[i];
+    c.m = m;
+    if (m == (uint8)Material::Empty) c.fromLevel = 0;
+
+    if (back[i].m == c.m && back[i].fromLevel == c.fromLevel) return;
+
+    back[i] = c;
+    mBack[i] = c.m;
 
     MarkChunkSim(x, y);
     MarkChunkGPU(x, y);

@@ -93,7 +93,7 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
         const uint8 m = in.grid[i];
         const int x = (int)(i % (size_t)world.GridW());
         const int y = (int)(i / (size_t)world.GridW());
-        world.SetFrontCell(x, y, m);
+        world.SetFrontCell(x, y, Cell{ m, (uint8)(m != (uint8)Material::Empty) });
     }
     world.CopyFrontToBack();
 

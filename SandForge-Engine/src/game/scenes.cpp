@@ -102,6 +102,7 @@ void Scene_Level::OnEnter()
 {
     app->engine->paused = false;
     app->engine->stepOnce = false;
+    app->engine->levelCellsProtection = true;
 
     levelFinished = false;
     levelResultSaved = false;
@@ -339,6 +340,7 @@ void Scene_Sandbox::OnEnter()
 {
     app->engine->paused = false;
     app->engine->stepOnce = false;
+    app->engine->levelCellsProtection = false;
     requestRescan = true;
 
     levelFinished = false;

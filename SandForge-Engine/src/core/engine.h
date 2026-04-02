@@ -89,6 +89,7 @@ public:
     bool stepOnce = false;
     int parity = 0;
 
+    bool levelCellsProtection = false;
 private:
     WorldSim world;
     PaintTool paint;

@@ -25,7 +25,8 @@ enum Material : uint8 {
 
 struct Cell {
     uint8 m = (uint8)Material::Empty;
-};
+    uint8 fromLevel = 0;
+}; 
 
 struct MatProps {
     std::string_view name;

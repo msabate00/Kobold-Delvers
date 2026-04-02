@@ -120,10 +120,14 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
                 const int dx = x - pcx;
                 const int dy = y - pcy;
                 if (dx * dx + dy * dy <= r2) {
-                    const uint8 oldMat = world.GetFrontCell(x, y).m;
-                    if (oldMat != (uint8)m) {
-                        world.SetFrontCell(x, y, (uint8)m);
-                        if (m != Material::Empty) {
+                    const Cell oldCell = world.GetFrontCell(x, y);
+                    if (engine.levelCellsProtection && oldCell.fromLevel == 1) {
+                        continue;
+                    }
+
+                    if (oldCell.m != m) {
+                        world.SetFrontCell(x, y, Cell{ (uint8)m, 0 });
+                        if (oldCell.m != m && m != Material::Empty) {
                             engine.AddMaterialUse(1);
                         }
                     }
