@@ -1,4 +1,4 @@
-﻿#include "ui/ui.h" 
+#include "ui/ui.h" 
 #include <glad/gl.h>
 #include <algorithm>
 #include <cstdio>
@@ -92,6 +92,10 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	x += 12.0f; float bx = x, bw = 200.0f, bh = 20.0f; float v = (float)brushSize;
 	Slider(bx, y + 4.0f, bw, bh, 1.0f, 64.0f, v, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
 	brushSize = (int)(v + 0.5f);
+
+	if (app->engine->levelCellsProtection) {
+		LevelCellsProtectionMark(brushSize);
+	}
 
 	Ring(mx, my, brushSize, 2, RGBAu32(actualMat.color.r, actualMat.color.g, actualMat.color.b, 100), 12);
 
@@ -223,6 +227,39 @@ void UI::Flush() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawArrays(GL_TRIANGLES, 0, (GLint)verts.size());
+}
+
+void UI::LevelCellsProtectionMark(int brushSize)
+{
+	int cx = 0, cy = 0;
+	if (app->engine->ScreenToWorldCell((int)mx, (int)my, cx, cy)) {
+		const int rr = std::fmax(1, brushSize);
+		const int r2 = rr * rr;
+		const int xmin = std::fmax(0, cx - rr);
+		const int xmax = std::fmin(app->engine->GridW() - 1, cx + rr);
+		const int ymin = std::fmax(0, cy - rr);
+		const int ymax = std::fmin(app->engine->GridH() - 1, cy + rr);
+
+		for (int wy = ymin; wy <= ymax; ++wy) {
+			for (int wx = xmin; wx <= xmax; ++wx) {
+				const int dx = wx - cx;
+				const int dy = wy - cy;
+				if (dx * dx + dy * dy > r2) continue;
+
+				const Cell c = app->engine->GetCell(wx, wy);
+				if (c.fromLevel == 1) {
+					float sx = 0.0f, sy = 0.0f, sw = 0.0f, sh = 0.0f;
+					if (app->engine->WorldRectToScreen((float)wx, (float)wy, 1.0f, 1.0f,
+						app->framebufferSize.x, app->framebufferSize.y,
+						sx, sy, sw, sh)) {
+
+						Rect(sx, sy, sw, sh, RGBAu32(255, 120, 120, 55));
+						RectBorders(sx, sy, sw, sh, 2, RGBAu32(255, 120, 120, 70));
+					}
+				}
+			}
+		}
+	}
 }
 
 

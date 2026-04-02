@@ -66,6 +66,8 @@ private:
 
     void Flush();
 
+    void LevelCellsProtectionMark(int brushSize);
+
 public:
 
 
