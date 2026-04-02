@@ -60,6 +60,7 @@ public:
     void Text(float x, float y, const char* text, uint32 rgba, float scale = 1.0f);
     void TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale = 1.0f);
 
+    void Cursor();
 
 private:
 
@@ -85,6 +86,9 @@ private:
 
     Texture2D matAtlas;
     bool matAtlasReady = false;
+
+    Texture2D cursorTex;
+    bool curorTexReady = false;
 
 };
 

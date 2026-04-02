@@ -126,6 +126,7 @@ bool App::Start()
 	particles->Start();
 
 	camera.pos.y = gridSize.y - camera.size.y;
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	return ret;
 }
@@ -150,7 +151,7 @@ bool App::Update()
 		scenes->BeginFrame();
 
 		// Mouse hide/show solo en escenas de mundo //FIX TODO
-		if (scenes->WorldActive()) {
+		/*if (scenes->WorldActive()) {
 			if (input->MouseY() < framebufferSize.y - 150) {
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 			} 
@@ -160,7 +161,7 @@ bool App::Update()
 		}
 		else {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
+		}*/
 
 		ui->SetMouse(input->MouseX(), input->MouseY(), input->MouseDown(GLFW_MOUSE_BUTTON_1));
 

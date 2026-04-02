@@ -18,6 +18,8 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 	const float vw = (float)app->framebufferSize.x;
 	const float vh = (float)app->framebufferSize.y;
 
+	ui->Cursor();
+
 	// Escalado simple en base a 1280x720
 	float s = std::fmin(vw / 1280.0f, vh / 720.0f);
 	if (s < 0.85f) s = 0.85f;

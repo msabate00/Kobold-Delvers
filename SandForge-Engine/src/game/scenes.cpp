@@ -39,6 +39,8 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     //bACKGROUND
     ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
 
+    ui->Cursor();
+
     // Logo
     static Texture2D sLogo;
     static bool sLogoLoaded = false;

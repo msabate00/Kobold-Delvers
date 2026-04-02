@@ -53,6 +53,7 @@ bool UI::Awake() {
 bool UI::Start() {
 	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 1024, 1024, true);
 	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
+	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }
@@ -93,6 +94,8 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	brushSize = (int)(v + 0.5f);
 
 	Ring(mx, my, brushSize, 2, RGBAu32(actualMat.color.r, actualMat.color.g, actualMat.color.b, 100), 12);
+
+	Cursor();
 
 	if (app->showChunks) {
 		std::vector<uint> chunks = app->engine->GetChunks();
@@ -588,4 +591,9 @@ void UI::TextCentered(float x, float y, float w, float h, const char* text, uint
 		Text(tx, ty, text, rgba, s);
 		return;
 	}
+}
+
+void UI::Cursor()
+{
+	Image(cursorTex, mx, my, 20, 23, RGBAu32(255, 255, 255, 255), 999);
 }

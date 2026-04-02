@@ -138,6 +138,11 @@ bool NPCSystem::Start()
         lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
         lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
         lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 48,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 60,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 0,48,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 12,48,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 24,48,12,12 }, 0.1f)); 
     }
 
     return true;

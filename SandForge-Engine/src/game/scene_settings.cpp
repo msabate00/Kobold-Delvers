@@ -27,6 +27,8 @@ void Scene_Settings::DrawUI(int&, Material&)
     float vw = (float)app->framebufferSize.x;
     float vh = (float)app->framebufferSize.y;
 
+    ui->Cursor();
+
     ui->Rect(0, 0, vw, vh, RGBAu32(18, 18, 22, 255));
 
     const float panelW = std::fmin(740.0f, vw * 0.92f);
