@@ -19,7 +19,8 @@ enum Material : uint8 {
     Steam,
     NpcCell,
     NpcSpawnerCell,
-    NpcGoalCell
+    NpcGoalCell,
+    NpcBonusCell
 };
 
 struct Cell {

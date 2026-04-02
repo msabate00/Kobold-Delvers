@@ -28,13 +28,26 @@ public:
     bool HasWorld() const override { return true; }
 
     void OnEnter() override;
+    void OnExit() override;
     void Update(float dt) override;
     void DrawUI(int& brushSize, Material& brushMat) override;
+
+protected:
+    int LevelIndex() const;
+    void CheckLevelCompleted();
+    void DrawMaterialBudgetBar();
+    void DrawLevelCompleteModal();
 
 protected:
     SceneManager* mgr = nullptr;
     SceneId id;
     std::string levelPath;
+
+    bool levelFinished = false;
+    bool levelResultSaved = false;
+    bool bonusStarEarned = false;
+    bool budgetStarEarned = false;
+    uint8 levelStarsEarned = 0;
 };
 
 //SANDBOX

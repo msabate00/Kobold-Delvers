@@ -35,6 +35,9 @@ bool SaveLevelFile(const char* path, const Level& lvl)
     hdr.npcCount = (uint32)lvl.npcs.size();
     hdr.spawnerCount = (uint32)lvl.spawners.size();
     hdr.goalCount = (uint32)lvl.goals.size();
+    hdr.bonusCount = (uint32)lvl.bonuses.size();
+    hdr.materialBudgetMax = lvl.rules.materialBudgetMax;
+    hdr.materialBudgetStar = lvl.rules.materialBudgetStar;
 
     if (std::fwrite(&hdr, sizeof(hdr), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write header failed '%s'", path); return false; }
 
@@ -77,6 +80,15 @@ bool SaveLevelFile(const char* path, const Level& lvl)
         if (std::fwrite(&g.capturedCount, sizeof(g.capturedCount), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write goal.capturedCount failed '%s'", path); return false; }
     }
 
+    for (const LevelBonus& b : lvl.bonuses)
+    {
+        if (std::fwrite(&b.x, sizeof(b.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.x failed '%s'", path); return false; }
+        if (std::fwrite(&b.y, sizeof(b.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.y failed '%s'", path); return false; }
+        if (std::fwrite(&b.w, sizeof(b.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.w failed '%s'", path); return false; }
+        if (std::fwrite(&b.h, sizeof(b.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.h failed '%s'", path); return false; }
+        if (std::fwrite(&b.claimed, sizeof(b.claimed), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.claimed failed '%s'", path); return false; }
+    }
+
     std::fclose(f);
     return true;
 }
@@ -108,13 +120,29 @@ bool LoadLevelFile(const char* path, Level& lvl)
         hdr.npcCount = hdr2.npcCount;
         hdr.spawnerCount = 0;
         hdr.goalCount = 0;
+        hdr.bonusCount = 0;
+        hdr.materialBudgetMax = 0;
+        hdr.materialBudgetStar = 0;
+    }
+    else if (version == 3) {
+        LevelHeaderV3 hdr3{};
+        hdr3.version = version;
+        if (std::fread(&hdr3.w, sizeof(LevelHeaderV3) - sizeof(uint32), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read v3 header failed '%s'", path); return false; }
+        hdr.w = hdr3.w;
+        hdr.h = hdr3.h;
+        hdr.npcCount = hdr3.npcCount;
+        hdr.spawnerCount = hdr3.spawnerCount;
+        hdr.goalCount = hdr3.goalCount;
+        hdr.bonusCount = 0;
+        hdr.materialBudgetMax = 0;
+        hdr.materialBudgetStar = 0;
     }
     else if (version == LVL_VERSION) {
         if (std::fread(&hdr.w, sizeof(LevelHeader) - sizeof(uint32), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read header failed '%s'", path); return false; }
     }
     else {
         std::fclose(f);
-        LOG("ERROR: LoadLevelFile version mismatch '%s' (file=%u expected=%u or 2)", path, version, (unsigned)LVL_VERSION);
+        LOG("ERROR: LoadLevelFile version mismatch '%s' (file=%u expected=%u, 3 or 2)", path, version, (unsigned)LVL_VERSION);
         return false;
     }
 
@@ -124,6 +152,7 @@ bool LoadLevelFile(const char* path, Level& lvl)
     if (hdr.npcCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile npcCount invalid '%s' (npcCount=%u)", path, hdr.npcCount); return false; }
     if (hdr.spawnerCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile spawnerCount invalid '%s' (spawnerCount=%u)", path, hdr.spawnerCount); return false; }
     if (hdr.goalCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile goalCount invalid '%s' (goalCount=%u)", path, hdr.goalCount); return false; }
+    if (hdr.bonusCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile bonusCount invalid '%s' (bonusCount=%u)", path, hdr.bonusCount); return false; }
 
     const size_t gridBytes = (size_t)hdr.w * (size_t)hdr.h;
 
@@ -136,6 +165,13 @@ bool LoadLevelFile(const char* path, Level& lvl)
     lvl.spawners.reserve(hdr.spawnerCount);
     lvl.goals.clear();
     lvl.goals.reserve(hdr.goalCount);
+    lvl.bonuses.clear();
+    lvl.bonuses.reserve(hdr.bonusCount);
+    lvl.rules.materialBudgetMax = std::fmax(0, hdr.materialBudgetMax);
+    lvl.rules.materialBudgetStar = std::fmax(0, hdr.materialBudgetStar);
+    if (lvl.rules.materialBudgetStar > lvl.rules.materialBudgetMax) {
+        lvl.rules.materialBudgetStar = lvl.rules.materialBudgetMax;
+    }
 
     if (gridBytes > 0) {
         if (std::fread(lvl.grid.data(), 1, gridBytes, f) != gridBytes) { std::fclose(f); LOG("ERROR: LoadLevelFile read grid failed '%s'", path); return false; }
@@ -200,6 +236,20 @@ bool LoadLevelFile(const char* path, Level& lvl)
         }
     }
 
+    if (version >= 4) {
+        for (uint32 i = 0; i < hdr.bonusCount; ++i)
+        {
+            LevelBonus b{};
+
+            if (std::fread(&b.x, sizeof(b.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.x failed '%s'", path); return false; }
+            if (std::fread(&b.y, sizeof(b.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.y failed '%s'", path); return false; }
+            if (std::fread(&b.w, sizeof(b.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.w failed '%s'", path); return false; }
+            if (std::fread(&b.h, sizeof(b.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.h failed '%s'", path); return false; }
+            if (std::fread(&b.claimed, sizeof(b.claimed), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.claimed failed '%s'", path); return false; }
+            lvl.bonuses.push_back(b);
+        }
+    }
+
     std::fclose(f);
-    return lvl.IsValid();
+    return true;
 }

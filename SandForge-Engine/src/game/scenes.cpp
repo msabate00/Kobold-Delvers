@@ -8,6 +8,7 @@
 #include "ui/ui.h"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 static uint32_t Hash32(const std::string& s)
@@ -90,41 +91,202 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
 }
 
+int Scene_Level::LevelIndex() const
+{
+    return (int)id - (int)SCENE_LEVEL1;
+}
+
 void Scene_Level::OnEnter()
 {
-	app->engine->paused = false;
-	app->engine->stepOnce = false;
+    app->engine->paused = false;
+    app->engine->stepOnce = false;
+
+    levelFinished = false;
+    levelResultSaved = false;
+    bonusStarEarned = false;
+    budgetStarEarned = false;
+    levelStarsEarned = 0;
 
     // Load assigned level
     if (!levelPath.empty()) {
         app->engine->LoadLevel(levelPath.c_str());
     }
+    else {
+        app->engine->ResetLevelSession();
+    }
     app->ResetCamera();
+}
+
+void Scene_Level::OnExit()
+{
+    app->engine->StopPaint();
+    app->engine->paused = false;
+}
+
+void Scene_Level::CheckLevelCompleted()
+{
+    if (levelFinished) return;
+    if (app->engine->CapturedGoalCount() < 5) return;
+
+    levelFinished = true;
+    app->engine->paused = true;
+
+    bonusStarEarned = app->engine->BonusTriggered();
+    budgetStarEarned = app->engine->MaterialBudgetEnabled() &&
+        app->engine->MaterialUsed() <= app->engine->LevelMaterialBudgetStar();
+
+    levelStarsEarned = (uint8)(1 + (bonusStarEarned ? 1 : 0) + (budgetStarEarned ? 1 : 0));
+
+    if (levelResultSaved) return;
+
+    const int levelIndex = LevelIndex();
+    if (levelIndex >= 0 && app->progress.StarsFor(levelIndex) < levelStarsEarned) {
+        if (app->progress.SetStarsFor(levelIndex, levelStarsEarned)) {
+            app->progress.Save();
+        }
+    }
+    levelResultSaved = true;
 }
 
 void Scene_Level::Update(float)
 {
+    CheckLevelCompleted();
+
+    if (levelFinished) {
+        if (app->input->KeyDown(GLFW_KEY_R)) {
+            OnEnter();
+            return;
+        }
+        if (app->input->KeyDown(GLFW_KEY_ESCAPE) || app->input->KeyDown(GLFW_KEY_ENTER)) {
+            mgr->Request(SCENE_LEVELSELECTOR);
+        }
+        return;
+    }
+
     if (app->input->KeyDown(GLFW_KEY_ESCAPE)) mgr->Request(SCENE_LEVELSELECTOR);
+}
+
+void Scene_Level::DrawMaterialBudgetBar()
+{
+    if (!app->engine->MaterialBudgetEnabled()) return;
+
+    UI* ui = app->ui;
+
+    const float maxBudget = (float)std::fmax(1, app->engine->LevelMaterialBudgetMax());
+    const float used = (float)std::fmax(0, app->engine->MaterialUsed());
+    const float remaining = std::fmax(0.0f, maxBudget - used);
+    const float fill = std::clamp(remaining / maxBudget, 0.0f, 1.0f);
+
+    const float starLimit = (float)std::clamp(app->engine->LevelMaterialBudgetStar(), 0, app->engine->LevelMaterialBudgetMax());
+    const float starFill = std::clamp((maxBudget - starLimit) / maxBudget, 0.0f, 1.0f);
+
+    const float barX = 12.0f;
+    const float barY = 52.0f;
+    const float barW = 18.0f;
+    const float barH = 150.0f;
+
+    ui->Rect(barX - 4.0f, barY - 4.0f, barW + 8.0f, barH + 8.0f, RGBAu32(18, 18, 18, 215));
+    ui->Rect(barX, barY, barW, barH, RGBAu32(50, 50, 55, 240));
+
+    const float fillH = barH * fill;
+    if (fillH > 0.0f) {
+        ui->Rect(barX, barY + (barH - fillH), barW, fillH,
+            budgetStarEarned || (!levelFinished && used <= starLimit) ? RGBAu32(235, 210, 90, 245) : RGBAu32(180, 75, 75, 245));
+    }
+
+    const float markY = barY + barH * starFill;
+    ui->Rect(barX - 4.0f, markY - 1.0f, barW + 8.0f, 2.0f, RGBAu32(245, 245, 245, 230));
+    ui->RectBorders(barX, barY, barW, barH, 2.0f, RGBAu32(220, 220, 220, 120));
+
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%d/%d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetMax());
+    ui->Text(barX + 28.0f, barY + barH - 16.0f, buf, RGBAu32(245, 245, 245, 235), 0.70f);
+    ui->Text(barX - 2.0f, barY - 18.0f, "MAT", RGBAu32(245, 245, 245, 220), 0.70f);
+    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetStar());
+    ui->Text(barX + 28.0f, markY - 8.0f, buf, RGBAu32(235, 235, 235, 220), 0.65f);
+}
+
+void Scene_Level::DrawLevelCompleteModal()
+{
+    if (!levelFinished) return;
+
+    UI* ui = app->ui;
+    const float vw = (float)app->framebufferSize.x;
+    const float vh = (float)app->framebufferSize.y;
+
+    ui->Button(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0));
+    ui->Rect(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 150));
+
+    const float panelW = 360.0f;
+    const float panelH = 220.0f;
+    const float px = (vw - panelW) * 0.5f;
+    const float py = (vh - panelH) * 0.5f - 40.0f;
+
+    ui->Rect(px, py, panelW, panelH, RGBAu32(34, 34, 38, 245));
+    ui->RectBorders(px, py, panelW, panelH, 3.0f, RGBAu32(235, 235, 235, 60));
+    ui->TextCentered(px, py + 14.0f, panelW, 34.0f, "LEVEL COMPLETE", RGBAu32(250, 250, 250, 245), 1.0f);
+
+    const float starY = py + 78.0f;
+    const float starR = 22.0f;
+    const float starGap = 70.0f;
+    const float startX = px + panelW * 0.5f - starGap;
+
+    for (int i = 0; i < 3; ++i) {
+        const float sx = startX + i * starGap;
+        const bool filled = i < (int)levelStarsEarned;
+        ui->StarOutline(sx, starY, starR,
+            filled ? RGBAu32(250, 210, 70, 245) : RGBAu32(170, 170, 175, 200),
+            filled ? RGBAu32(250, 210, 70, 245) : RGBAu32(70, 70, 78, 220));
+    }
+
+    char line[128];
+    std::snprintf(line, sizeof(line), "Bonus: %s", bonusStarEarned ? "OK" : "NO");
+    ui->TextCentered(px, py + 118.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+
+    if (app->engine->MaterialBudgetEnabled()) {
+        std::snprintf(line, sizeof(line), "Material: %d / %d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetStar());
+    }
+    else {
+        std::snprintf(line, sizeof(line), "Material: no limit set");
+    }
+    ui->TextCentered(px, py + 138.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+
+    const float btnW = 120.0f;
+    const float btnH = 34.0f;
+    const float btnY = py + panelH - 50.0f;
+    const float retryX = px + 44.0f;
+    const float backX = px + panelW - btnW - 44.0f;
+
+    if (ui->Button(retryX, btnY, btnW, btnH, RGBAu32(90, 120, 90, 230), RGBAu32(110, 145, 110, 240), RGBAu32(70, 95, 70, 230))) {
+        OnEnter();
+    }
+    ui->TextCentered(retryX, btnY, btnW, btnH, "RETRY", RGBAu32(245, 245, 245, 240), 0.85f);
+
+    if (ui->Button(backX, btnY, btnW, btnH, RGBAu32(120, 80, 80, 230), RGBAu32(150, 105, 105, 240), RGBAu32(95, 60, 60, 230))) {
+        mgr->Request(SCENE_LEVELSELECTOR);
+    }
+    ui->TextCentered(backX, btnY, btnW, btnH, "LEVELS", RGBAu32(245, 245, 245, 240), 0.85f);
 }
 
 void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 {
-    //CAMBIAR LA UI A UNA MAS MODULAR PARA LOS NIVELES
     app->ui->Draw(brushSize, brushMat);
+    DrawMaterialBudgetBar();
 
-    float x = (float)app->framebufferSize.x* 0.20 - 36.0f;
-    float y = app->framebufferSize.y - 120;
+    float x = (float)app->framebufferSize.x * 0.20f - 36.0f;
+    float y = app->framebufferSize.y - 120.0f;
     float s = 28.0f;
+
     //Down Materials
     {
-        //background
         app->ui->Rect(0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, RGBAu32(24, 24, 24, 255));
 
         auto makeBtnColor = [&](uint32 base) {
             uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
             bool clicked = app->ui->Button(x, y, 32, 32, base, h, a);
-            x += 32 + 6.0f; return clicked;
-            };
+            x += 32 + 6.0f;
+            return clicked;
+        };
 
         for (int i = 0; i < 256; ++i) {
             const MatProps& mp = matProps((uint8)i);
@@ -137,19 +299,14 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
         x += 8.0f;
 
-        if (app->engine->paused) {
+        if (app->engine->paused && !levelFinished) {
             if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
             if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
         }
-        else {
+        else if (!levelFinished) {
             if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
         }
-
-
     }
-   
-
-
 
     //Back
     x = (float)app->framebufferSize.x - 36.0f;
@@ -158,8 +315,7 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     if (app->ui->Button(x, y, s, s, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
         mgr->Request(SCENE_LEVELSELECTOR);
     }
-	app->ui->TextCentered(x, y, s, s, "<", RGBAu32(250,250,250,240), 0.85f);
-
+    app->ui->TextCentered(x, y, s, s, "<", RGBAu32(250, 250, 250, 240), 0.85f);
 
     //Settings
     float sx = x - 34.0f;
@@ -167,7 +323,9 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     if (app->ui->Button(sx, y, s, s, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) {
         mgr->OpenSettings(GetId());
     }
-    app->ui->TextCentered(sx, y, s, s, "S", RGBAu32(250,250,250,240), 0.85f);
+    app->ui->TextCentered(sx, y, s, s, "S", RGBAu32(250, 250, 250, 240), 0.85f);
+
+    DrawLevelCompleteModal();
 }
 
 Scene_Sandbox::Scene_Sandbox(App* app, SceneManager* mgr)
@@ -177,9 +335,15 @@ Scene_Sandbox::Scene_Sandbox(App* app, SceneManager* mgr)
 
 void Scene_Sandbox::OnEnter()
 {
-	app->engine->paused = false;
-	app->engine->stepOnce = false;
+    app->engine->paused = false;
+    app->engine->stepOnce = false;
     requestRescan = true;
+
+    levelFinished = false;
+    levelResultSaved = false;
+    levelStarsEarned = 0;
+    bonusStarEarned = false;
+    budgetStarEarned = false;
 
     app->ResetCamera();
 }
@@ -196,7 +360,6 @@ void Scene_Sandbox::Update(float)
 
 void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
 {
-    //CAMBIAR LA UI A UNA MAS COMPLETA Y COMODA DE USAR EN EL SANDBOX
     app->ui->Draw(brushSize, brushMat);
 
     UI* ui = app->ui;
@@ -208,7 +371,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         uint32 h = MulRGBA(c, 1.15f), a = MulRGBA(c, 0.85f);
         float bx = x;
         bool clicked = ui->Button(bx, y, btn, btn, c, h, a);
-		ui->TextCentered(bx, y, btn, btn, label, RGBAu32(250,250,250,240), 0.85f);
+        ui->TextCentered(bx, y, btn, btn, label, RGBAu32(250, 250, 250, 240), 0.85f);
         x += btn + 6.0f;
         return clicked;
     };
@@ -241,7 +404,8 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
     if (btn3(RGBAu32(120, 90, 150, 230), "N")) {
         std::string name = NextAutoName();
         EnsureLevelsFolder();
-        app->engine->ClearWorld(); //Limpiamos el mundo (si quiero mantener que se quite esto)
+        app->engine->ClearWorld();
+        app->engine->SetLevelMaterialLimits(0, 0);
         app->engine->SaveLevel(name.c_str());
         requestRescan = true;
     }
@@ -252,12 +416,12 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
     }
 
     if (!files.empty()) {
-        if (files.size() == selected) {
+        if ((int)files.size() == selected) {
             selected--;
         }
         std::string show = std::filesystem::path(files[selected]).filename().string();
         if ((int)show.size() > 28) show = show.substr(0, 25) + "...";
-		ui->Text(148.0f, y + 10, show.c_str(), RGBAu32(240,240,240,220), 0.85f);
+        ui->Text(148.0f, y + 10, show.c_str(), RGBAu32(240, 240, 240, 220), 0.85f);
     }
 
     // Archivos
@@ -289,48 +453,68 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         else {
             std::snprintf(ibuf, sizeof(ibuf), "%s", "Q");
         }
-        
-		ui->TextCentered(bx, by, cell, cell, ibuf, RGBAu32(250,250,250,220), 0.65f);
+
+        ui->TextCentered(bx, by, cell, cell, ibuf, RGBAu32(250, 250, 250, 220), 0.65f);
 
         if (i == selected) {
             ui->RectBorders(bx, by, cell, cell, 2.0f, RGBAu32(240, 240, 240, 180));
         }
     }
 
-    //Sliders Grid
-    const float sx = 600 + 36.0f;
-    const float sw = 1200 - 44.0f;
+    //Sliders Grid + level rules
+    const float sx = 600.0f + 36.0f;
+    const float sw = 1200.0f - 44.0f;
     const float sh = 16.0f;
     float sW = (float)app->gridSize.x;
     float sH = (float)app->gridSize.y;
 
-    ui->Text(600 + 10.0f, 30 + 28.0f, "W", RGBAu32(235, 235, 235, 230), 0.9f);
-    ui->Text(600 + 10.0f, 30 + 50.0f, "H", RGBAu32(235, 235, 235, 230), 0.9f);
+    ui->Text(610.0f, 58.0f, "W", RGBAu32(235, 235, 235, 230), 0.9f);
+    ui->Text(610.0f, 80.0f, "H", RGBAu32(235, 235, 235, 230), 0.9f);
 
-    ui->Slider(sx, 30 + 26.0f, sw, sh, 64.0f, 2048.0f, sW, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
-    ui->Slider(sx, 30 + 48.0f, sw, sh, 64.0f, 1024.0f, sH, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+    ui->Slider(sx, 56.0f, sw, sh, 64.0f, 2048.0f, sW, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+    ui->Slider(sx, 78.0f, sw, sh, 64.0f, 1024.0f, sH, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
 
     const int newW = std::fmax(1, (int)(sW + 0.5f));
     const int newH = std::fmax(1, (int)(sH + 0.5f));
 
-    // Aplica solo si cambia el entero (durante drag, esto corre en el pass noRender)
     if (newW != app->gridSize.x || newH != app->gridSize.y) {
         app->engine->ResizeGrid(newW, newH, true);
     }
 
-    char buf[32];
+    char buf[64];
     std::snprintf(buf, sizeof(buf), "%d", app->gridSize.x);
-    ui->Text(600 + 100 - 50.0f, 30 + 28.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+    ui->Text(660.0f, 58.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
     std::snprintf(buf, sizeof(buf), "%d", app->gridSize.y);
-    ui->Text(600 + 100 - 50.0f, 30 + 50.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+    ui->Text(660.0f, 80.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+
+    const float budgetMaxRange = (float)std::fmax(100, app->gridSize.x * app->gridSize.y);
+    float budgetMax = (float)app->engine->LevelMaterialBudgetMax();
+    float budgetStar = (float)app->engine->LevelMaterialBudgetStar();
+    if (budgetStar > budgetMax) budgetStar = budgetMax;
+
+    ui->Text(610.0f, 108.0f, "MAT MAX", RGBAu32(235, 235, 235, 230), 0.85f);
+    ui->Text(610.0f, 130.0f, "MAT STAR", RGBAu32(235, 235, 235, 230), 0.85f);
+    ui->Slider(sx, 106.0f, sw, sh, 0.0f, budgetMaxRange, budgetMax, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+    ui->Slider(sx, 128.0f, sw, sh, 0.0f, std::fmax(0.0f, budgetMax), budgetStar, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+
+    const int newBudgetMax = std::fmax(0, (int)(budgetMax + 0.5f));
+    const int newBudgetStar = std::fmax(0, (int)(budgetStar + 0.5f));
+    if (newBudgetMax != app->engine->LevelMaterialBudgetMax() || newBudgetStar != app->engine->LevelMaterialBudgetStar()) {
+        app->engine->SetLevelMaterialLimits(newBudgetMax, newBudgetStar);
+    }
+
+    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetMax());
+    ui->Text(690.0f, 108.0f, buf, RGBAu32(235, 235, 235, 230), 0.85f);
+    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetStar());
+    ui->Text(690.0f, 130.0f, buf, RGBAu32(235, 235, 235, 230), 0.85f);
 
     //Materiales
-    pad = 8.0f, y = 8.0f, x = 8.0f, btn = 28.0f;
+    pad = 8.0f; y = 8.0f; x = 8.0f; btn = 28.0f;
     auto makeBtnColor = [&](uint32 base) {
         uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
         bool clicked = ui->Button(x, y, btn, btn, base, h, a);
         x += btn + 6.0f; return clicked;
-        };
+    };
 
     for (int i = 0; i < 256; ++i) {
         const MatProps& mp = matProps((uint8)i);
@@ -382,7 +566,6 @@ void Scene_Sandbox::ScanLevels()
 
 std::string Scene_Sandbox::NextAutoName()
 {
-    //levels/custom_XXX.lvl
     int maxId = 0;
     for (const auto& f : files) {
         auto pos = f.find("custom_");

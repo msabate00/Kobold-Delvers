@@ -50,6 +50,16 @@ struct NPCGoal {
     SpriteAnimPlayer anim;
 };
 
+struct NPCBonus {
+    int x = 0, y = 0;
+    int w = 12, h = 12;
+
+    bool claimed = false;
+
+    Sprite sprite;
+    SpriteAnimPlayer anim;
+};
+
 class NPCSystem
 {
 public:
@@ -61,12 +71,17 @@ public:
     NPC& AddNPC(WorldSim& world, int x, int y, int dir = 1);
     NPCSpawner& AddSpawner(WorldSim& world, int x, int y);
     NPCGoal& AddGoal(WorldSim& world, int x, int y);
+    NPCBonus& AddBonus(WorldSim& world, int x, int y);
 
     const std::vector<NPC>& GetNPCs() const { return npcs; }
     const std::vector<NPCSpawner>& GetSpawners() const { return spawners; }
     const std::vector<NPCGoal>& GetGoals() const { return goals; }
+    const std::vector<NPCBonus>& GetBonuses() const { return bonuses; }
 
     const std::vector<int>& Occ() const { return occ; }
+
+    bool AnyBonusClaimed() const;
+    int TotalCapturedCount() const;
 
     void RebuildOcc(const WorldSim& world);
     void MoveNPCs(WorldSim& world, float fixedTimeStep);
@@ -78,21 +93,23 @@ private:
 
     bool TrySpawnFromSpawner(WorldSim& world, int spawnerId);
     bool TryParkNPCInGoal(NPC& n);
+    bool TryTouchBonus(NPC& n);
     int CountAliveFromSpawner(int spawnerId) const;
 
 private:
     std::vector<NPC> npcs;
     std::vector<NPCSpawner> spawners;
     std::vector<NPCGoal> goals;
+    std::vector<NPCBonus> bonuses;
     std::vector<int> occ;
 
     Texture2D npcTex;
-    Texture2D spawnerTex;
-    Texture2D goalTex;
+    Texture2D structuresTex;
 
     SpriteAnimLibrary npcAnims;
     SpriteAnimLibrary spawnerAnims;
     SpriteAnimLibrary goalAnims;
+    SpriteAnimLibrary bonusAnims;
 
     float npcMoveAcc = 0.0f;
     float npcCellsPerSec = 32.0f;

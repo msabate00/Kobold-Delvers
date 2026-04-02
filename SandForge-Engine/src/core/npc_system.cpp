@@ -1,10 +1,13 @@
 #include "npc_system.h"
+
 #include "worldsim.h"
 #include "engine.h"
 #include "app/app.h"
 #include "render/renderer.h"
+
 #include <algorithm>
 #include <cmath>
+#include <ui/ui.h>
 
 static NPC MakeDefaultNPC(const Texture2D* npcTex, const SpriteAnimLibrary* npcAnims,
     int x, int y, int dir)
@@ -22,10 +25,10 @@ static NPC MakeDefaultNPC(const Texture2D* npcTex, const SpriteAnimLibrary* npcA
     const int padTop = 5;
     const int padBottom = 0;
 
-    npc.hbOffX = std::clamp(padX, 0, std::max(0, npc.w - 1));
-    npc.hbOffY = std::clamp(padTop, 0, std::max(0, npc.h - 1));
-    npc.hbW = std::max(1, npc.w - 2 * padX);
-    npc.hbH = std::max(1, npc.h - padTop - padBottom);
+    npc.hbOffX = std::clamp(padX, 0, (int)std::fmax(0, npc.w - 1));
+    npc.hbOffY = std::clamp(padTop, 0, (int)std::fmax(0, npc.h - 1));
+    npc.hbW = std::fmax(1, npc.w - 2 * padX);
+    npc.hbH = std::fmax(1, npc.h - padTop - padBottom);
 
     npc.dir = dir;
     npc.alive = true;
@@ -56,8 +59,7 @@ bool NPCSystem::Awake(const WorldSim& world)
 bool NPCSystem::Start()
 {
     npcTex.Load(SPRITE_DIR "/KoboldMiner.png");
-    spawnerTex.Load(SPRITE_DIR "/npc_spawner.png");
-    goalTex.Load(SPRITE_DIR "/npc_goal.png");
+    structuresTex.Load(SPRITE_DIR "/Structures.png");
 
     npcAnims.Clear();
     {
@@ -101,19 +103,41 @@ bool NPCSystem::Start()
     spawnerAnims.Clear();
     {
         auto& idle = spawnerAnims.Add("idle");
-        idle.defaultTex = &spawnerTex;
+        idle.defaultTex = &structuresTex;
         idle.fps = 1.0f;
         idle.loop = AnimLoopMode::Loop;
-        idle.frames.push_back(AnimFramePx(&spawnerTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
+        idle.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
     }
 
     goalAnims.Clear();
     {
         auto& idle = goalAnims.Add("idle");
-        idle.defaultTex = &goalTex;
+        idle.defaultTex = &structuresTex;
         idle.fps = 1.0f;
         idle.loop = AnimLoopMode::Loop;
-        idle.frames.push_back(AnimFramePx(&goalTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
+        idle.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 0,12,12,12 }, 0.1f));
+    }
+    bonusAnims.Clear();
+    {
+        auto& idle = bonusAnims.Add("idle");
+        idle.defaultTex = &structuresTex;
+        idle.fps = 1.0f;
+        idle.loop = AnimLoopMode::Loop;
+        idle.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 0,24,12,12 }, 0.1f));
+
+        auto& lighted = bonusAnims.Add("lighted");
+        lighted.defaultTex = &structuresTex;
+        lighted.fps = 1.0f;
+        lighted.loop = AnimLoopMode::Loop;
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 36,24,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 48,24,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 60,24,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 0,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
+        lighted.frames.push_back(AnimFramePx(&structuresTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
     }
 
     return true;
@@ -124,6 +148,7 @@ void NPCSystem::Clear(const WorldSim& world)
     npcs.clear();
     spawners.clear();
     goals.clear();
+    bonuses.clear();
 
     const size_t n = (size_t)world.GridW() * (size_t)world.GridH();
     occ.assign(n, 0);
@@ -151,7 +176,7 @@ NPCSpawner& NPCSystem::AddSpawner(WorldSim& world, int x, int y)
     sp.spawnCooldown = 0.5f;
     sp.spawnAcc = sp.spawnCooldown;
 
-    sp.sprite.tex = &spawnerTex;
+    sp.sprite.tex = &structuresTex;
     sp.anim.SetLibrary(&spawnerAnims);
     sp.anim.Play("idle", true);
     sp.anim.ApplyTo(sp.sprite, false);
@@ -171,7 +196,7 @@ NPCGoal& NPCSystem::AddGoal(WorldSim& world, int x, int y)
     goal.h = 12;
     goal.capturedCount = 0;
 
-    goal.sprite.tex = &goalTex;
+    goal.sprite.tex = &structuresTex;
     goal.anim.SetLibrary(&goalAnims);
     goal.anim.Play("idle", true);
     goal.anim.ApplyTo(goal.sprite, false);
@@ -180,6 +205,40 @@ NPCGoal& NPCSystem::AddGoal(WorldSim& world, int x, int y)
     world.MarkChunksInRect(x, y, goal.w, goal.h);
 
     return goals.back();
+}
+
+NPCBonus& NPCSystem::AddBonus(WorldSim& world, int x, int y)
+{
+    NPCBonus bonus{};
+    bonus.x = x;
+    bonus.y = y;
+    bonus.w = 12;
+    bonus.h = 12;
+    bonus.claimed = false;
+    bonus.sprite.tex = &structuresTex;
+    bonus.anim.SetLibrary(&bonusAnims);
+    bonus.anim.Play("idle", true);
+    bonus.anim.ApplyTo(bonus.sprite);
+
+    bonuses.push_back(bonus);
+    world.MarkChunksInRect(x, y, bonus.w, bonus.h);
+
+    return bonuses.back();
+}
+
+bool NPCSystem::AnyBonusClaimed() const
+{
+    for (const NPCBonus& b : bonuses) {
+        if (b.claimed) return true;
+    }
+    return false;
+}
+
+int NPCSystem::TotalCapturedCount() const
+{
+    int total = 0;
+    for (const NPCGoal& g : goals) total += std::fmax(0, g.capturedCount);
+    return total;
 }
 
 void NPCSystem::RebuildOcc(const WorldSim& world)
@@ -192,6 +251,7 @@ void NPCSystem::RebuildOcc(const WorldSim& world)
     for (int i = 0; i < (int)npcs.size(); ++i) {
         const auto& n = npcs[i];
         if (!n.alive) continue;
+        if (n.parked) continue;
 
         const int bx = n.x + n.hbOffX;
         const int by = n.y + n.hbOffY;
@@ -264,7 +324,7 @@ bool NPCSystem::TrySpawnFromSpawner(WorldSim& world, int spawnerId)
     NPCSpawner& sp = spawners[spawnerId];
     NPC temp = MakeDefaultNPC(&npcTex, &npcAnims,
         sp.x + (sp.w - 12) / 2,
-        sp.y + sp.h,
+        sp.y + (sp.h-12)/ 2,
         1);
 
     const int hbX = temp.x + temp.hbOffX;
@@ -298,6 +358,22 @@ bool NPCSystem::TryParkNPCInGoal(NPC& n)
     return false;
 }
 
+bool NPCSystem::TryTouchBonus(NPC& n)
+{
+    if (!n.alive) return false;
+
+    const int hx = n.x + n.hbOffX;
+    const int hy = n.y + n.hbOffY;
+    for (NPCBonus& bonus : bonuses) {
+        if (bonus.claimed) continue;
+        if (!RectsOverlap(hx, hy, n.hbW, n.hbH, bonus.x, bonus.y, bonus.w, bonus.h)) continue;
+        bonus.claimed = true;
+        return true;
+    }
+
+    return false;
+}
+
 void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 {
     // Spawners
@@ -325,7 +401,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 
     // NPCs
     npcMoveAcc += fixedTimeStep;
-    const float npcMoveInterval = 1.0f / std::max(0.001f, npcCellsPerSec);
+    const float npcMoveInterval = 1.0f / std::fmax(0.001f, npcCellsPerSec);
     if (npcMoveAcc < npcMoveInterval) return;
     npcMoveAcc -= npcMoveInterval;
 
@@ -346,6 +422,8 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
             continue;
         }
 
+        TryTouchBonus(n);
+
         if (TryParkNPCInGoal(n)) {
             continue;
         }
@@ -357,6 +435,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 
         if (RectFreeOnBack(world, hbX, hbY + 1, n.hbW, n.hbH, id)) {
             n.y += 1;
+            TryTouchBonus(n);
             if (!TryParkNPCInGoal(n)) {
                 n.anim.Play("fall", false);
             }
@@ -367,6 +446,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 
         if (RectFreeOnBack(world, nx + n.hbOffX, hbY, n.hbW, n.hbH, id)) {
             n.x = nx;
+            TryTouchBonus(n);
             if (!TryParkNPCInGoal(n)) {
                 n.anim.Play("walk", false);
             }
@@ -390,6 +470,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
             n.y -= step;
             n.x = nx;
             climbed = true;
+            TryTouchBonus(n);
             if (!TryParkNPCInGoal(n)) {
                 n.anim.Play("walk", false);
             }
@@ -424,6 +505,32 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
         sp.sprite.layer = RenderLayer::WORLD;
         sp.sprite.sort = -20;
         app->renderer->Queue(sp.sprite);
+    }
+
+    for (auto& bonus : bonuses) {
+        bonus.anim.Update(dt);
+        bonus.anim.ApplyTo(bonus.sprite);
+
+
+        float sx, sy, sw, sh;
+        if (!engine.WorldRectToScreen((float)bonus.x, (float)bonus.y, (float)bonus.w, (float)bonus.h,
+            app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh))
+            continue;
+
+        bonus.sprite.x = std::floor(sx);
+        bonus.sprite.y = std::floor(sy);
+        bonus.sprite.w = std::floor(sw);
+        bonus.sprite.h = std::floor(sh);
+        bonus.sprite.layer = RenderLayer::WORLD;
+        bonus.sprite.sort = -15;
+        if (bonus.claimed) {
+            //bonus.sprite.color = RGBAu32(255, 255, 255, 170);
+            bonus.anim.Play("lighted", false);
+        } 
+        else {
+            //bonus.sprite.color = RGBAu32(255, 255, 255, 255);
+        }
+        app->renderer->Queue(bonus.sprite);
     }
 
     for (auto& goal : goals) {

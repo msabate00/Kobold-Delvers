@@ -11,6 +11,8 @@ bool Engine::Awake()
     if (!world.Awake(app)) return false;
     npcs.Awake(world);
     paint.Clear();
+    ResetLevelSession();
+    SetLevelMaterialLimits(0, 0);
     return true;
 }
 
@@ -81,6 +83,7 @@ void Engine::ResizeGrid(int w, int h, bool keepContent)
     stepOnce = false;
     world.StepAccumulator() = 0.0f;
 
+    ResetLevelSession();
     npcs.RebuildOcc(world);
 
     // Camara
@@ -101,6 +104,7 @@ void Engine::ClearWorld(uint8 fill)
     parity = 0;
     stepOnce = false;
 
+    ResetLevelSession();
     npcs.RebuildOcc(world);
 }
 
@@ -117,6 +121,26 @@ bool Engine::trySwap(int x0, int y0, int x1, int y1, const Cell& c)
 void Engine::SetCell(int x, int y, uint8 m)
 {
     world.SetCell(x, y, m);
+}
+
+void Engine::AddMaterialUse(int amount)
+{
+    if (amount <= 0) return;
+    materialUsed += amount;
+}
+
+void Engine::ResetLevelSession()
+{
+    materialUsed = 0;
+}
+
+void Engine::SetLevelMaterialLimits(int maxUse, int starUse)
+{
+    levelMaterialBudgetMax = std::fmax(0, maxUse);
+    levelMaterialBudgetStar = std::fmax(0, starUse);
+    if (levelMaterialBudgetStar > levelMaterialBudgetMax) {
+        levelMaterialBudgetStar = levelMaterialBudgetMax;
+    }
 }
 
 void Engine::Paint(int screenX, int screenY, Material m, int r)

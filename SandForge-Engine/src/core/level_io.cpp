@@ -59,6 +59,21 @@ void LevelIO::ExportLevel(const WorldSim& world, const NPCSystem& npcs, Level& o
         lg.capturedCount = g.capturedCount;
         out.goals.push_back(lg);
     }
+
+    out.bonuses.clear();
+    out.bonuses.reserve(npcs.GetBonuses().size());
+    for (const auto& b : npcs.GetBonuses()) {
+        LevelBonus lb{};
+        lb.x = b.x;
+        lb.y = b.y;
+        lb.w = b.w;
+        lb.h = b.h;
+        lb.claimed = (uint8)b.claimed;
+        out.bonuses.push_back(lb);
+    }
+
+    out.rules.materialBudgetMax = app->engine->LevelMaterialBudgetMax();
+    out.rules.materialBudgetStar = app->engine->LevelMaterialBudgetStar();
 }
 
 bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const Level& in)
@@ -99,6 +114,13 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
         g.capturedCount = std::fmax(0, lg.capturedCount);
     }
 
+    for (const auto& lb : in.bonuses) {
+        NPCBonus& b = npcs.AddBonus(world, lb.x, lb.y);
+        b.w = lb.w;
+        b.h = lb.h;
+        b.claimed = (lb.claimed != 0);
+    }
+
     for (const auto& ln : in.npcs) {
         NPC& n = npcs.AddNPC(world, ln.x, ln.y, ln.dir);
         n.w = ln.w;
@@ -117,6 +139,8 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
     world.StepAccumulator() = 0.0f;
     engine.parity = 0;
     engine.stepOnce = false;
+    engine.ResetLevelSession();
+    engine.SetLevelMaterialLimits(in.rules.materialBudgetMax, in.rules.materialBudgetStar);
 
     npcs.RebuildOcc(world);
 
@@ -138,7 +162,7 @@ bool LevelIO::SaveLevel(const WorldSim& world, const NPCSystem& npcs, const char
     ExportLevel(world, npcs, lvl);
     const bool ok = SaveLevelFile(path, lvl);
     if (!ok) LOG("ERROR: SaveLevelFile failed for '%s'", path);
-    else LOG("Saved level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size());
+    else LOG("Saved level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size());
     return ok;
 }
 
@@ -155,7 +179,7 @@ bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const 
     }
     const bool ok = ImportLevel(engine, world, npcs, lvl);
     if (!ok) LOG("ERROR: ImportLevel failed for '%s'", path);
-    else LOG("Loaded level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size());
+    else LOG("Loaded level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size());
 
     app->ResetCamera();
 

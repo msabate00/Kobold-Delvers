@@ -191,6 +191,7 @@ void registerDefaultMaterials() {
     g_mat[(uint8)Material::NpcCell] = { "NPC",            {220, 40, 200,255},          0,   nullptr };
     g_mat[(uint8)Material::NpcSpawnerCell] = { "Spawner", {80, 220, 255,255},          0,   nullptr };
     g_mat[(uint8)Material::NpcGoalCell] = { "Goal",       {255, 220, 80,255},          0,   nullptr };
+    g_mat[(uint8)Material::NpcBonusCell] = { "Bonus",     {20, 20, 20,255},            0,   nullptr };
 }
 
 bool isVolatile(uint8 m)

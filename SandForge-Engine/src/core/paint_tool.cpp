@@ -91,25 +91,42 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
         return;
     }
 
-    auto stampCircle = [&](int pcx, int pcy, int& minX, int& minY, int& maxX, int& maxY) {
-        const int rr = std::max(1, r);
-        const int r2 = rr * rr;
-        const int xmin = std::max(0, pcx - rr);
-        const int xmax = std::min(world.GridW() - 1, pcx + rr);
-        const int ymin = std::max(0, pcy - rr);
-        const int ymax = std::min(world.GridH() - 1, pcy + rr);
+    // Bonus
+    if (m == Material::NpcBonusCell) {
+        if (!npcDrawed) {
+            npcs.AddBonus(world, tx - 6, ty - 6);
+            npcDrawed = true;
+        }
+        paintLast = { tx, ty };
+        paintShiftPrev = app->shiftPressed;
+        return;
+    }
 
-        minX = std::min(minX, xmin);
-        minY = std::min(minY, ymin);
-        maxX = std::max(maxX, xmax);
-        maxY = std::max(maxY, ymax);
+    auto stampCircle = [&](int pcx, int pcy, int& minX, int& minY, int& maxX, int& maxY) {
+        const int rr = std::fmax(1, r);
+        const int r2 = rr * rr;
+        const int xmin = std::fmax(0, pcx - rr);
+        const int xmax = std::fmin(world.GridW() - 1, pcx + rr);
+        const int ymin = std::fmax(0, pcy - rr);
+        const int ymax = std::fmin(world.GridH() - 1, pcy + rr);
+
+        minX = std::fmin(minX, xmin);
+        minY = std::fmin(minY, ymin);
+        maxX = std::fmax(maxX, xmax);
+        maxY = std::fmax(maxY, ymax);
 
         for (int y = ymin; y <= ymax; ++y) {
             for (int x = xmin; x <= xmax; ++x) {
                 const int dx = x - pcx;
                 const int dy = y - pcy;
                 if (dx * dx + dy * dy <= r2) {
-                    world.SetFrontCell(x, y, (uint8)m);
+                    const uint8 oldMat = world.GetFrontCell(x, y).m;
+                    if (oldMat != (uint8)m) {
+                        world.SetFrontCell(x, y, (uint8)m);
+                        if (m != Material::Empty) {
+                            engine.AddMaterialUse(1);
+                        }
+                    }
                 }
             }
         }
@@ -119,8 +136,8 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
     auto paintSegment = [&](int x0, int y0, int x1, int y1,
         int& minX, int& minY, int& maxX, int& maxY)
         {
-            const int rr = std::max(1, r);
-            const int stride = std::max(1, rr / 2);
+            const int rr = std::fmax(1, r);
+            const int stride = std::fmax(1, rr / 2);
 
             int dx = std::abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
             int dy = -std::abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
