@@ -306,6 +306,24 @@ void UI::Image(const Texture2D& t, float x, float y, float w, float h, uint32 ti
 	app->renderer->Queue(s);
 }
 
+void UI::Image(const Texture2D& t, float x, float y, float w, float h,
+	const AtlasRectPx& srcPx, uint32 tint, int sort)
+{
+	if (noRender) return;
+
+	const UVRect uv = UVFromPx(t, srcPx);
+	Sprite s{};
+	s.tex = &t;
+	s.x = x;  s.y = y;  s.w = w;  s.h = h;
+	s.u0 = uv.u0; s.v0 = uv.v0;
+	s.u1 = uv.u1; s.v1 = uv.v1;
+	s.color = tint;
+	s.layer = RenderLayer::UI;
+	s.sort = sort;
+
+	app->renderer->Queue(s);
+}
+
 bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort)
 {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
@@ -320,6 +338,21 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uin
 	Sprite s{ &t, x,y,w,h, 0,0,1,1, cc, RenderLayer::UI, sort  };
 	app->renderer->Queue(s);
 
+	return false;
+}
+
+bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort)
+{
+	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+
+	uint32 cc = hover ? (md ? tint_rgbaActive : tint_rgbaHover) : tint_rgba;
+	bool clicked = hover && !md && mdPrev;
+	if (hover && (md || clicked)) {
+		mouseConsumed = true;
+	}
+	if (noRender) return clicked;
+
+	Image(t, x, y, w, h, srcPx, cc, sort);
 	return false;
 }
 

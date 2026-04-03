@@ -284,19 +284,21 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     {
         app->ui->Rect(0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, RGBAu32(24, 24, 24, 255));
 
-        auto makeBtnColor = [&](uint32 base) {
+        auto makeBtnColor = [&](uint32 base, int i = 0) {
             uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-            bool clicked = app->ui->Button(x, y, 32, 32, base, h, a);
+            //bool clicked = app->ui->Button(x, y, 32, 32, base, h, a);
+            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x, y, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a);
             x += 32 + 6.0f;
-            return clicked;
+            return clicked; 
         };
 
         for (int i = 0; i < 256; ++i) {
             const MatProps& mp = matProps((uint8)i);
 
             if (mp.name.length() > 0) {
-                uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
-                if (makeBtnColor(c)) brushMat = (Material)i;
+                //uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
+                uint32 c = RGBAu32(255, 255, 255, 255);
+                if (makeBtnColor(c, i)) brushMat = (Material)i;
             }
         }
 
