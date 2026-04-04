@@ -188,7 +188,7 @@ void Scene_Level::DrawMaterialBudgetBar()
     const float barW = 36.0f;
     const float barH = 300.0f;
 
-    ui->Rect(barX - 4.0f, barY - 4.0f, barW + 8.0f, barH + 8.0f, RGBAu32(18, 18, 18, 215));
+    
     ui->Rect(barX, barY, barW, barH, RGBAu32(50, 50, 55, 240));
 
     const float fillH = barH * fill;
