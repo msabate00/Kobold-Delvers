@@ -457,40 +457,22 @@ bool UI::Slider(float x, float y, float w, float h,
 	return released;
 }
 
-bool UI::Slider(float x, float y, float w, float h,
-	float minv, float maxv, float& v,
-	const Texture2D& atlas,
-	const AtlasRectPx& knobRect,
-	const AtlasRectPx& bgRect,
-	uint32 tint)
+bool UI::Slider(float x, float y, float w, float h, float minv, float maxv, float& v, bool fill, uint32 tint)
 {
 	float t, kx, kx0, kw;
 	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
 
-	Image(atlas, x, y, w, h, bgRect, tint, 3);
-	Image(atlas, kx0, y, kw, h, knobRect, tint, 5);
+	//Background
+	Image(interfaceTex, x, y, w, h, AtlasRectPx{ 135,890,220,16 }, tint, 3);
 
-	return released;
-}
-
-bool UI::Slider(float x, float y, float w, float h,
-	float minv, float maxv, float& v,
-	const Texture2D& atlas,
-	const AtlasRectPx& knobRect,
-	const AtlasRectPx& bgRect,
-	const AtlasRectPx& fillRect,
-	uint32 tint)
-{
-	float t, kx, kx0, kw;
-	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
-
-	Image(atlas, x, y, w, h, bgRect, tint, 3);
-
+	//Fill
 	float fillW = kx - x;
 	if (fillW > 0.0f) {
-		Image(atlas, x, y, fillW, h, fillRect, tint, 4);
+		Image(interfaceTex, x, y, fillW, h, AtlasRectPx{ 413, 890, (int)fillW,16 }, tint, 4);
 	}
-	Image(atlas, kx0, y-10, kw, h+20, knobRect, tint, 4);
+
+	//Knob
+	Image(interfaceTex, kx0, y-10, kw, h+20, AtlasRectPx{ 374,877,21,42 }, tint, 5);
 
 	return released;
 }

@@ -43,18 +43,7 @@ public:
     bool Slider(float x, float y, float w, float h,
         float minv, float maxv, float& v, uint32 track, uint32 knob);
     bool Slider(float x, float y, float w, float h,
-        float minv, float maxv, float& v,
-        const Texture2D& atlas,
-        const AtlasRectPx& knobRect,
-        const AtlasRectPx& bgRect,
-        uint32 tint = 0xFFFFFFFF);
-
-    bool Slider(float x, float y, float w, float h,
-        float minv, float maxv, float& v,
-        const Texture2D& atlas,
-        const AtlasRectPx& knobRect,
-        const AtlasRectPx& bgRect,
-        const AtlasRectPx& fillRect,
+        float minv, float maxv, float& v, bool fill = false,
         uint32 tint = 0xFFFFFFFF);
 
     void Circle(float cx, float cy, float r, uint32 c, int segments = 0);

@@ -281,26 +281,29 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     app->ui->Image(app->ui->interfaceTex, 0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, AtlasRectPx{0, 930, 1080, 150}, RGBAu32(255, 255, 255, 255), -10);
 
 
-    //sLIDER
+    //SLIDER
     float y = app->framebufferSize.y - 50.0f;
-    float x = ((float)app->framebufferSize.x / 2) - (((36.0 + 16) * Material::COUNT) / 2);
+    //float x = ((float)app->framebufferSize.x / 2) - (((36.0 + 16) * Material::COUNT) / 2);
+    float x = ((float)app->framebufferSize.x / 2) - 110;
+    float v = (float)brushSize;
 
-
-    x += 12.0f; float bx = x, bw = 200.0f, bh = 20.0f; float v = (float)brushSize;
-    app->ui->Slider(x, y, 200.0f, 20.0f, 1.0f, 64.0f, v, app->ui->interfaceTex, AtlasRectPx{ 374,877,21,42 }, AtlasRectPx{ 135,890,220,16 }, AtlasRectPx{ 413, 890, 220,16 });
+    app->ui->Slider(x, y, 220, 20.0f, 1.0f, 64.0f, v, true);
     brushSize = (int)(v + 0.5f);
 
 
 
-    x = ((float)app->framebufferSize.x / 2) - (((36.0+16)*Material::COUNT)/2);
-    y = app->framebufferSize.y - 100.0f;
+    //x = ((float)app->framebufferSize.x / 2) - ((((36.0+16)* 6)-27)/2);
+    
     float s = 28.0f;
 
     //Down Materials
     {
+        x = ((float)app->framebufferSize.x / 2) - (((44.5*6)) /2);
+        y = app->framebufferSize.y - 100.0f;
+
         app->ui->Rect(0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, RGBAu32(24, 24, 24, 255));
 
-        auto makeBtnColor = [&](uint32 base, int i = 0) {
+        auto makeBtnColor = [&](uint32 base, int i = 0) { 
             uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
 
             //Background
@@ -313,7 +316,7 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
 
             bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a, 5);
-            x += 32 + 16.0f;
+            x += 50;
             /*if ((i+1) % 5 == 0) {
                 y += 32 + 16;
                 x = (float)app->framebufferSize.x * 0.20f - 36.0f;
@@ -322,7 +325,7 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
             return clicked; 
         };
 
-        for (int i = 0; i < 256; ++i) {
+        for (int i = 0; i < 6; ++i) {
             const MatProps& mp = matProps((uint8)i);
 
             if (mp.name.length() > 0) {
@@ -332,14 +335,19 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
             }
         }
 
-        x += 8.0f;
+        x += 200.0f;
 
         if (app->engine->paused && !levelFinished) {
-            if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
-            if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
+            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            if(app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 255, 255, 255), RGBAu32(55, 255, 255, 200), RGBAu32(55, 255, 255, 55), 5))  app->engine->paused = false;
+
+            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 32, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->matAtlas, x - 16 + 16 + 32, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 255), RGBAu32(55, 55, 255, 200), RGBAu32(55, 55, 255, 55), 5)) app->engine->stepOnce = true;
         }
         else if (!levelFinished) {
-            if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
+
+            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(255, 55, 55, 255), RGBAu32(255, 55, 55, 200), RGBAu32(255, 55, 55, 55), 5))  app->engine->paused = true;
         }
     }
 
