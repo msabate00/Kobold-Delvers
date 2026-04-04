@@ -183,30 +183,43 @@ void Scene_Level::DrawMaterialBudgetBar()
     const float starLimit = (float)std::clamp(app->engine->LevelMaterialBudgetStar(), 0, app->engine->LevelMaterialBudgetMax());
     const float starFill = std::clamp((maxBudget - starLimit) / maxBudget, 0.0f, 1.0f);
 
-    const float barX = 12.0f;
-    const float barY = 52.0f;
-    const float barW = 36.0f;
-    const float barH = 300.0f;
+    const float barX = ((float)app->framebufferSize.x / 2) - 480;
+    const float barY = app->framebufferSize.y - 110.0f;
+    const float barW = 201;
+    const float barH = 34;
 
-    
-    ui->Rect(barX, barY, barW, barH, RGBAu32(50, 50, 55, 240));
+    //Background
+    ui->Image(ui->interfaceTex, barX, barY, barW, barH, ui->hudBudgedBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
 
-    const float fillH = barH * fill;
-    if (fillH > 0.0f) {
-        ui->Rect(barX, barY + (barH - fillH), barW, fillH,
-            budgetStarEarned || (!levelFinished && used <= starLimit) ? RGBAu32(235, 210, 90, 245) : RGBAu32(180, 75, 75, 245));
+    //Fill
+    const float fillW = barW * fill;
+    if (fillW > 0.0f) {
+        ui->Image(ui->interfaceTex, barX + (barW - fillW), barY, fillW, barH, ui->hudBudgedFillRect,
+            budgetStarEarned || (!levelFinished && used <= starLimit) ? RGBAu32(235, 235, 235, 245) : RGBAu32(235, 75, 75, 245), 4);
     }
 
-    const float markY = barY + barH * starFill;
-    ui->Rect(barX - 4.0f, markY - 1.0f, barW + 8.0f, 2.0f, RGBAu32(245, 245, 245, 230));
-    ui->RectBorders(barX, barY, barW, barH, 2.0f, RGBAu32(220, 220, 220, 120));
 
-    char buf[64];
+    //Mark
+    const float markX = barX + barW - (barW * starFill);
+    ui->Image(ui->interfaceTex, markX-28, barY-50, 48, 96, ui->hudBudgedStarHolderRect, RGBAu32(255,255,255,255), 5);
+
+    //StarMark
+    ui->Image(ui->interfaceTex, markX - 15, barY - 40, 22, 22, (used <= starLimit) ? ui->starIconRect : ui->starEmptyIconRect, RGBAu32(255, 255, 255, 255), 5);
+
+    /*char buf[64];
+    std::snprintf(buf, sizeof(buf), "%d/%d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetMax());
+    ui->Text(barX + (barW/2)- 30 , barY + barH + 16.0f, buf, RGBAu32(245, 245, 245, 235), 0.70f);*/
+
+    ui->Text(barX, barY - 20.0f, "Budget", RGBAu32(245, 245, 245, 235), 0.70f);
+
+    ui->Text(barX, barY + barH + 16.0f, levelName.c_str(), RGBAu32(245, 245, 245, 235), 0.70f);
+    
+    /*char buf[64];
     std::snprintf(buf, sizeof(buf), "%d/%d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetMax());
     ui->Text(barX + 28.0f, barY + barH - 16.0f, buf, RGBAu32(245, 245, 245, 235), 0.70f);
     ui->Text(barX - 2.0f, barY - 18.0f, "MAT", RGBAu32(245, 245, 245, 220), 0.70f);
-    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetStar());
-    ui->Text(barX + 28.0f, markY - 8.0f, buf, RGBAu32(235, 235, 235, 220), 0.65f);
+    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetStar());*/
+    //ui->Text(barX + 28.0f, markY - 8.0f, buf, RGBAu32(235, 235, 235, 220), 0.65f);
 }
 
 void Scene_Level::DrawLevelCompleteModal()
@@ -273,12 +286,14 @@ void Scene_Level::DrawLevelCompleteModal()
 
 void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 {
-    app->ui->Draw(brushSize, brushMat);
+    UI* ui = app->ui;
+
+    ui->Draw(brushSize, brushMat);
     DrawMaterialBudgetBar();
 
 
 
-    app->ui->Image(app->ui->interfaceTex, 0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, AtlasRectPx{0, 930, 1080, 150}, RGBAu32(255, 255, 255, 255), -10);
+    ui->Image(ui->interfaceTex, 0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, ui->hudBackgroundRect, RGBAu32(255, 255, 255, 255), -10);
 
 
     //SLIDER
@@ -308,13 +323,13 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
             //Background
             if (app->engine->brushMat == i) {
-                app->ui->Image(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, AtlasRectPx{ 5,871,55,55 }, RGBAu32(255,255,255,255), 4);
+                app->ui->Image(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, ui->hudMaterialBackgroundSelectedRect, RGBAu32(255,255,255,255), 4);
             }
             else {
-                app->ui->Image(app->ui->interfaceTex, x-21, y-21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+                app->ui->Image(app->ui->interfaceTex, x-21, y-21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             }
 
-
+            //Fix, deberia de ser al pulsar el fondo, no el dibujito
             bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a, 5);
             x += 50;
             /*if ((i+1) % 5 == 0) {
@@ -340,19 +355,19 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         if (app->engine->paused && !levelFinished) {
 
             //Pausa
-            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             if(app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 255, 255, 255), RGBAu32(55, 255, 255, 200), RGBAu32(55, 255, 255, 55), 5))  app->engine->paused = false;
 
             //Step
-            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             if (app->ui->ImageButton(app->ui->matAtlas, x - 16 + 16 + 48, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 255), RGBAu32(55, 55, 255, 200), RGBAu32(55, 55, 255, 55), 5)) app->engine->stepOnce = true;
         }
         else if (!levelFinished) {
 
-            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             if (app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(255, 55, 55, 255), RGBAu32(255, 55, 55, 200), RGBAu32(255, 55, 55, 55), 5))  app->engine->paused = true;
 
-            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             app->ui->Image(app->ui->matAtlas, x - 16 + 16 + 48, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 055), 5);
         }
         
@@ -361,14 +376,14 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     //Separadores
     {
         x = ((float)app->framebufferSize.x / 2);
-        y = app->framebufferSize.y - 180.0f;
+        y = app->framebufferSize.y - 164.0f;
         //app->ui->Image(app->ui->interfaceTex, x - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
 
 
-        app->ui->Image(app->ui->interfaceTex, x - 520-19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
-        app->ui->Image(app->ui->interfaceTex, x-240 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
-        app->ui->Image(app->ui->interfaceTex, x+240 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
-        app->ui->Image(app->ui->interfaceTex, x+520 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x - 520-19.5, y, 39, 192, ui->hudSeparatorWoodRect, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x-240 - 19.5, y, 39, 192, ui->hudSeparatorWoodRect, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x+240 - 19.5, y, 39, 192, ui->hudSeparatorWoodRect, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x+520 - 19.5, y, 39, 192, ui->hudSeparatorWoodRect, RGBAu32(255, 255, 255, 255), 6);
     
     }
 

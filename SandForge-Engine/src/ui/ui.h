@@ -85,6 +85,28 @@ public:
     Texture2D interfaceTex;
     bool interfaceTexReady = false;
 
+
+    AtlasRectPx hudBackgroundRect{0,18,1920,150};
+    AtlasRectPx hudSeparatorWoodRect{6,182,39,172};
+
+    AtlasRectPx hudMaterialBackgroundSelectedRect{5,356,54,54};
+    AtlasRectPx hudMaterialBackgroundRect{66,362,42,42};
+
+    AtlasRectPx sliderBackgroundRect{ 135,375,220,16 };
+    AtlasRectPx sliderFillRect{ 413,375,220,16 };
+    AtlasRectPx sliderKnobRect{ 374,362,21,42 };
+
+    AtlasRectPx hudBudgedBackgroundRect{135,331,201,34};
+    AtlasRectPx hudBudgedFillRect{135,293,201,34};
+    AtlasRectPx hudBudgedStarHolderRect{64,257,48,97};
+
+    AtlasRectPx starIconRect{ 59,183,56,59 };
+    AtlasRectPx starEmptyIconRect{ 116,183,56,59 };
+
+    AtlasRectPx lockIconRect{ 654,200,151,202 };
+    AtlasRectPx panelLevelRect{ 832,195,256,192 };
+    AtlasRectPx thumbLevelRect{ 1105,243,256,144 };
+
 private:
 
     unsigned int prog = 0, vao = 0, vbo = 0;

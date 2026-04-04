@@ -21,8 +21,8 @@ private:
 //NIVEL ESTANDARD
 class Scene_Level : public Scene {
 public:
-    Scene_Level(App* app, SceneManager* mgr, SceneId id, const char* levelPath)
-        : Scene(app), mgr(mgr), id(id), levelPath(levelPath ? levelPath : "") {}
+    Scene_Level(App* app, SceneManager* mgr, SceneId id, const char* levelPath, const char* levelName = "")
+        : Scene(app), mgr(mgr), id(id), levelPath(levelPath ? levelPath : ""), levelName(levelName) { }
 
     SceneId GetId() const override { return id; }
     bool HasWorld() const override { return true; }
@@ -42,6 +42,7 @@ protected:
     SceneManager* mgr = nullptr;
     SceneId id;
     std::string levelPath;
+    std::string levelName;
 
     bool levelFinished = false;
     bool levelResultSaved = false;

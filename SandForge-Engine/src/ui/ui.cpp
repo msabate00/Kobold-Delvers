@@ -463,16 +463,18 @@ bool UI::Slider(float x, float y, float w, float h, float minv, float maxv, floa
 	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
 
 	//Background
-	Image(interfaceTex, x, y, w, h, AtlasRectPx{ 135,890,220,16 }, tint, 3);
+	Image(interfaceTex, x, y, w, h, sliderBackgroundRect, tint, 3);
 
 	//Fill
 	float fillW = kx - x;
 	if (fillW > 0.0f) {
-		Image(interfaceTex, x, y, fillW, h, AtlasRectPx{ 413, 890, (int)fillW,16 }, tint, 4);
+		AtlasRectPx fillRect = sliderFillRect;
+		fillRect.w = fillW;
+		Image(interfaceTex, x, y, fillW, h, fillRect, tint, 4);
 	}
 
 	//Knob
-	Image(interfaceTex, kx0, y-10, kw, h+20, AtlasRectPx{ 374,877,21,42 }, tint, 5);
+	Image(interfaceTex, kx0, y-10, kw, h+20, sliderKnobRect, tint, 5);
 
 	return released;
 }

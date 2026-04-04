@@ -16,7 +16,7 @@ bool SceneManager::Awake()
     scenes[SCENE_LEVELSELECTOR] = new Scene_LevelSelector(app, this);
     scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/vanilla/tutorial.lvl");
     scenes[SCENE_SANDBOX] = new Scene_Sandbox(app, this);
-    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_01.lvl");
+    scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_01.lvl", "Escena nivel 1 jeje prov");
     scenes[SCENE_LEVEL2] = new Scene_Level(app, this, SCENE_LEVEL2, "levels/vanilla/level_02.lvl");
     scenes[SCENE_LEVEL3]  = new Scene_Level(app, this, SCENE_LEVEL3,  "levels/vanilla/level_03.lvl");
     scenes[SCENE_LEVEL4]  = new Scene_Level(app, this, SCENE_LEVEL4,  "levels/vanilla/level_04.lvl");

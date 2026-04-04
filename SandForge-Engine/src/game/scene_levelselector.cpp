@@ -26,23 +26,6 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 	if (s > 1.25f) s = 1.25f;
 	auto S = [&](float v) { return v * s; };
 
-	// tEXTURAS
-	static Texture2D sLockTex;
-	static Texture2D sPanelLevel;
-	static Texture2D sPanelThumb;
-	static Texture2D sStarFull;
-	static Texture2D sStarEmpty;
-	static bool sUILoaded = false;
-
-	if (!sUILoaded) {
-		sUILoaded = true;
-		sLockTex.Load("assets/sprites/ui/lock.png");
-		sPanelLevel.Load("assets/sprites/ui/panel_level.png");
-		sPanelThumb.Load("assets/sprites/ui/panel_thumb.png");
-		sStarFull.Load("assets/sprites/ui/star_full.png");
-		sStarEmpty.Load("assets/sprites/ui/star_empty.png");
-	}
-
 	// --------------------------------------------------------
 	// Fondo + barra superior
 	// --------------------------------------------------------
@@ -95,9 +78,9 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		const float sx = pillX + S(12.0f);
 		const float sy = pillY + (pillH - starSize) * 0.5f;
 
-		if (sStarFull.id != 0) {
-			ui->Image(sStarFull, sx, sy, starSize, starSize, RGBAu32(250, 210, 70, 240));
-		}
+		
+		ui->Image(ui->interfaceTex, sx, sy, starSize, starSize, ui->starIconRect, RGBAu32(250, 210, 70, 240));
+		
 
 		ui->Text(pillX + S(36.0f), pillY + S(2.0f), buf, RGBAu32(240, 240, 240, 240), 1.0f * s);
 	}
@@ -139,13 +122,13 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		const bool unlocked = app->progress.IsLevelUnlocked(i);
 
 		// Panel image
-		if (sPanelLevel.id != 0) {
-			uint32 tint = unlocked ? RGBAu32(235, 235, 235, 255) : RGBAu32(255, 255, 255, 90);
-			uint32 hover = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 90);
-			uint32 active = unlocked ? RGBAu32(210, 210, 210, 255) : RGBAu32(255, 255, 255, 90);
-			const bool clicked = ui->ImageButton(sPanelLevel, x, y, tileW, tileH, tint, hover, active);
-			if (clicked && unlocked) mgr->Request(levelScenes[i]);
-		}		
+		
+		uint32 tint = unlocked ? RGBAu32(235, 235, 235, 255) : RGBAu32(255, 255, 255, 90);
+		uint32 hover = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 90);
+		uint32 active = unlocked ? RGBAu32(210, 210, 210, 255) : RGBAu32(255, 255, 255, 90);
+		const bool clicked = ui->ImageButton(ui->interfaceTex, x, y, tileW, tileH, ui->panelLevelRect, tint, hover, active);
+		if (clicked && unlocked) mgr->Request(levelScenes[i]);
+			
 
 		//Thumb panel
 		if (!sThumbTried[i]) {
@@ -165,10 +148,10 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		if (frameH > maxFrameH) frameH = maxFrameH;
 		if (frameH < S(8.0f)) frameH = S(8.0f);
 
-		if (sPanelThumb.id != 0) {
-			const uint32 tint = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 190);
-			ui->Image(sPanelThumb, frameX, frameY, frameW, frameH, tint);
-		}
+		
+		tint = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 190);
+		ui->Image(ui->interfaceTex, frameX, frameY, frameW, frameH, ui->thumbLevelRect, tint);
+		
 
 		const float inner = S(6.0f);
 		const float tx = frameX + inner;
@@ -205,12 +188,10 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 			for (int st = 0; st < 3; ++st) {
 				const float sx = startX + st * stepX;
 				if (st < (int)earned) {
-					if (sStarFull.id != 0)
-						ui->Image(sStarFull, sx, starY, starSize, starSize, RGBAu32(250, 210, 70, 240));
+					ui->Image(ui->interfaceTex, sx, starY, starSize, starSize, ui->starIconRect, RGBAu32(250, 210, 70, 240));
 				}
 				else {
-					if (sStarEmpty.id != 0)
-						ui->Image(sStarEmpty, sx, starY, starSize, starSize, RGBAu32(220, 220, 230, 200));
+					ui->Image(ui->interfaceTex, sx, starY, starSize, starSize, ui->starEmptyIconRect, RGBAu32(220, 220, 230, 200));
 				}
 			}
 		}
@@ -219,12 +200,12 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		if (!unlocked) {
 
 			//Candado
-			if (sLockTex.id != 0) {
-				const float lockS = std::fmin(frameW, frameH) * 0.80f;
-				const float lx = frameX + (frameW - lockS) * 0.5f;
-				const float ly = frameY + (frameH - lockS) * 0.5f;
-				ui->Image(sLockTex, lx, ly, lockS, lockS, RGBAu32(255, 255, 255, 210), 1);
-			}
+			
+			const float lockS = std::fmin(frameW, frameH) * 0.80f;
+			const float lx = frameX + (frameW - lockS) * 0.5f; 
+			const float ly = frameY + (frameH - lockS) * 0.5f;
+			ui->Image(ui->interfaceTex, lx, ly, lockS, lockS, ui->lockIconRect,RGBAu32(255, 255, 255, 210), 1);
+			
 
 			//Pill need stars
 			char req[32];
