@@ -54,6 +54,7 @@ bool UI::Start() {
 	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 1024, 1024, true);
 	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
 	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
+	interfaceTexReady = interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }
@@ -87,11 +88,7 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	const MatProps actualMat = matProps((uint8)brushMat);
 
 
-	float pad = 8.0f, y = 8.0f, x = 550.0f, btn = 28.0f;
-
-	x += 12.0f; float bx = x, bw = 200.0f, bh = 20.0f; float v = (float)brushSize;
-	Slider(bx, y + 4.0f, bw, bh, 1.0f, 64.0f, v, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
-	brushSize = (int)(v + 0.5f);
+	
 
 	if (app->engine->levelCellsProtection) {
 		LevelCellsProtectionMark(brushSize);
@@ -228,6 +225,32 @@ void UI::Flush() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawArrays(GL_TRIANGLES, 0, (GLint)verts.size());
 }
+
+bool UI::SliderLogic(float x, float y, float w, float h,
+	float minv, float maxv, float& v,
+	float& t, float& kx, float& kx0, float& kw)
+{
+	if (v < minv) v = minv;
+	if (v > maxv) v = maxv;
+
+	float range = maxv - minv;
+	t = (range > 0.0f) ? Clamp01((v - minv) / range) : 0.0f;
+
+	kx = x + t * w;
+	kw = h;
+	kx0 = kx - kw * 0.5f;
+
+	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+
+	if (hover && md) {
+		float nt = (w > 0.0f) ? Clamp01(float((mx - x) / w)) : 0.0f;
+		v = minv + nt * (maxv - minv);
+		mouseConsumed = true;
+	}
+
+	return hover && !md && mdPrev;
+}
+
 
 void UI::LevelCellsProtectionMark(int brushSize)
 {
@@ -423,22 +446,53 @@ bool UI::ButtonAtlas(float x, float y, float w, float h,
 
 bool UI::Slider(float x, float y, float w, float h,
 	float minv, float maxv, float& v,
-	uint32 track, uint32 knob) {
-	if (v < minv) v = minv; if (v > maxv) v = maxv;
+	uint32 track, uint32 knob)
+{
+	float t, kx, kx0, kw;
+	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
+
 	Rect(x, y + h * 0.4f, w, h * 0.2f, track);
-	float t = (v - minv) / (maxv - minv);
-	float kx = x + t * w;
-	float kw = h;
-	float kx0 = kx - kw * 0.5f;
 	Rect(kx0, y, kw, h, knob);
 
+	return released;
+}
 
-	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
-	if (noRender) {
-		if (hover && md) { v = minv + float((mx - x) / w) * (maxv - minv); mouseConsumed = true; }
-		return hover && !md && mdPrev; // soltado sobre el slider
+bool UI::Slider(float x, float y, float w, float h,
+	float minv, float maxv, float& v,
+	const Texture2D& atlas,
+	const AtlasRectPx& knobRect,
+	const AtlasRectPx& bgRect,
+	uint32 tint)
+{
+	float t, kx, kx0, kw;
+	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
+
+	Image(atlas, x, y, w, h, bgRect, tint, 3);
+	Image(atlas, kx0, y, kw, h, knobRect, tint, 5);
+
+	return released;
+}
+
+bool UI::Slider(float x, float y, float w, float h,
+	float minv, float maxv, float& v,
+	const Texture2D& atlas,
+	const AtlasRectPx& knobRect,
+	const AtlasRectPx& bgRect,
+	const AtlasRectPx& fillRect,
+	uint32 tint)
+{
+	float t, kx, kx0, kw;
+	bool released = SliderLogic(x, y, w, h, minv, maxv, v, t, kx, kx0, kw);
+
+	Image(atlas, x, y, w, h, bgRect, tint, 3);
+
+	float fillW = kx - x;
+	if (fillW > 0.0f) {
+		Image(atlas, x, y, fillW, h, fillRect, tint, 4);
 	}
-	return false;
+	Image(atlas, kx0, y-10, kw, h+20, knobRect, tint, 4);
+
+	return released;
 }
 
 void UI::Circle(float cx, float cy, float r, uint32 c, int segments) {

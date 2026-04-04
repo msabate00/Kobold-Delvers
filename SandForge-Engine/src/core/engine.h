@@ -90,6 +90,8 @@ public:
     int parity = 0;
 
     bool levelCellsProtection = false;
+    Material brushMat;
+
 private:
     WorldSim world;
     PaintTool paint;

@@ -20,7 +20,8 @@ enum Material : uint8 {
     NpcCell,
     NpcSpawnerCell,
     NpcGoalCell,
-    NpcBonusCell
+    NpcBonusCell,
+    COUNT
 };
 
 struct Cell {

@@ -185,8 +185,8 @@ void Scene_Level::DrawMaterialBudgetBar()
 
     const float barX = 12.0f;
     const float barY = 52.0f;
-    const float barW = 18.0f;
-    const float barH = 150.0f;
+    const float barW = 36.0f;
+    const float barH = 300.0f;
 
     ui->Rect(barX - 4.0f, barY - 4.0f, barW + 8.0f, barH + 8.0f, RGBAu32(18, 18, 18, 215));
     ui->Rect(barX, barY, barW, barH, RGBAu32(50, 50, 55, 240));
@@ -276,8 +276,24 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     app->ui->Draw(brushSize, brushMat);
     DrawMaterialBudgetBar();
 
-    float x = (float)app->framebufferSize.x * 0.20f - 36.0f;
-    float y = app->framebufferSize.y - 120.0f;
+
+
+    app->ui->Image(app->ui->interfaceTex, 0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, AtlasRectPx{0, 930, 1080, 150}, RGBAu32(255, 255, 255, 255), -10);
+
+
+    //sLIDER
+    float y = app->framebufferSize.y - 50.0f;
+    float x = ((float)app->framebufferSize.x / 2) - (((36.0 + 16) * Material::COUNT) / 2);
+
+
+    x += 12.0f; float bx = x, bw = 200.0f, bh = 20.0f; float v = (float)brushSize;
+    app->ui->Slider(x, y, 200.0f, 20.0f, 1.0f, 64.0f, v, app->ui->interfaceTex, AtlasRectPx{ 374,877,21,42 }, AtlasRectPx{ 135,890,220,16 }, AtlasRectPx{ 413, 890, 220,16 });
+    brushSize = (int)(v + 0.5f);
+
+
+
+    x = ((float)app->framebufferSize.x / 2) - (((36.0+16)*Material::COUNT)/2);
+    y = app->framebufferSize.y - 100.0f;
     float s = 28.0f;
 
     //Down Materials
@@ -286,9 +302,23 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
         auto makeBtnColor = [&](uint32 base, int i = 0) {
             uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-            //bool clicked = app->ui->Button(x, y, 32, 32, base, h, a);
-            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x, y, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a);
-            x += 32 + 6.0f;
+
+            //Background
+            if (app->engine->brushMat == i) {
+                app->ui->Image(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, AtlasRectPx{ 5,871,55,55 }, RGBAu32(255,255,255,255), 4);
+            }
+            else {
+                app->ui->Image(app->ui->interfaceTex, x-21, y-21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            }
+
+
+            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a, 5);
+            x += 32 + 16.0f;
+            /*if ((i+1) % 5 == 0) {
+                y += 32 + 16;
+                x = (float)app->framebufferSize.x * 0.20f - 36.0f;
+            }*/
+            
             return clicked; 
         };
 

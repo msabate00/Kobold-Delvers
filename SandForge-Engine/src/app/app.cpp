@@ -137,7 +137,7 @@ bool App::Update()
 	double fpsTimer = 0.0;
 	frames = 0;
 
-	Material brushMat = Material::Sand;
+	engine->brushMat = Material::Sand;
 	int brushSize = 2;
 
 	while (!glfwWindowShouldClose(window) && !quitRequested)
@@ -168,7 +168,7 @@ bool App::Update()
 		// UI logica
 		ui->SetNoRender(true);
 		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
-		scenes->DrawUI(brushSize, brushMat);
+		scenes->DrawUI(brushSize, engine->brushMat);
 		ui->End();
 
 		scenes->BeginFrame();
@@ -176,7 +176,7 @@ bool App::Update()
 		scenes->BeginFrame();
 
 		if (scenes->WorldActive()) {
-			input->ProcessBindings(brushMat, brushSize);
+			input->ProcessBindings(engine->brushMat, brushSize);
 			engine->Update(dt);
 		}
 
@@ -187,7 +187,7 @@ bool App::Update()
 		// UI render
 		ui->SetNoRender(false);
 		ui->Begin(app->framebufferSize.x, app->framebufferSize.y);
-		scenes->DrawUI(brushSize, brushMat);
+		scenes->DrawUI(brushSize, engine->brushMat);
 		ui->End();
 		renderer->FlushUI(app->framebufferSize.x, app->framebufferSize.y);
 
