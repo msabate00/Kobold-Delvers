@@ -338,17 +338,38 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         x += 200.0f;
 
         if (app->engine->paused && !levelFinished) {
+
+            //Pausa
             app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
             if(app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 255, 255, 255), RGBAu32(55, 255, 255, 200), RGBAu32(55, 255, 255, 55), 5))  app->engine->paused = false;
 
-            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 32, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
-            if (app->ui->ImageButton(app->ui->matAtlas, x - 16 + 16 + 32, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 255), RGBAu32(55, 55, 255, 200), RGBAu32(55, 55, 255, 55), 5)) app->engine->stepOnce = true;
+            //Step
+            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->matAtlas, x - 16 + 16 + 48, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 255), RGBAu32(55, 55, 255, 200), RGBAu32(55, 55, 255, 55), 5)) app->engine->stepOnce = true;
         }
         else if (!levelFinished) {
 
             app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
             if (app->ui->ImageButton(app->ui->matAtlas, x - 16, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(255, 55, 55, 255), RGBAu32(255, 55, 55, 200), RGBAu32(255, 55, 55, 55), 5))  app->engine->paused = true;
+
+            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, AtlasRectPx{ 66,877,42,42 }, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->matAtlas, x - 16 + 16 + 48, y - 16, 32, 32, AtlasRectPx{ 32 * 9,0,32,32 }, RGBAu32(55, 55, 255, 055), 5);
         }
+        
+    }
+
+    //Separadores
+    {
+        x = ((float)app->framebufferSize.x / 2);
+        y = app->framebufferSize.y - 180.0f;
+        //app->ui->Image(app->ui->interfaceTex, x - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+
+
+        app->ui->Image(app->ui->interfaceTex, x - 520-19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x-240 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x+240 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+        app->ui->Image(app->ui->interfaceTex, x+520 - 19.5, y, 39, 192, AtlasRectPx{ 5,677, 39, 192 }, RGBAu32(255, 255, 255, 255), 6);
+    
     }
 
     //Back
