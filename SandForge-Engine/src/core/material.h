@@ -11,7 +11,7 @@ enum Material : uint8 {
     Empty = 0,
     Sand,
     Water,
-    Stone,
+    Stone, 
     Wood,
     Fire,
     Lava,
