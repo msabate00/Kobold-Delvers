@@ -132,6 +132,7 @@ void Engine::AddMaterialUse(int amount)
 void Engine::ResetLevelSession()
 {
     materialUsed = 0;
+    sceneTimer.Start();
 }
 
 void Engine::SetLevelMaterialLimits(int maxUse, int starUse)

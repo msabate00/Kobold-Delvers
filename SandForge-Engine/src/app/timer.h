@@ -13,6 +13,7 @@ public:
     void Start(uint32 startingMS = 0);
     void Stop();
     float Read() const;
+    std::string ReadString() const;
 
 
     uint32 CountDown(int total) const;

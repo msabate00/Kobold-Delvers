@@ -355,22 +355,25 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         if (app->engine->paused && !levelFinished) {
 
             //Pausa
-            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if(app->ui->ImageButton(app->ui->interfaceTex, x - 16, y - 16, 32, 32, ui->playIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = false;
+            app->ui->Image(app->ui->interfaceTex, x - 21 - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if(app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21, y - 16, 32, 32, ui->playIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = false;
 
             //Step
-            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5)) app->engine->stepOnce = true;
+            app->ui->Image(app->ui->interfaceTex, x - 21 - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5)) app->engine->stepOnce = true;
         }
         else if (!levelFinished) {
              
-            app->ui->Image(app->ui->interfaceTex, x - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16, y - 16, 32, 32, ui->pauseIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = true;
+            app->ui->Image(app->ui->interfaceTex, x - 21 - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21, y - 16, 32, 32, ui->pauseIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = true;
 
-            app->ui->Image(app->ui->interfaceTex, x - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            app->ui->Image(app->ui->interfaceTex, x - 16 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 055), 5);
+            app->ui->Image(app->ui->interfaceTex, x - 21 - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, x - 16 - 21 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 055), 5);
         }
-        
+
+
+        //Timer:
+        app->ui->TextCentered(x, y+50, s, s, app->engine->sceneTimer.ReadString().c_str(), RGBAu32(250, 250, 250, 240), 1.2f);
     }
 
     //Separadores

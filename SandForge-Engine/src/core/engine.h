@@ -8,6 +8,7 @@
 #include "paint_tool.h"
 #include "npc_system.h"
 #include "level_io.h"
+#include <app/timer.h>
 
 
 class Engine : public Module {
@@ -91,6 +92,8 @@ public:
 
     bool levelCellsProtection = false;
     Material brushMat;
+
+    Timer sceneTimer;
 
 private:
     WorldSim world;

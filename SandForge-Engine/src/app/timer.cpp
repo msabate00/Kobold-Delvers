@@ -30,6 +30,17 @@ float Timer::Read() const
     return started ? std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime).count() : 0;
 }
 
+std::string Timer::ReadString() const
+{
+    uint32 totalSeconds = static_cast<uint32>(Read());
+    uint32 minutes = totalSeconds / 60;
+    uint32 seconds = totalSeconds % 60;
+
+    char buffer[16];
+    std::snprintf(buffer, sizeof(buffer), "%02u:%02u", minutes, seconds);
+    return std::string(buffer);
+}
+
 uint32 Timer::CountDown(int total) const
 {
     if (started) {
