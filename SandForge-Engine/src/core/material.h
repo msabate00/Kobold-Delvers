@@ -15,7 +15,7 @@ enum Material : uint8 {
     Wood,
     Fire,
     Lava,
-    Smoke,
+    Smoke, 
     Steam,
     NpcCell,
     NpcSpawnerCell,
