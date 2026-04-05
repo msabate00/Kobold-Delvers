@@ -172,6 +172,18 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(255, 220, 80, 220));
 			}
 		}
+
+		const auto& bonuses = app->engine->GetBonuses();
+		for (const NPCBonus& b : bonuses) {
+			float sx, sy, sw, sh;
+			if (app->engine->WorldRectToScreen(
+				(float)b.x, (float)b.y, (float)b.w, (float)b.h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+			{
+				RectBorders(sx, sy, sw, sh, 2.0f, RGBAu32(160, 90, 230, 220));
+			}
+		}
 	}
 
 	const auto& goals = app->engine->GetGoals();

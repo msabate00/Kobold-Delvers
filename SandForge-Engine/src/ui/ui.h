@@ -107,6 +107,11 @@ public:
     AtlasRectPx panelLevelRect{ 832,195,256,192 };
     AtlasRectPx thumbLevelRect{ 1105,243,256,144 };
 
+
+    AtlasRectPx pauseIcon{ 194, 195, 26, 34};
+    AtlasRectPx playIcon{ 230, 194, 29, 34};
+    AtlasRectPx stepIcon{ 266, 198, 35, 26};
+
 private:
 
     unsigned int prog = 0, vao = 0, vbo = 0;
