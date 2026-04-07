@@ -391,21 +391,20 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     }
 
     //Back
-    x = (float)app->framebufferSize.x - 36.0f;
+    x = (float)app->framebufferSize.x - 60.0f;
     y = 8.0f;
-    s = 28.0f;
-    if (app->ui->Button(x, y, s, s, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
+    s = 48;
+    if (ui->ImageButton(ui->interfaceTex, x, y, s, s, ui->buttonLittleUp, ui->buttonLittleDown, ui->buttonLittleDown, RGBAu32(220, 170, 170, 220))) {
         mgr->Request(SCENE_LEVELSELECTOR);
     }
-    app->ui->TextCentered(x, y, s, s, "<", RGBAu32(250, 250, 250, 240), 0.85f);
+    app->ui->TextCentered(x+3, y-2, s, s, "<", RGBAu32(250, 250, 250, 240), 0.85f);
 
     //Settings
-    float sx = x - 34.0f;
-    uint32 cSet = RGBAu32(70, 90, 140, 220);
-    if (app->ui->Button(sx, y, s, s, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) {
+    x -= 46.0f;
+    if (ui->ImageButton(ui->interfaceTex, x, y, s, s, ui->buttonLittleUp, ui->buttonLittleDown, ui->buttonLittleDown, RGBAu32(102, 161, 255, 220))) {
         mgr->OpenSettings(GetId());
     }
-    app->ui->TextCentered(sx, y, s, s, "S", RGBAu32(250, 250, 250, 240), 0.85f);
+    app->ui->TextCentered(x+4, y-2, s, s, "S", RGBAu32(250, 250, 250, 240), 0.85f);
 
     DrawLevelCompleteModal();
 }

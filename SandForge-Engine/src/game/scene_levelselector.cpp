@@ -44,20 +44,20 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 	// Botones arriba (Back / Settings)
 	// --------------------------------------------------------
 	{
-		float bx = S(16.0f), by = S(22.0f), bw = S(94.0f), bh = S(32.0f);
+		float bx = S(16.0f), by = S(22.0f), bw = S(100.0f), bh = S(42.0f);
 		uint32 c = RGBAu32(110, 70, 70, 220);
-		if (ui->Button(bx, by, bw, bh, c, MulRGBA(c, 1.15f), MulRGBA(c, 0.85f)))
+		if (ui->ImageButton(ui->interfaceTex, bx, by, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(220, 170, 170, 220)))
 			mgr->Request(SCENE_MAINMENU);
-		ui->TextCentered(bx, by, bw, bh, "BACK", RGBAu32(250, 250, 250, 240), 0.85f * s);
+		ui->TextCentered(bx+2, by-2, bw, bh, "BACK", RGBAu32(250, 250, 250, 240), 0.75f * s);
 	}
 
 	{
-		float bw = S(94.0f), bh = S(32.0f);
+		float bw = S(100.0f), bh = S(42.0f);
 		float bx = vw - S(16.0f) - bw, by = S(22.0f);
 		uint32 c = RGBAu32(70, 90, 140, 220);
-		if (ui->Button(bx, by, bw, bh, c, MulRGBA(c, 1.15f), MulRGBA(c, 0.85f)))
+		if (ui->ImageButton(ui->interfaceTex, bx, by, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(102, 161, 255, 220)))
 			mgr->OpenSettings(SCENE_LEVELSELECTOR);
-		ui->TextCentered(bx, by, bw, bh, "SETTINGS", RGBAu32(250, 250, 250, 240), 0.85f * s);
+		ui->TextCentered(bx+2, by-2, bw, bh, "SETTINGS", RGBAu32(250, 250, 250, 240), 0.75f * s);
 	}
 
 	// --------------------------------------------------------

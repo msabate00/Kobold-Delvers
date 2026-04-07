@@ -111,6 +111,9 @@ public:
     AtlasRectPx buttonUp{ 1388, 179, 345, 78 };
     AtlasRectPx buttonDown{ 1388, 255, 345, 78 };
 
+    AtlasRectPx buttonLittleUp{ 1746, 179, 85, 78 };
+    AtlasRectPx buttonLittleDown{ 1746, 255, 85, 78 };
+
     AtlasRectPx pauseIcon{ 194, 195, 26, 34};
     AtlasRectPx playIcon{ 230, 194, 29, 34};
     AtlasRectPx stepIcon{ 266, 198, 35, 26};
