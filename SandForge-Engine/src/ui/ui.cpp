@@ -51,7 +51,7 @@ bool UI::Awake() {
 
 }
 bool UI::Start() {
-	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 1024, 1024, true);
+	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 512, 512, false); //cambiar pixel height para mayor calidad
 	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
 	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
 	interfaceTexReady = interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
@@ -646,14 +646,19 @@ void UI::Text(float x, float y, const char* text, uint32 rgba, float scale)
 			penX = bx;
 			penY = by;
 
-			const float w = (q.x1 - q.x0) * s;
-			const float h = (q.y1 - q.y0) * s;
+			const float x0 = std::floor(x + q.x0 * s);
+			const float y0 = std::floor(y + q.y0 * s);
+			const float x1 = std::floor(x + q.x1 * s);
+			const float y1 = std::floor(y + q.y1 * s);
+
+			const float w = x1 - x0;
+			const float h = y1 - y0;
 			if (w <= 0.0f || h <= 0.0f) continue;
 
 			Sprite spr;
 			spr.tex = &font.Atlas();
-			spr.x = x + q.x0 * s;
-			spr.y = y + q.y0 * s;
+			spr.x = x0;
+			spr.y = y0;
 			spr.w = w;
 			spr.h = h;
 			spr.u0 = q.s0;
