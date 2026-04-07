@@ -496,7 +496,7 @@ bool UI::Slider(float x, float y, float w, float h, float minv, float maxv, floa
 	float fillW = kx - x;
 	if (fillW > 0.0f) {
 		AtlasRectPx fillRect = sliderFillRect;
-		fillRect.w = fillW;
+		fillRect.w = (fillW*sliderFillRect.w)/w;
 		Image(interfaceTex, x, y, fillW, h, fillRect, tint, 4);
 	}
 
