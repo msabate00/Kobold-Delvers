@@ -66,31 +66,31 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     }
 
     //Botones
-    float bw = 240.0f;
-    float bh = 48.0f;
-    float spacing = 16.0f;
+    float bw = 260.0f;
+    float bh = 70.0f;
+    float spacing = 8.0f;
     float cx = (vw - bw) * 0.5f;
     float cy = logoY + logoH + 28.0f;
 
-    uint32 base = RGBAu32(80, 80, 90, 220);
-    uint32 hover = MulRGBA(base, 1.15f);
-    uint32 act = MulRGBA(base, 0.85f);
-
-    if (ui->Button(cx, cy, bw, bh, base, hover, act)) mgr->Request(SCENE_LEVELSELECTOR);
-    ui->TextCentered(cx, cy, bw, bh, "LEVELS", RGBAu32(240, 240, 240, 230), 1.0f);
+    //if (ui->Button(cx, cy, bw, bh, base, hover, act)) mgr->Request(SCENE_LEVELSELECTOR);
+    if(ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(180, 180, 220, 220)))
+        mgr->Request(SCENE_LEVELSELECTOR);
+    ui->TextCentered(cx+2, cy-2, bw, bh, "LEVELS", RGBAu32(240, 240, 240, 230), 1.0f);
 
     cy += bh + spacing;
-    if (ui->Button(cx, cy, bw, bh, RGBAu32(70, 90, 70, 220), RGBAu32(90, 120, 90, 230), RGBAu32(60, 80, 60, 220))) mgr->Request(SCENE_SANDBOX);
-    ui->TextCentered(cx, cy, bw, bh, "SANDBOX", RGBAu32(240, 240, 240, 230), 1.0f);
+    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(170, 220, 170, 220)))
+        mgr->Request(SCENE_SANDBOX);
+    ui->TextCentered(cx+2, cy-2, bw, bh, "SANDBOX", RGBAu32(240, 240, 240, 230), 1.0f);
 
     cy += bh + spacing;
-    uint32 cSet = RGBAu32(70, 90, 140, 220);
-    if (ui->Button(cx, cy, bw, bh, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) mgr->OpenSettings(SCENE_MAINMENU);
-    ui->TextCentered(cx, cy, bw, bh, "SETTINGS", RGBAu32(240, 240, 240, 230), 1.0f);
+    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(102, 161, 255, 220)))
+        mgr->OpenSettings(SCENE_MAINMENU);
+    ui->TextCentered(cx+2, cy-2, bw, bh, "SETTINGS", RGBAu32(240, 240, 240, 230), 1.0f);
 
     cy += bh + spacing;
-    if (ui->Button(cx, cy, bw, bh, RGBAu32(120, 70, 70, 220), RGBAu32(150, 90, 90, 230), RGBAu32(100, 60, 60, 220))) app->RequestQuit();
-    ui->TextCentered(cx, cy, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
+    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(220, 170, 170, 220)))
+        app->RequestQuit();
+    ui->TextCentered(cx+2, cy-2, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
 }
 
 int Scene_Level::LevelIndex() const

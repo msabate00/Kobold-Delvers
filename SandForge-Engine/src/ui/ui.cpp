@@ -391,6 +391,21 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, con
 	return false;
 }
 
+bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, const AtlasRectPx& srcPxHover, const AtlasRectPx& srcPxActive, uint32 tint_rgba, int sort)
+{
+	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+
+	AtlasRectPx rect = hover ? (md ? srcPxActive : srcPxHover) : srcPx;
+	bool clicked = hover && !md && mdPrev;
+	if (hover && (md || clicked)) {
+		mouseConsumed = true;
+	}
+	if (noRender) return clicked;
+
+	Image(t, x, y, w, h, rect, tint_rgba, sort);
+	return false;
+}
+
 
 
 bool UI::Button(float x, float y, float w, float h,

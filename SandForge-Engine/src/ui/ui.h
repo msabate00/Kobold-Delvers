@@ -62,6 +62,7 @@ public:
     void Image(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, uint32 tint = 0xFFFFFFFF, int sort = 0);
     bool ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort = 0);
     bool ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort = 0);
+    bool ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, const AtlasRectPx& srcPxHover, const AtlasRectPx& srcPxActive, uint32 tint_rgba, int sort = 0);
 
     void Text(float x, float y, const char* text, uint32 rgba, float scale = 1.0f);
     void TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale = 1.0f);
@@ -107,6 +108,8 @@ public:
     AtlasRectPx panelLevelRect{ 832,195,256,192 };
     AtlasRectPx thumbLevelRect{ 1105,243,256,144 };
 
+    AtlasRectPx buttonUp{ 1388, 179, 345, 78 };
+    AtlasRectPx buttonDown{ 1388, 255, 345, 78 };
 
     AtlasRectPx pauseIcon{ 194, 195, 26, 34};
     AtlasRectPx playIcon{ 230, 194, 29, 34};
