@@ -4,6 +4,11 @@
 #include "core/engine.h"
 #include "app/app.h"
 #include "core/utils.h"
+#include "app/screenshot.h"
+
+#include <vector>
+#include <cstring>
+#include <algorithm>
 
 
 Renderer::Renderer(App* app, bool start_enabled) : Module(app, start_enabled) {};
@@ -117,8 +122,13 @@ bool Renderer::Update(float dt) {
     }
     
 
+    if (app->HasPendingTransparentScreenshot()) {
+        const bool ok = SaveTransparentScreenshot(app->PendingTransparentScreenshotPath().c_str(),
+            app->gridSize.x, app->gridSize.y, app->framebufferSize.x, app->framebufferSize.y);
+        app->FinishTransparentScreenshot(ok);
+    }
 
-    DrawGrid(std::vector<uint8>{}, app->gridSize.x, app->gridSize.y, app->framebufferSize.x, app->framebufferSize.y);
+    DrawGrid(app->gridSize.x, app->gridSize.y, app->framebufferSize.x, app->framebufferSize.y);
 
     return true;
 }
@@ -177,124 +187,253 @@ void Renderer::Draw(const uint8* planeM, int gridW, int gridH, int x0, int y0, i
     }
 }
 
+bool Renderer::SaveBackbufferScreenshot(const char* path, int viewW, int viewH)
+{
+    if (!path || viewW <= 0 || viewH <= 0) return false;
+
+    std::vector<uint8> pixels((size_t)viewW * (size_t)viewH * 4u);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glReadBuffer(GL_BACK);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, viewW, viewH, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    return sf_screenshot::WritePngRGBA(path, pixels, viewW, viewH);
+}
+
+bool Renderer::SaveTransparentScreenshot(const char* path, int gridW, int gridH, int viewW, int viewH)
+{
+    if (!path || gridW <= 0 || gridH <= 0 || viewW <= 0 || viewH <= 0) return false;
+
+    uint capSceneFBO = 0, capSceneTex = 0;
+    uint capPingFBO[2] = { 0,0 }, capPingTex[2] = { 0,0 };
+    uint capOutFBO = 0, capOutTex = 0;
+    bool ok = false;
+
+    auto makeTex16F = [&](uint& id) {
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, viewW, viewH, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    };
+
+    auto makeTex8 = [&](uint& id) {
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, viewW, viewH, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    };
+
+    glGenFramebuffers(1, &capSceneFBO);
+    makeTex16F(capSceneTex);
+    glBindFramebuffer(GL_FRAMEBUFFER, capSceneFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, capSceneTex, 0);
+
+    for (int i = 0; i < 2; ++i) {
+        glGenFramebuffers(1, &capPingFBO[i]);
+        makeTex16F(capPingTex[i]);
+        glBindFramebuffer(GL_FRAMEBUFFER, capPingFBO[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, capPingTex[i], 0);
+    }
+
+    glGenFramebuffers(1, &capOutFBO);
+    makeTex8(capOutTex);
+    glBindFramebuffer(GL_FRAMEBUFFER, capOutFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, capOutTex, 0);
+
+    const bool outOk = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    glBindFramebuffer(GL_FRAMEBUFFER, capSceneFBO);
+    const bool sceneOk = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    glBindFramebuffer(GL_FRAMEBUFFER, capPingFBO[0]);
+    const bool ping0Ok = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    glBindFramebuffer(GL_FRAMEBUFFER, capPingFBO[1]);
+    const bool ping1Ok = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    if (outOk && sceneOk && ping0Ok && ping1Ok) {
+        DrawSceneTarget(capSceneFBO, capSceneTex, gridW, gridH, viewW, viewH, true, false, true);
+        uint bloomTex = BlurSceneBloom(capSceneTex, capPingFBO[0], capPingTex[0], capPingFBO[1], capPingTex[1], viewW, viewH);
+        CompositeScene(capOutFBO, capSceneTex, bloomTex, viewW, viewH, 0.0f);
+
+        std::vector<uint8> pixels((size_t)viewW * (size_t)viewH * 4u);
+        std::vector<float> scenePixels((size_t)viewW * (size_t)viewH * 4u);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, capOutFBO);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(0, 0, viewW, viewH, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        glBindFramebuffer(GL_FRAMEBUFFER, capSceneFBO);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glReadPixels(0, 0, viewW, viewH, GL_RGBA, GL_FLOAT, scenePixels.data());
+
+        const size_t count = (size_t)viewW * (size_t)viewH;
+        for (size_t i = 0; i < count; ++i) {
+            const size_t j = i * 4u;
+            const float sceneA = std::clamp(scenePixels[j + 3], 0.0f, 1.0f);
+            const uint8 sceneAlpha = (uint8)std::clamp(int(sceneA * 255.0f + 0.5f), 0, 255);
+            const uint8 bloomAlpha = std::fmax(pixels[j + 0], std::fmax(pixels[j + 1], pixels[j + 2]));
+            pixels[j + 3] = std::fmax(sceneAlpha, bloomAlpha);
+        }
+
+        ok = sf_screenshot::WritePngRGBA(path, pixels, viewW, viewH);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, viewW, viewH);
+    glEnable(GL_BLEND);
+
+    if (capOutTex) glDeleteTextures(1, &capOutTex);
+    if (capOutFBO) glDeleteFramebuffers(1, &capOutFBO);
+    for (int i = 0; i < 2; ++i) {
+        if (capPingTex[i]) glDeleteTextures(1, &capPingTex[i]);
+        if (capPingFBO[i]) glDeleteFramebuffers(1, &capPingFBO[i]);
+    }
+    if (capSceneTex) glDeleteTextures(1, &capSceneTex);
+    if (capSceneFBO) glDeleteFramebuffers(1, &capSceneFBO);
+
+    return ok;
+}
+
 void Renderer::Queue(const Sprite& s)
 {
     sprites.Push(s);
 }
 
-
-
-
-
-
-void Renderer::DrawGrid(const std::vector<uint8>& indices, int w, int h, int viewW, int viewH)
+void Renderer::DrawGrid(int w, int h, int viewW, int viewH)
 {
-    if (!indices.empty()) {
-        uploadFullCPU(indices.data(), w, h);
-    }
     ensureSceneTargets(viewW, viewH);
+    DrawSceneTarget(sceneFBO, sceneTex, w, h, viewW, viewH, false, true, false);
+    uint bloomTex = BlurSceneBloom(sceneTex, pingFBO[0], pingTex[0], pingFBO[1], pingTex[1], viewW, viewH);
+    CompositeScene(0, sceneTex, bloomTex, viewW, viewH, 0.0f);
+    glEnable(GL_BLEND);
+}
 
-    //Grid → HDR scene
-    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-    glViewport(0, 0, viewW, viewH);
-    const float outR = 0.02f, outG = 0.02f, outB = 0.03f; // fuera (bandas "negras")
-    const float inR = 0.06f, inG = 0.06f, inB = 0.08f; // dentro (zona grid)
-
-    const float cw = std::fmax(1.0f, app->camera.size.x);
-    const float ch = std::fmax(1.0f, app->camera.size.y);
-
-    int sxCell = (int)((float)viewW / cw); if (sxCell < 1) sxCell = 1;
-    int syCell = (int)((float)viewH / ch); if (syCell < 1) syCell = 1;
-    int s = (sxCell < syCell) ? sxCell : syCell; if (s < 1) s = 1;
-
-    int sizeW = (int)(cw * (float)s);
-    int sizeH = (int)(ch * (float)s);
-    if (sizeW > viewW) sizeW = viewW;
-    if (sizeH > viewH) sizeH = viewH;
-
-    int offX = (viewW - sizeW) / 2;
-    int offY = (viewH - sizeH) / 2;
-    if (offX < 0) offX = 0;
-    if (offY < 0) offY = 0;
-
+void Renderer::DrawSceneTarget(uint targetFBO, uint targetTex, int gridW, int gridH, int viewW, int viewH,
+    bool transparentBg, bool drawBg, bool keepWorldQueue)
+{
     //Color de fuera
     glDisable(GL_SCISSOR_TEST);
-    glClearColor(outR, outG, outB, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 
-    //Color Dentro
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(offX, offY, sizeW, sizeH);
-    glClearColor(inR, inG, inB, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+    glViewport(0, 0, viewW, viewH);
 
-    sprites.Begin(viewW, viewH);
-    sprites.Flush(RenderLayer::BG);
+    if (transparentBg) {
+        glClearColor(0.f, 0.f, 0.f, 0.f);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    else {
+        const float outR = 0.02f, outG = 0.02f, outB = 0.03f;
+        const float inR = 0.06f, inG = 0.06f, inB = 0.08f;
+
+        const float cw = std::fmax(1.0f, app->camera.size.x);
+        const float ch = std::fmax(1.0f, app->camera.size.y);
+
+        int sxCell = (int)((float)viewW / cw); if (sxCell < 1) sxCell = 1;
+        int syCell = (int)((float)viewH / ch); if (syCell < 1) syCell = 1;
+        int s = (sxCell < syCell) ? sxCell : syCell; if (s < 1) s = 1;
+
+        int sizeW = (int)(cw * (float)s);
+        int sizeH = (int)(ch * (float)s);
+        if (sizeW > viewW) sizeW = viewW;
+        if (sizeH > viewH) sizeH = viewH;
+
+        int offX = (viewW - sizeW) / 2;
+        int offY = (viewH - sizeH) / 2;
+        if (offX < 0) offX = 0;
+        if (offY < 0) offY = 0;
+
+        glClearColor(outR, outG, outB, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        //Color Dentro
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(offX, offY, sizeW, sizeH);
+        glClearColor(inR, inG, inB, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_SCISSOR_TEST);
+    }
+
+    if (drawBg) {
+        sprites.Begin(viewW, viewH);
+        sprites.Flush(RenderLayer::BG);
+    }
 
     glUseProgram(progGrid);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);
     glUniform1i(loc_uTex, 0);
-    glUniform2f(loc_uGrid, float(w), float(h));
-    glUniform2f(loc_uView, float(viewW), float(viewH));
+    glUniform2f(loc_uGrid, (float)gridW, (float)gridH);
+    glUniform2f(loc_uView, (float)viewW, (float)viewH);
     glUniform2f(loc_uCamPos, app->camera.pos.x, app->camera.pos.y);
     glUniform2f(loc_uCamSize, app->camera.size.x, app->camera.size.y);
     drawFullscreen();
 
+    glEnable(GL_BLEND);
     sprites.Begin(viewW, viewH);
-    sprites.Flush(RenderLayer::WORLD);
+    sprites.Flush(RenderLayer::WORLD, !keepWorldQueue);
+}
 
-    //Bloom
+uint Renderer::BlurSceneBloom(uint sceneTexId, uint pingFbo0, uint pingTex0, uint pingFbo1, uint pingTex1,
+    int viewW, int viewH)
+{
     glDisable(GL_BLEND);
 
     glUseProgram(progThresh);
     glUniform1i(loc_th_uScene, 0);
     glUniform1f(loc_th_uThreshold, 1.0f);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sceneTex);
-    glBindFramebuffer(GL_FRAMEBUFFER, pingFBO[0]);
+    glBindTexture(GL_TEXTURE_2D, sceneTexId);
+    glBindFramebuffer(GL_FRAMEBUFFER, pingFbo0);
     glViewport(0, 0, viewW, viewH);
     drawFullscreen();
 
-    //Blur
     bool horizontal = true;
     int passes = 6;
-    for (int i = 0;i < passes;++i) {
+    for (int i = 0; i < passes; ++i) {
         glUseProgram(progBlur);
         glUniform1i(loc_bl_uTex, 0);
         glUniform2f(loc_bl_uTexel, 1.0f / float(viewW), 1.0f / float(viewH));
         glUniform1i(loc_bl_uHorizontal, horizontal ? 1 : 0);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pingTex[horizontal ? 0 : 1]);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, pingFBO[horizontal ? 1 : 0]);
+        glBindTexture(GL_TEXTURE_2D, horizontal ? pingTex0 : pingTex1);
+        glBindFramebuffer(GL_FRAMEBUFFER, horizontal ? pingFbo1 : pingFbo0);
         drawFullscreen();
         horizontal = !horizontal;
     }
 
-    //Composite
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return horizontal ? pingTex0 : pingTex1;
+}
+
+void Renderer::CompositeScene(uint targetFBO, uint sceneTexId, uint bloomTexId, int viewW, int viewH, float fade)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
     glViewport(0, 0, viewW, viewH);
+
+    if (targetFBO != 0) {
+        glClearColor(0.f, 0.f, 0.f, 0.f);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
     glUseProgram(progComposite);
     glUniform1i(loc_cp_uScene, 0);
     glUniform1i(loc_cp_uBloom, 1);
     glUniform1f(loc_cp_uExposure, 1.0f);
     glUniform1f(loc_cp_uBloomStrength, 0.7f);
 
-    //Fade al final de todo para que afecte a todo
-    if (loc_cp_uFade >= 0) glUniform1f(loc_cp_uFade, 0.0f);
+    if (loc_cp_uFade >= 0) glUniform1f(loc_cp_uFade, fade);
     if (loc_cp_uFadeEdge >= 0) glUniform1f(loc_cp_uFadeEdge, 0.08f);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sceneTex);
+    glBindTexture(GL_TEXTURE_2D, sceneTexId);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, pingTex[horizontal ? 0 : 1]);
-
+    glBindTexture(GL_TEXTURE_2D, bloomTexId);
     drawFullscreen();
-	glEnable(GL_BLEND);
-
 }
 
 void Renderer::FlushUI(int viewW, int viewH)
@@ -325,7 +464,7 @@ void Renderer::DrawFadeOverlay(int viewW, int viewH)
     if (loc_fo_uEdge >= 0) glUniform1f(loc_fo_uEdge, 0.04f);
     if (loc_fo_uView >= 0) glUniform2f(loc_fo_uView, (float)viewW, (float)viewH);
     glUniform3f(loc_fo_uColor, 0.1f, 0.1f, 0.11f); //Color del fade to black
-    if (loc_fo_uCellPx >= 0) glUniform1f(loc_fo_uCellPx, app->pixelsPerCell); 
+    if (loc_fo_uCellPx >= 0) glUniform1f(loc_fo_uCellPx, app->pixelsPerCell);
 
     drawFullscreen();
 }

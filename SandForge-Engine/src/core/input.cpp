@@ -59,6 +59,8 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     if (this->KeyDown(GLFW_KEY_F5)) app->engine->SaveLevel("levels/custom/quick.lvl");
     if (this->KeyDown(GLFW_KEY_F9)) app->engine->LoadLevel("levels/custom/quick.lvl");
     if (this->KeyDown(GLFW_KEY_F6)) app->engine->ClearWorld((uint8)Material::Empty);
+    if (this->KeyDown(GLFW_KEY_F10)) app->RequestScreenshot(false);
+    if (this->KeyDown(GLFW_KEY_F11)) app->RequestScreenshot(true);
 
 
     float sp = 300 * app->dt;

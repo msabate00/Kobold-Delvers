@@ -24,10 +24,17 @@ public:
 
     //Solo afecta: RenderLayer::UI
     void FlushUI(int viewW, int viewH);
+    bool SaveBackbufferScreenshot(const char* path, int viewW, int viewH);
+    bool SaveTransparentScreenshot(const char* path, int gridW, int gridH, int viewW, int viewH);
 
 private:
 
-    void DrawGrid(const std::vector<uint8>& indices, int w, int h, int viewW, int viewH);
+    void DrawGrid(int w, int h, int viewW, int viewH);
+    void DrawSceneTarget(uint targetFBO, uint targetTex, int gridW, int gridH, int viewW, int viewH,
+        bool transparentBg, bool drawBg, bool keepWorldQueue);
+    uint BlurSceneBloom(uint sceneTexId, uint pingFbo0, uint pingTex0, uint pingFbo1, uint pingTex1,
+        int viewW, int viewH);
+    void CompositeScene(uint targetFBO, uint sceneTexId, uint bloomTexId, int viewW, int viewH, float fade);
 
     void uploadFullCPU(const uint8* img, int w, int h);
     void uploadRectPBO(const uint8* src, int rw, int rh, int x0, int y0,
@@ -40,7 +47,7 @@ private:
 public:
 
 private:
-    uint progGrid = 0, vao = 0, tex = 0;;
+    uint progGrid = 0, vao = 0, tex = 0;
     int texW = 0, texH = 0;
     bool texValid = false;
 

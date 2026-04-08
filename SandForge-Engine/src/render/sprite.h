@@ -27,5 +27,5 @@ public:
 	void Shutdown();
 	void Begin(int viewW, int viewH);
 	void Push(const Sprite& s);
-	void Flush(RenderLayer layer);
+	void Flush(RenderLayer layer, bool removeFromQueue = true);
 };

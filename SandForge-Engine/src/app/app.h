@@ -1,6 +1,7 @@
 #pragma once
 #include "app/defs.h"
 #include "app/game_progress.h"
+#include <string>
 
 class GLFWwindow;
 
@@ -46,6 +47,13 @@ public:
 	void SetCameraRect(float x, float y, float w, float h);
 
 	void RequestQuit(); //Close app
+	void RequestScreenshot(bool transparent);
+	bool HasPendingOpaqueScreenshot() const { return !pendingOpaqueScreenshotPath.empty(); }
+	bool HasPendingTransparentScreenshot() const { return !pendingTransparentScreenshotPath.empty(); }
+	const std::string& PendingOpaqueScreenshotPath() const { return pendingOpaqueScreenshotPath; }
+	const std::string& PendingTransparentScreenshotPath() const { return pendingTransparentScreenshotPath; }
+	void FinishOpaqueScreenshot(bool success);
+	void FinishTransparentScreenshot(bool success);
 
 	GLFWwindow* GetWindow() const { return window; }
 	void ResetCamera();
@@ -85,6 +93,8 @@ private:
 
 	GLFWwindow* window;
 	bool quitRequested = false;
+	std::string pendingOpaqueScreenshotPath;
+	std::string pendingTransparentScreenshotPath;
 
 };
 

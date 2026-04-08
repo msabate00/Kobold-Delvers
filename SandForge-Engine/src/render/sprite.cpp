@@ -65,7 +65,7 @@ void SpriteBatch::Push(const Sprite& s) {
     queue.push_back(s);
 }
 
-void SpriteBatch::Flush(RenderLayer layer) {
+void SpriteBatch::Flush(RenderLayer layer, bool removeFromQueue) {
     if (queue.empty()) return;
 
 
@@ -134,6 +134,9 @@ void SpriteBatch::Flush(RenderLayer layer) {
 
     glBindVertexArray(0);
 
+    if (!removeFromQueue) {
+        return;
+    }
     if (tmp.size() == queue.size()) {
         queue.clear();
     }

@@ -13,6 +13,7 @@
 #include "game/scene_manager.h"
 #include "app/settings.h"
 #include "app/log.h"
+#include "app/screenshot.h"
 
 
 
@@ -191,6 +192,12 @@ bool App::Update()
 		ui->End();
 		renderer->FlushUI(app->framebufferSize.x, app->framebufferSize.y);
 
+		if (HasPendingOpaqueScreenshot()) {
+			const bool ok = renderer->SaveBackbufferScreenshot(PendingOpaqueScreenshotPath().c_str(),
+				app->framebufferSize.x, app->framebufferSize.y);
+			FinishOpaqueScreenshot(ok);
+		}
+
 		input->EndFrame();
 
 		frames++;
@@ -268,4 +275,27 @@ void App::SetCameraRect(float x, float y, float w, float h) {
 
 	camera.pos.x = std::clamp(x, 0.f, maxX);
 	camera.pos.y = std::clamp(y, 0.f, maxY);
+}
+
+
+void App::RequestScreenshot(bool transparent)
+{
+	if (transparent) pendingTransparentScreenshotPath = sf_screenshot::BuildPath(sf_screenshot::Kind::TransparentWorld);
+	else pendingOpaqueScreenshotPath = sf_screenshot::BuildPath(sf_screenshot::Kind::Opaque);
+}
+
+void App::FinishOpaqueScreenshot(bool success)
+{
+	if (!pendingOpaqueScreenshotPath.empty()) {
+		LOG(success ? "Screenshot guardado: %s" : "ERROR: no se pudo guardar screenshot: %s", pendingOpaqueScreenshotPath.c_str());
+	}
+	pendingOpaqueScreenshotPath.clear();
+}
+
+void App::FinishTransparentScreenshot(bool success)
+{
+	if (!pendingTransparentScreenshotPath.empty()) {
+		LOG(success ? "Screenshot alpha guardado: %s" : "ERROR: no se pudo guardar screenshot alpha: %s", pendingTransparentScreenshotPath.c_str());
+	}
+	pendingTransparentScreenshotPath.clear();
 }
