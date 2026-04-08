@@ -65,6 +65,15 @@ static bool IsHazardMat(uint8 m)
     return m == (uint8)Material::Lava || m == (uint8)Material::Fire;
 }
 
+static bool CircleIntersectsRect(int cx, int cy, int radius, int rx, int ry, int rw, int rh)
+{
+    const int nearestX = std::clamp(cx, rx, rx + rw - 1);
+    const int nearestY = std::clamp(cy, ry, ry + rh - 1);
+    const int dx = cx - nearestX;
+    const int dy = cy - nearestY;
+    return dx * dx + dy * dy <= radius * radius;
+}
+
 bool NPCSystem::Awake(const WorldSim& world)
 {
     const size_t n = (size_t)world.GridW() * (size_t)world.GridH();
@@ -248,6 +257,100 @@ NPCBonus& NPCSystem::AddBonus(WorldSim& world, int x, int y)
     world.MarkChunksInRect(x, y, bonus.w, bonus.h);
 
     return bonuses.back();
+}
+
+bool NPCSystem::EraseEntitiesInCircle(WorldSim& world, int cx, int cy, int radius, bool eraseNPCs, bool eraseSpawners, bool eraseGoals, bool eraseBonuses)
+{
+    bool removedAny = false;
+
+    auto eraseNPCRange = [&](auto& vec, auto&& pred) {
+        const auto oldSize = vec.size();
+        vec.erase(std::remove_if(vec.begin(), vec.end(), pred), vec.end());
+        if (vec.size() != oldSize) removedAny = true;
+    };
+
+    if (eraseNPCs) {
+        eraseNPCRange(npcs, [&](const NPC& n) {
+            return CircleIntersectsRect(cx, cy, radius, n.x, n.y, n.w, n.h);
+        });
+    }
+
+    if (eraseSpawners) {
+        std::vector<int> removedIds;
+        for (int i = 0; i < (int)spawners.size(); ++i) {
+            const NPCSpawner& sp = spawners[i];
+            if (CircleIntersectsRect(cx, cy, radius, sp.x, sp.y, sp.w, sp.h)) {
+                removedIds.push_back(i);
+            }
+        }
+
+        if (!removedIds.empty()) {
+            eraseNPCRange(spawners, [&](const NPCSpawner& sp) {
+                return CircleIntersectsRect(cx, cy, radius, sp.x, sp.y, sp.w, sp.h);
+            });
+
+            for (NPC& n : npcs) {
+                if (n.spawnerId < 0) continue;
+
+                int shift = 0;
+                bool removedSpawner = false;
+                for (int id : removedIds) {
+                    if (n.spawnerId == id) { removedSpawner = true; break; }
+                    if (id < n.spawnerId) ++shift;
+                }
+
+                if (removedSpawner) n.spawnerId = -1;
+                else n.spawnerId -= shift;
+            }
+        }
+    }
+
+    if (eraseGoals) {
+        std::vector<int> removedIds;
+        for (int i = 0; i < (int)goals.size(); ++i) {
+            const NPCGoal& g = goals[i];
+            if (CircleIntersectsRect(cx, cy, radius, g.x, g.y, g.w, g.h)) {
+                removedIds.push_back(i);
+            }
+        }
+
+        if (!removedIds.empty()) {
+            eraseNPCRange(goals, [&](const NPCGoal& g) {
+                return CircleIntersectsRect(cx, cy, radius, g.x, g.y, g.w, g.h);
+            });
+
+            for (NPC& n : npcs) {
+                if (n.goalId < 0) continue;
+
+                int shift = 0;
+                bool removedGoal = false; 
+                for (int id : removedIds) {
+                    if (n.goalId == id) { removedGoal = true; break; }
+                    if (id < n.goalId) ++shift;
+                }
+
+                if (removedGoal) {
+                    n.goalId = -1;
+                    n.parked = false;
+                }
+                else {
+                    n.goalId -= shift;
+                }
+            }
+        }
+    }
+
+    if (eraseBonuses) {
+        eraseNPCRange(bonuses, [&](const NPCBonus& b) {
+            return CircleIntersectsRect(cx, cy, radius, b.x, b.y, b.w, b.h);
+        });
+    }
+
+    if (removedAny) {
+        RebuildOcc(world);
+    }
+
+    return removedAny;
 }
 
 bool NPCSystem::AnyBonusClaimed() const

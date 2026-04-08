@@ -105,6 +105,10 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
     auto stampCircle = [&](int pcx, int pcy, int& minX, int& minY, int& maxX, int& maxY) {
         const int rr = std::fmax(1, r);
         const int r2 = rr * rr;
+
+        if (m == Material::Empty) {
+            npcs.EraseEntitiesInCircle(world, pcx, pcy, rr, true, true, true, true);
+        }
         const int xmin = std::fmax(0, pcx - rr);
         const int xmax = std::fmin(world.GridW() - 1, pcx + rr);
         const int ymin = std::fmax(0, pcy - rr);

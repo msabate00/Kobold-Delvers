@@ -78,6 +78,8 @@ public:
     NPCGoal& AddGoal(WorldSim& world, int x, int y);
     NPCBonus& AddBonus(WorldSim& world, int x, int y);
 
+    bool EraseEntitiesInCircle(WorldSim& world, int cx, int cy, int radius, bool eraseNPCs = true, bool eraseSpawners = true, bool eraseGoals = true, bool eraseBonuses = true);
+
     const std::vector<NPC>& GetNPCs() const { return npcs; }
     const std::vector<NPCSpawner>& GetSpawners() const { return spawners; }
     const std::vector<NPCGoal>& GetGoals() const { return goals; }
