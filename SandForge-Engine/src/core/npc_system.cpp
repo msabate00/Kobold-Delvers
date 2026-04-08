@@ -84,6 +84,9 @@ bool NPCSystem::Start()
         idle.fps = 6.0f;
         idle.loop = AnimLoopMode::Loop;
         idle.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
+        idle.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,0,12,12 }, 0.1f));
+        idle.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,0,12,12 }, 0.1f));
+        idle.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,0,12,12 }, 0.1f));
 
         auto& walk = npcAnims.Add("walk");
         walk.defaultTex = &npcTex;
@@ -325,7 +328,7 @@ bool NPCSystem::CheckNPCDie(const WorldSim& world, int x, int y, int w, int h) c
 
 bool NPCSystem::IsInWater(const WorldSim& world, int x, int y, int w, int h) const
 {
-    for (int yy = 0; yy < h; ++yy) {
+    for (int yy = 0; yy < h-5; ++yy) {
         for (int xx = 0; xx < w; ++xx) {
             const int gx = x + xx;
             const int gy = y + yy;
@@ -456,7 +459,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
     if (npcMoveAcc < npcMoveInterval) return;
     npcMoveAcc -= npcMoveInterval;
 
-    constexpr int kMaxStep = 1;
+    constexpr int kMaxStep = 2;
     for (int i = 0; i < (int)npcs.size(); ++i) {
         auto& n = npcs[i];
         if (!n.alive) continue;
@@ -548,8 +551,45 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
             break;
         }
 
-        if (!climbed) {
-            n.dir = -n.dir;
+        if (climbed) {
+            continue;
+        }
+
+        const int otherDir = -n.dir;
+        const int otherNx = n.x + otherDir;
+
+        if (RectFreeOnBack(world, otherNx + n.hbOffX, hbY, n.hbW, n.hbH, id)) {
+            n.dir = otherDir;
+            n.x = otherNx;
+            TryTouchBonus(n);
+            if (!TryParkNPCInGoal(n)) {
+                n.anim.Play("walk", false);
+            }
+            continue;
+        }
+
+        bool climbedOther = false;
+        for (int step = 1; step <= kMaxStep; ++step) {
+            if (!RectFreeOnBack(world, otherNx + n.hbOffX, (n.y - step) + n.hbOffY, n.hbW, n.hbH, id)) continue;
+
+            bool support = false;
+            const int supY = (n.y - step) + n.hbOffY + n.hbH;
+            for (int xx = 0; xx < n.hbW; ++xx)
+                support |= solid((otherNx + n.hbOffX) + xx, supY);
+            if (!support) continue;
+
+            n.dir = otherDir;
+            n.y -= step;
+            n.x = otherNx;
+            climbedOther = true;
+            TryTouchBonus(n);
+            if (!TryParkNPCInGoal(n)) {
+                n.anim.Play("walk", false);
+            }
+            break;
+        }
+
+        if (!climbedOther) {
             n.anim.Play("idle", false);
         }
     }

@@ -220,13 +220,13 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				sx, sy, sw, sh))
 				continue;
 
-			const float boxW = 62.0f;
+			const float boxW = 42.0f;
 			const float boxH = 26.0f;
 			const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
 			const float boxY = std::floor(sy - boxH - 8.0f);
 
 			if (n.drowning && n.oxygenTime > 0.0f) {
-				Image(npcInteractionsTex, boxX+30, boxY+23, boxW, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
+				Image(npcInteractionsTex, boxX+30, boxY+23, boxW+20, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
 				Text(boxX + 6.0f + 30, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
 
 				const float progress = Clamp01(n.oxygenTime / 3);
