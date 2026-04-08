@@ -133,6 +133,12 @@ void WorldSim::SetFrontCell(int x, int y, const Cell& c)
     mFront[i] = c.m;
 }
 
+static bool IgnoresNPCOcc(uint8 m)
+{
+    return  m == (uint8)Material::Smoke || m == (uint8)Material::Steam ||
+            m == (uint)Material::Water || m == (uint)Material::Lava;
+}
+
 bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std::vector<int>& occ)
 {
     const int nx = x0 + dx;
@@ -143,7 +149,7 @@ bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std:
     const int ni = LinearIndex(nx, ny);
 
     if (back[ni].m != (uint8)Material::Empty) return false;
-    if (!occ.empty() && occ[ni] != 0) return false;
+    if (!occ.empty() && occ[ni] != 0 && !IgnoresNPCOcc(c.m)) return false;
 
     back[ni] = c;
     mBack[ni] = c.m;
@@ -178,7 +184,7 @@ bool WorldSim::TrySwap(int x0, int y0, int dx, int dy, const Cell& c, const std:
 
     const Cell& dst = front[ni];
     if (dst.m == (uint8)Material::Empty) return false;
-    if (!occ.empty() && occ[ni] != 0) return false;
+    if (!occ.empty() && occ[ni] != 0 && !IgnoresNPCOcc(c.m)) return false;
     if (matProps(c.m).density <= matProps(dst.m).density) return false;
 
     back[ni] = c;

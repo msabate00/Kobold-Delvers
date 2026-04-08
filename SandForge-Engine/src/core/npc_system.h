@@ -21,6 +21,11 @@ struct NPC {
     bool alive = true;
     bool parked = false;
 
+    float oxygenTime = 0.0f;
+    float speechTimer = 0.0f;
+    int speechMessage = -1;
+    bool drowning = false;
+
     int spawnerId = -1;
     int goalId = -1;
 
@@ -90,6 +95,8 @@ public:
 private:
     bool RectFreeOnBack(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const;
     bool CheckNPCDie(const WorldSim& world, int x, int y, int w, int h) const;
+    bool IsInWater(const WorldSim& world, int x, int y, int w, int h) const;
+    bool IsBuriedInSand(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const;
 
     bool TrySpawnFromSpawner(WorldSim& world, int spawnerId);
     bool TryParkNPCInGoal(NPC& n);

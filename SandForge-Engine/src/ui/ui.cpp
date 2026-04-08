@@ -55,6 +55,7 @@ bool UI::Start() {
 	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
 	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
 	interfaceTexReady = interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
+	npcInteractionsTexReady = npcInteractionsTex.Load(SPRITE_DIR "/KoboldInteractions.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }
@@ -68,7 +69,12 @@ bool UI::CleanUp() {
 	fontReady = false;
 	matAtlas.Destroy();
 	matAtlasReady = false;
-
+	interfaceTex.Destroy();
+	interfaceTexReady = false;
+	npcInteractionsTex.Destroy();
+	npcInteractionsTexReady = false;
+	cursorTex.Destroy();
+	curorTexReady = false;
 
 	if (vbo) glDeleteBuffers(1, &vbo);
 	if (vao) glDeleteVertexArrays(1, &vao);
@@ -200,6 +206,46 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 		char buf[32];
 		std::snprintf(buf, sizeof(buf), "%d", g.capturedCount);
 		TextCentered(sx, sy - 14.0f, sw, 12.0f, buf, RGBAu32(255, 245, 180, 240), 0.65f);
+	}
+
+	if (npcInteractionsTexReady) {
+		const auto& npcs = app->engine->GetNPCs();
+		for (const NPC& n : npcs) {
+			if (!n.alive) continue;
+
+			float sx, sy, sw, sh;
+			if (!app->engine->WorldRectToScreen(
+				(float)n.x, (float)n.y, (float)n.w, (float)n.h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+				continue;
+
+			const float boxW = 62.0f;
+			const float boxH = 26.0f;
+			const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
+			const float boxY = std::floor(sy - boxH - 8.0f);
+
+			if (n.drowning && n.oxygenTime > 0.0f) {
+				Image(npcInteractionsTex, boxX+30, boxY+23, boxW, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
+				Text(boxX + 6.0f + 30, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
+
+				const float progress = Clamp01(n.oxygenTime / 3);
+				const int stage = std::fmin(15, (int)std::floor(progress * 16.0f));
+
+				for (int b = 0; b < 3; ++b) {
+					int bubbleStage = stage - b * 5;
+					bubbleStage = std::clamp(bubbleStage, 0, 5);
+					Image(npcInteractionsTex, boxX + b * 10.0f + 30 + 30, boxY + 26, 10.0f, 10.0f, oxygenBubble[(size_t)bubbleStage], RGBAu32(255, 255, 255, 255), 4);
+				}
+				continue;
+			}
+
+			if (n.speechTimer > 0.0f && n.speechMessage >= 0 && n.speechMessage < (int)npcsMessages.size()) {
+				Image(npcInteractionsTex, boxX+30, boxY + 23, boxW, boxH, speechBoxWhite, RGBAu32(255, 255, 255, 255), 3);
+				TextCentered(boxX + 6.0f + 30, boxY + 23.0f, boxW - 12.0f, boxH - 8.0f,
+					npcsMessages[(size_t)n.speechMessage], RGBAu32(35, 30, 25, 255), 0.42f);
+			}
+		}
 	}
 
 	if (app->showGridBounds) {

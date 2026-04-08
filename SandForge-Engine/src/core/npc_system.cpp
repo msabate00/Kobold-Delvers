@@ -35,6 +35,9 @@ static NPC MakeDefaultNPC(const Texture2D* npcTex, const SpriteAnimLibrary* npcA
     npc.parked = false;
     npc.spawnerId = -1;
     npc.goalId = -1;
+    npc.speechTimer = 0.0f;
+    npc.speechMessage = -1;
+    npc.drowning = false;
 
     npc.sprite.tex = npcTex;
     npc.anim.SetLibrary(npcAnims);
@@ -47,6 +50,19 @@ static NPC MakeDefaultNPC(const Texture2D* npcTex, const SpriteAnimLibrary* npcA
 static bool RectsOverlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
 {
     return ax < (bx + bw) && (ax + aw) > bx && ay < (by + bh) && (ay + ah) > by;
+}
+
+static bool IsNPCPassableMat(uint8 m)
+{
+    return m == (uint8)Material::Empty
+        || m == (uint8)Material::Water
+        || m == (uint8)Material::Smoke
+        || m == (uint8)Material::Steam;
+}
+
+static bool IsHazardMat(uint8 m)
+{
+    return m == (uint8)Material::Lava || m == (uint8)Material::Fire;
 }
 
 bool NPCSystem::Awake(const WorldSim& world)
@@ -277,7 +293,7 @@ bool NPCSystem::RectFreeOnBack(const WorldSim& world, int x, int y, int w, int h
             const int gy = y + yy;
             if (!world.InRange(gx, gy)) return false;
             const int i = world.LinearIndex(gx, gy);
-            if (world.BackMatAtIndex(i) != (uint8)Material::Empty) return false;
+            if (!IsNPCPassableMat(world.BackMatAtIndex(i))) return false;
             const int occId = occ.empty() ? 0 : occ[i];
             if (occId != 0 && occId != ignoreId) return false;
         }
@@ -288,12 +304,7 @@ bool NPCSystem::CheckNPCDie(const WorldSim& world, int x, int y, int w, int h) c
 {
     auto isLava = [&](int gx, int gy) -> bool {
         if (!world.InRange(gx, gy)) return false;
-        switch (world.BackMatAtIndex(world.LinearIndex(gx, gy)))
-        {
-        case (uint8)Material::Lava: return true;
-        case (uint8)Material::Fire: return true;
-        default: return false;
-        }
+        return IsHazardMat(world.BackMatAtIndex(world.LinearIndex(gx, gy)));
     };
 
     for (int yy = 0; yy < h; ++yy)
@@ -310,6 +321,42 @@ bool NPCSystem::CheckNPCDie(const WorldSim& world, int x, int y, int w, int h) c
     }
 
     return false;
+}
+
+bool NPCSystem::IsInWater(const WorldSim& world, int x, int y, int w, int h) const
+{
+    for (int yy = 0; yy < h; ++yy) {
+        for (int xx = 0; xx < w; ++xx) {
+            const int gx = x + xx;
+            const int gy = y + yy;
+            if (!world.InRange(gx, gy)) continue;
+            if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == (uint8)Material::Water) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool NPCSystem::IsBuriedInSand(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const
+{
+    int topSand = 0;
+    for (int xx = 0; xx < w; ++xx) {
+        const int gx = x + xx;
+        const int gy = y - 1;
+        if (!world.InRange(gx, gy)) continue;
+        if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == (uint8)Material::Sand) {
+            ++topSand;
+        }
+    }
+
+    if (topSand <= 0) return false;
+
+    const bool canRise = RectFreeOnBack(world, x, y - 1, w, h, ignoreId);
+    const bool canMoveLeft = RectFreeOnBack(world, x - 1, y, w, h, ignoreId);
+    const bool canMoveRight = RectFreeOnBack(world, x + 1, y, w, h, ignoreId);
+
+    return !canRise && !canMoveLeft && !canMoveRight;
 }
 
 int NPCSystem::CountAliveFromSpawner(int spawnerId) const
@@ -404,7 +451,6 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 
     RebuildOcc(world);
 
-    // NPCs
     npcMoveAcc += fixedTimeStep;
     const float npcMoveInterval = 1.0f / std::fmax(0.001f, npcCellsPerSec);
     if (npcMoveAcc < npcMoveInterval) return;
@@ -417,18 +463,38 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
         if (n.anim.CurrentName() == "die") continue;
         const int id = i + 1;
 
+        auto killNPC = [&]() {
+            n.anim.Play("die", false);
+            n.parked = false;
+            n.goalId = -1;
+            n.oxygenTime = 0.0f;
+            n.drowning = false;
+            n.speechTimer = 0.0f;
+            n.speechMessage = -1;
+        };
+
         const int hbX = n.x + n.hbOffX;
         const int hbY = n.y + n.hbOffY;
 
         if (CheckNPCDie(world, hbX, hbY, n.hbW, n.hbH)) {
-            n.anim.Play("die", false);
-            n.parked = false;
-            n.goalId = -1;
+            killNPC();
             continue;
         }
 
-        TryTouchBonus(n);
+        if (IsInWater(world, hbX, hbY, n.hbW, n.hbH) || IsBuriedInSand(world, hbX, hbY, n.hbW, n.hbH, id)) {
+            n.oxygenTime += fixedTimeStep;
+            n.drowning = true;
+            if (n.oxygenTime >= 3.0f) {
+                killNPC();
+                continue;
+            }
+        }
+        else {
+            n.oxygenTime = 0.0f;
+            n.drowning = false;
+        }
 
+        TryTouchBonus(n);
         if (TryParkNPCInGoal(n)) {
             continue;
         }
@@ -460,7 +526,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
 
         auto solid = [&](int gx, int gy) {
             return world.InRange(gx, gy) && world.BackMatAtIndex(world.LinearIndex(gx, gy)) != (uint8)Material::Empty;
-        };
+            };
 
         bool climbed = false;
         for (int step = 1; step <= kMaxStep; ++step) {
@@ -494,6 +560,23 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
     App* app = engine.app;
     if (!app || !app->renderer) return;
 
+    constexpr float kSpeechDuration = 3.0f;
+
+    for (auto& n : npcs) {
+        if (n.speechTimer > 0.0f) {
+            n.speechTimer = std::fmax(0.0f, n.speechTimer - dt);
+            if (n.speechTimer <= 0.0f) n.speechMessage = -1;
+        }
+
+        if (!n.alive || n.parked || n.anim.CurrentName() == "die") continue;
+        if (n.speechTimer > 0.0f) continue;
+
+        if ((std::rand() % 1000) == 0) {
+            n.speechMessage = std::rand() % 5;
+            n.speechTimer = kSpeechDuration;
+        }
+    }
+
     for (auto& sp : spawners) {
         sp.anim.Update(dt);
         sp.anim.ApplyTo(sp.sprite, false);
@@ -513,6 +596,9 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
     }
 
     for (auto& bonus : bonuses) {
+        if (bonus.claimed) {
+            bonus.anim.Play("lighted", false);
+        }
         bonus.anim.Update(dt);
         bonus.anim.ApplyTo(bonus.sprite);
 
@@ -528,13 +614,6 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
         bonus.sprite.h = std::floor(sh);
         bonus.sprite.layer = RenderLayer::WORLD;
         bonus.sprite.sort = -15;
-        if (bonus.claimed) {
-            //bonus.sprite.color = RGBAu32(255, 255, 255, 170);
-            bonus.anim.Play("lighted", false);
-        } 
-        else {
-            //bonus.sprite.color = RGBAu32(255, 255, 255, 255);
-        }
         app->renderer->Queue(bonus.sprite);
     }
 

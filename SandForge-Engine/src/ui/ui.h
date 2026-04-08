@@ -86,6 +86,27 @@ public:
     Texture2D interfaceTex;
     bool interfaceTexReady = false;
 
+    Texture2D npcInteractionsTex;
+    bool npcInteractionsTexReady = false;
+
+    AtlasRectPx speechBoxWhite{ 0,0,31,13 };
+    AtlasRectPx speechBoxRed{ 31,0,31,13 };
+    std::array<AtlasRectPx, 6> oxygenBubble{{
+        { 0,13,10,10 },
+        { 10,13,10,10 },
+        { 20,13,10,10 },
+        { 30,13,10,10 },
+        { 40,13,10,10 },
+        { 50,13,10,10 }
+    }};
+    std::vector<const char*> npcsMessages{{
+        "¡Wow!",
+        "Huh?",
+        "AAAH!",
+        "Stones?!",
+        "Hungry..."
+    }};
+
 
     AtlasRectPx hudBackgroundRect{0,18,1920,150};
     AtlasRectPx hudSeparatorWoodRect{6,182,39,172};
