@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <chrono>
+#include <ctime>
 
 static uint32_t Hash32(const std::string& s)
 {
@@ -29,6 +31,18 @@ static uint32_t ColorForName(const std::string& s)
     unsigned b = 60 + ((h >> 16) & 0x7Fu);
     return RGBAu32(r, g, b, 220);
 }
+
+static int CountFilledCells(const uint8* plane, int count)
+{
+    int total = 0;
+    for (int i = 0; i < count; ++i) {
+        if (plane[i] != (uint8)Material::Empty) ++total;
+    }
+    return total;
+}
+
+static int gSandboxMatCounterBase = 0;
+static bool gSandboxResetMatCounter = true;
 
 void Scene_MainMenu::DrawUI(int&, Material&)
 {
@@ -427,6 +441,8 @@ void Scene_Sandbox::OnEnter()
     bonusStarEarned = false;
     budgetStarEarned = false;
 
+    gSandboxResetMatCounter = true;
+
     app->ResetCamera();
 }
 
@@ -442,179 +458,312 @@ void Scene_Sandbox::Update(float)
 
 void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
 {
-    app->ui->Draw(brushSize, brushMat);
-
     UI* ui = app->ui;
-    float x = 8.0f;
-    float y = 44.0f;
-    float btn = 28.0f;
+    const float vw = (float)app->framebufferSize.x;
 
-    auto btn3 = [&](uint32 c, const char* label) {
-        uint32 h = MulRGBA(c, 1.15f), a = MulRGBA(c, 0.85f);
-        float bx = x;
-        bool clicked = ui->Button(bx, y, btn, btn, c, h, a);
-        ui->TextCentered(bx, y, btn, btn, label, RGBAu32(250, 250, 250, 240), 0.85f);
-        x += btn + 6.0f;
+    ui->Draw(brushSize, brushMat);
+    ui->Cursor();
+
+    static bool showGridPanel = false;
+
+    const int totalMat = CountFilledCells(app->engine->GetFrontPlane(), app->gridSize.x * app->gridSize.y);
+    if (gSandboxResetMatCounter) {
+        gSandboxMatCounterBase = totalMat;
+        gSandboxResetMatCounter = false;
+    }
+    const int matCounter = totalMat - gSandboxMatCounterBase;
+
+    const uint32 text = RGBAu32(245, 245, 245, 235);
+    const uint32 sub = RGBAu32(205, 210, 220, 220);
+    const uint32 bg = RGBAu32(16, 20, 28, 185);
+    const uint32 bg2 = RGBAu32(24, 30, 40, 220);
+    const uint32 line = RGBAu32(255, 255, 255, 36);
+
+    auto tinyBtn = [&](float x, float y, float w, float h, uint32 c, const char* label, float scale = 0.72f) {
+        bool clicked = ui->Button(x, y, w, h, c, MulRGBA(c, 1.15f), MulRGBA(c, 0.85f));
+        ui->TextCentered(x, y, w, h, label, RGBAu32(250, 250, 250, 240), scale);
         return clicked;
-    };
+        };
 
-    // Back
-    const float bxBack = (float)app->framebufferSize.x - 36.0f;
-    if (app->ui->Button(bxBack, 8.0f, 28.0f, 28.0f, RGBAu32(200, 80, 80, 230), RGBAu32(240, 120, 120, 240), RGBAu32(170, 60, 60, 230))) {
-        mgr->Request(SCENE_MAINMENU);
-    }
-    app->ui->TextCentered(bxBack, 8.0f, 28.0f, 28.0f, "<", RGBAu32(250, 250, 250, 240), 0.85f);
+    auto presetBtn = [&](float x, float y, float w, float h, int current, int target, const char* label, uint32 c) {
+        uint32 cc = (current == target) ? MulRGBA(c, 1.20f) : c;
+        bool clicked = ui->Button(x, y, w, h, cc, MulRGBA(cc, 1.10f), MulRGBA(cc, 0.85f));
+        ui->TextCentered(x, y, w, h, label, RGBAu32(255, 255, 255, 240), 0.68f);
+        if (current == target) {
+            ui->RectBorders(x, y, w, h, 2.0f, RGBAu32(255, 255, 255, 90));
+        }
+        return clicked;
+        };
 
-    // Settings
-    const float bxSet = bxBack - 34.0f;
-    uint32 cSet = RGBAu32(70, 90, 140, 220);
-    if (app->ui->Button(bxSet, 8.0f, 28.0f, 28.0f, cSet, MulRGBA(cSet, 1.15f), MulRGBA(cSet, 0.85f))) {
-        mgr->OpenSettings(SCENE_SANDBOX);
-    }
-    app->ui->TextCentered(bxSet, 8.0f, 28.0f, 28.0f, "S", RGBAu32(250, 250, 250, 240), 0.85f);
-
-    //Load
-    if (btn3(RGBAu32(80, 120, 80, 230), "L")) {
-        if (!files.empty()) app->engine->LoadLevel(files[selected].c_str());
-    }
-    //Save
-    if (btn3(RGBAu32(150, 120, 70, 230), "S")) {
-        if (!files.empty()) app->engine->SaveLevel(files[selected].c_str());
-    }
-
-    //New
-    if (btn3(RGBAu32(120, 90, 150, 230), "N")) {
-        std::string name = NextAutoName();
-        EnsureLevelsFolder();
-        app->engine->ClearWorld();
-        app->engine->SetLevelMaterialLimits(0, 0);
-        app->engine->SaveLevel(name.c_str());
-        requestRescan = true;
-    }
-
-    //Delete
-    if (btn3(RGBAu32(220, 90, 90, 230), "D")) {
-        //TODO
-    }
-
+    // Clamp selección
     if (!files.empty()) {
-        if ((int)files.size() == selected) {
-            selected--;
-        }
-        std::string show = std::filesystem::path(files[selected]).filename().string();
-        if ((int)show.size() > 28) show = show.substr(0, 25) + "...";
-        ui->Text(148.0f, y + 10, show.c_str(), RGBAu32(240, 240, 240, 220), 0.85f);
+        if (selected < 0) selected = 0;
+        if (selected >= (int)files.size()) selected = (int)files.size() - 1;
+    }
+    else {
+        selected = 0;
     }
 
-    // Archivos
-    float gx = 8.0f;
-    float gy = 80.0f;
-    float cell = 20.0f;
-    float pad = 4.0f;
-    int perRow = (int)std::fmax(1.0f, std::floor((app->framebufferSize.x - gx) / (cell + pad)));
+    // Botones arriba derecha
+    {
+        const float b = 28.0f;
+        const float by = 8.0f;
+        const float bxBack = vw - 8.0f - b;
+        const float bxSet = bxBack - 34.0f;
+        const float bxGrid = bxSet - 34.0f;
 
-    for (int i = 0; i < (int)files.size(); ++i) {
-        int row = i / perRow;
-        int col = i % perRow;
-        float bx = gx + col * (cell + pad);
-        float by = gy + row * (cell + pad);
-
-        uint32 c = ColorForName(files[i]);
-        if (i == selected) c = MulRGBA(c, 1.3f);
-        uint32 h = MulRGBA(c, 1.15f), a = MulRGBA(c, 0.85f);
-
-        if (ui->Button(bx, by, cell, cell, c, h, a)) {
-            selected = i;
+        // Back
+        if (tinyBtn(bxBack, by, b, b, RGBAu32(200, 80, 80, 230), "<", 0.85f)) {
+            mgr->Request(SCENE_MAINMENU);
         }
 
-        char ibuf[8];
-        auto pos = files[i].find("quick.lvl");
-        if (pos == std::string::npos) {
-            std::snprintf(ibuf, sizeof(ibuf), "%d", i + 1);
+        // Settings
+        if (tinyBtn(bxSet, by, b, b, RGBAu32(70, 90, 140, 220), "S", 0.80f)) {
+            mgr->OpenSettings(SCENE_SANDBOX);
+        }
+
+        uint32 cGrid = showGridPanel ? RGBAu32(120, 110, 190, 235) : RGBAu32(70, 70, 90, 220);
+        if (tinyBtn(bxGrid, by, b, b, cGrid, "G", 0.80f)) {
+            showGridPanel = !showGridPanel;
+        }
+    }
+
+    // Panel nivel
+    {
+        const float x0 = 8.0f;
+        const float y0 = 8.0f;
+        const float w = 330.0f;
+
+        const float cell = 18.0f;
+        const float pad = 4.0f;
+        const int perRow = 8;
+        const int rows = std::fmax(1, ((int)files.size() + perRow - 1) / perRow);
+        const float h = std::fmax(62.0f, 54.0f + rows * (cell + pad));
+
+        ui->Rect(x0, y0, w, h, bg);
+        ui->RectBorders(x0, y0, w, h, 1.0f, line);
+
+        const float by = y0 + 6.0f;
+        const float bw = 46.0f;
+        const float bh = 22.0f;
+        const float gap = 4.0f;
+
+        //Load
+        if (tinyBtn(x0 + 6.0f + (bw + gap) * 0, by, bw, bh, RGBAu32(80, 120, 80, 230), "LOAD", 0.58f)) {
+            if (!files.empty()) {
+                app->engine->LoadLevel(files[selected].c_str());
+                gSandboxResetMatCounter = true;
+            }
+        }
+
+        //Save
+        if (tinyBtn(x0 + 6.0f + (bw + gap) * 1, by, bw, bh, RGBAu32(150, 120, 70, 230), "SAVE", 0.58f)) {
+            if (!files.empty()) app->engine->SaveLevel(files[selected].c_str());
+        }
+
+        //New
+        if (tinyBtn(x0 + 6.0f + (bw + gap) * 2, by, bw, bh, RGBAu32(120, 90, 150, 230), "NEW", 0.60f)) {
+            std::string name = NextAutoName();
+            EnsureLevelsFolder();
+            app->engine->ClearWorld();
+            app->engine->SetLevelMaterialLimits(0, 0);
+            app->engine->SaveLevel(name.c_str());
+            requestRescan = true;
+            gSandboxResetMatCounter = true;
+        }
+
+        //Delete
+        if (tinyBtn(x0 + 6.0f + (bw + gap) * 3, by, bw, bh, RGBAu32(220, 90, 90, 230), "DEL", 0.60f)) {
+            if (!files.empty() && selected >= 0 && selected < (int)files.size()) {
+                std::error_code ec;
+                std::filesystem::remove(files[selected], ec);
+                requestRescan = true;
+                if (selected > 0) selected--;
+            }
+        }
+
+        //Files
+        if (!files.empty()) {
+            std::string show = std::filesystem::path(files[selected]).filename().string();
+            if ((int)show.size() > 24) show = show.substr(0, 21) + "...";
+            ui->Text(x0 + 6.0f, y0 + 36.0f, show.c_str(), text, 0.72f);
         }
         else {
-            std::snprintf(ibuf, sizeof(ibuf), "%s", "Q");
+            ui->Text(x0 + 6.0f, y0 + 36.0f, "no levels", sub, 0.72f);
         }
 
-        ui->TextCentered(bx, by, cell, cell, ibuf, RGBAu32(250, 250, 250, 220), 0.65f);
+        const float fx = x0 + 6.0f;
+        const float fy = y0 + 54.0f;
 
-        if (i == selected) {
-            ui->RectBorders(bx, by, cell, cell, 2.0f, RGBAu32(240, 240, 240, 180));
+        for (int i = 0; i < (int)files.size(); ++i) {
+            int row = i / perRow;
+            int col = i % perRow;
+
+            float bx = fx + col * (cell + pad);
+            float by2 = fy + row * (cell + pad);
+
+            uint32 c = ColorForName(files[i]);
+            if (i == selected) c = MulRGBA(c, 1.25f);
+
+            if (ui->Button(bx, by2, cell, cell, c, MulRGBA(c, 1.15f), MulRGBA(c, 0.85f))) {
+                selected = i;
+            }
+
+            char ibuf[8];
+            auto pos = files[i].find("quick.lvl");
+            if (pos == std::string::npos) std::snprintf(ibuf, sizeof(ibuf), "%d", i + 1);
+            else                          std::snprintf(ibuf, sizeof(ibuf), "Q");
+
+            ui->TextCentered(bx, by2, cell, cell, ibuf, RGBAu32(250, 250, 250, 230), 0.58f);
+
+            if (i == selected) {
+                ui->RectBorders(bx, by2, cell, cell, 2.0f, RGBAu32(255, 255, 255, 180));
+            }
         }
     }
 
     //Sliders Grid + level rules
-    const float sx = 600.0f + 36.0f;
-    const float sw = 1200.0f - 44.0f;
-    const float sh = 16.0f;
-    float sW = (float)app->gridSize.x;
-    float sH = (float)app->gridSize.y;
+    if (showGridPanel)
+    {
+        float sW = (float)app->gridSize.x;
+        float sH = (float)app->gridSize.y;
 
-    ui->Text(610.0f, 58.0f, "W", RGBAu32(235, 235, 235, 230), 0.9f);
-    ui->Text(610.0f, 80.0f, "H", RGBAu32(235, 235, 235, 230), 0.9f);
+        const float panelW = std::fmin(1420.0f, vw - 16.0f);
+        const float panelH = 190.0f;
+        const float x0 = vw - 8.0f - panelW;
+        const float y0 = 44.0f;
 
-    ui->Slider(sx, 56.0f, sw, sh, 64.0f, 2048.0f, sW, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
-    ui->Slider(sx, 78.0f, sw, sh, 64.0f, 1024.0f, sH, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+        ui->Rect(x0, y0, panelW, panelH, bg2);
+        ui->RectBorders(x0, y0, panelW, panelH, 1.0f, line);
 
-    const int newW = std::fmax(1, (int)(sW + 0.5f));
-    const int newH = std::fmax(1, (int)(sH + 0.5f));
+        const float statsW = 180.0f;
+        const float statsX = x0 + panelW - statsW - 12.0f;
 
-    if (newW != app->gridSize.x || newH != app->gridSize.y) {
-        app->engine->ResizeGrid(newW, newH, true);
-    }
+        const float left = x0 + 12.0f;
+        const float sliderX = left + 26.0f;
+        const float sliderW = statsX - sliderX - 56.0f;
 
-    char buf[64];
-    std::snprintf(buf, sizeof(buf), "%d", app->gridSize.x);
-    ui->Text(660.0f, 58.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
-    std::snprintf(buf, sizeof(buf), "%d", app->gridSize.y);
-    ui->Text(660.0f, 80.0f, buf, RGBAu32(235, 235, 235, 230), 0.9f);
+        const float pW = 80.0f;
+        const float pH = 20.0f;
+        const float pGap = 8.0f;
 
-    const float budgetMaxRange = (float)std::fmax(100, app->gridSize.x * app->gridSize.y);
-    float budgetMax = (float)app->engine->LevelMaterialBudgetMax();
-    float budgetStar = (float)app->engine->LevelMaterialBudgetStar();
-    if (budgetStar > budgetMax) budgetStar = budgetMax;
+        ui->Text(left, y0 + 10.0f, "W", text, 0.74f);
+        if (presetBtn(left + 26.0f + (pW + pGap) * 0, y0 + 8.0f, pW, pH, (int)sW, 320, "320", RGBAu32(84, 104, 160, 220))) sW = 320.0f;
+        if (presetBtn(left + 26.0f + (pW + pGap) * 1, y0 + 8.0f, pW, pH, (int)sW, 480, "480", RGBAu32(84, 104, 160, 220))) sW = 480.0f;
+        if (presetBtn(left + 26.0f + (pW + pGap) * 2, y0 + 8.0f, pW, pH, (int)sW, 640, "640", RGBAu32(84, 104, 160, 220))) sW = 640.0f;
 
-    ui->Text(610.0f, 108.0f, "MAT MAX", RGBAu32(235, 235, 235, 230), 0.85f);
-    ui->Text(610.0f, 130.0f, "MAT STAR", RGBAu32(235, 235, 235, 230), 0.85f);
-    ui->Slider(sx, 106.0f, sw, sh, 0.0f, budgetMaxRange, budgetMax, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
-    ui->Slider(sx, 128.0f, sw, sh, 0.0f, std::fmax(0.0f, budgetMax), budgetStar, RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+        ui->Text(left, y0 + 40.0f, "W", sub, 0.72f);
+        ui->Slider(sliderX, y0 + 38.0f, sliderW, 18.0f, 64.0f, 2048.0f, sW,
+            RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
 
-    const int newBudgetMax = std::fmax(0, (int)(budgetMax + 0.5f));
-    const int newBudgetStar = std::fmax(0, (int)(budgetStar + 0.5f));
-    if (newBudgetMax != app->engine->LevelMaterialBudgetMax() || newBudgetStar != app->engine->LevelMaterialBudgetStar()) {
-        app->engine->SetLevelMaterialLimits(newBudgetMax, newBudgetStar);
-    }
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%d", (int)(sW + 0.5f));
+        ui->Text(sliderX + sliderW + 8.0f, y0 + 40.0f, buf, text, 0.72f);
 
-    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetMax());
-    ui->Text(690.0f, 108.0f, buf, RGBAu32(235, 235, 235, 230), 0.85f);
-    std::snprintf(buf, sizeof(buf), "%d", app->engine->LevelMaterialBudgetStar());
-    ui->Text(690.0f, 130.0f, buf, RGBAu32(235, 235, 235, 230), 0.85f);
+        ui->Text(left, y0 + 72.0f, "H", text, 0.74f);
+        if (presetBtn(left + 26.0f + (pW + pGap) * 0, y0 + 70.0f, pW, pH, (int)sH, 160, "160", RGBAu32(100, 92, 152, 220))) sH = 160.0f;
+        if (presetBtn(left + 26.0f + (pW + pGap) * 1, y0 + 70.0f, pW, pH, (int)sH, 240, "240", RGBAu32(100, 92, 152, 220))) sH = 240.0f;
+        if (presetBtn(left + 26.0f + (pW + pGap) * 2, y0 + 70.0f, pW, pH, (int)sH, 320, "320", RGBAu32(100, 92, 152, 220))) sH = 320.0f;
 
-    //Materiales
-    pad = 8.0f; y = 8.0f; x = 8.0f; btn = 28.0f;
-    auto makeBtnColor = [&](uint32 base) {
-        uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-        bool clicked = ui->Button(x, y, btn, btn, base, h, a);
-        x += btn + 6.0f; return clicked;
-    };
+        ui->Text(left, y0 + 102.0f, "H", sub, 0.72f);
+        ui->Slider(sliderX, y0 + 100.0f, sliderW, 18.0f, 64.0f, 1024.0f, sH,
+            RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
 
-    for (int i = 0; i < 256; ++i) {
-        const MatProps& mp = matProps((uint8)i);
+        std::snprintf(buf, sizeof(buf), "%d", (int)(sH + 0.5f));
+        ui->Text(sliderX + sliderW + 8.0f, y0 + 102.0f, buf, text, 0.72f);
 
-        if (mp.name.length() > 0) {
-            uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
-            if (makeBtnColor(c)) brushMat = (Material)i;
+        const int newW = std::fmax(1, (int)(sW + 0.5f));
+        const int newH = std::fmax(1, (int)(sH + 0.5f));
+        if (newW != app->gridSize.x || newH != app->gridSize.y) {
+            app->engine->ResizeGrid(newW, newH, true);
+            gSandboxResetMatCounter = true;
+        }
+
+        const float budgetMaxRange = (float)std::fmax(100, app->gridSize.x * app->gridSize.y);
+        float budgetMax = (float)app->engine->LevelMaterialBudgetMax();
+        float budgetStar = (float)app->engine->LevelMaterialBudgetStar();
+        if (budgetStar > budgetMax) budgetStar = budgetMax;
+
+        ui->Text(left, y0 + 134.0f, "MAX", text, 0.70f);
+        ui->Slider(sliderX, y0 + 132.0f, sliderW, 18.0f, 0.0f, budgetMaxRange, budgetMax,
+            RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+
+        std::snprintf(buf, sizeof(buf), "%d", (int)(budgetMax + 0.5f));
+        ui->Text(sliderX + sliderW + 8.0f, y0 + 134.0f, buf, text, 0.70f);
+
+        ui->Text(left, y0 + 162.0f, "STAR", text, 0.70f);
+        ui->Slider(sliderX, y0 + 160.0f, sliderW, 18.0f, 0.0f, std::fmax(0.0f, budgetMax), budgetStar,
+            RGBAu32(90, 90, 100, 200), RGBAu32(230, 230, 240, 240));
+
+        std::snprintf(buf, sizeof(buf), "%d", (int)(budgetStar + 0.5f));
+        ui->Text(sliderX + sliderW + 8.0f, y0 + 162.0f, buf, text, 0.70f);
+
+        const int newBudgetMax = std::fmax(0, (int)(budgetMax + 0.5f));
+        const int newBudgetStar = std::fmax(0, (int)(budgetStar + 0.5f));
+        if (newBudgetMax != app->engine->LevelMaterialBudgetMax() ||
+            newBudgetStar != app->engine->LevelMaterialBudgetStar()) {
+            app->engine->SetLevelMaterialLimits(newBudgetMax, newBudgetStar);
+        }
+
+        //Stats
+        ui->Rect(statsX, y0 + 10.0f, statsW, panelH - 20.0f, bg);
+        ui->RectBorders(statsX, y0 + 10.0f, statsW, panelH - 20.0f, 1.0f, line);
+
+        ui->Text(statsX + 10.0f, y0 + 22.0f, "MAT TOTAL", text, 0.72f);
+        std::snprintf(buf, sizeof(buf), "%d", totalMat);
+        ui->Text(statsX + 10.0f, y0 + 44.0f, buf, RGBAu32(255, 255, 255, 240), 1.0f);
+
+        ui->Text(statsX + 10.0f, y0 + 80.0f, "MAT COUNT", text, 0.72f);
+        std::snprintf(buf, sizeof(buf), "%d", matCounter);
+        ui->Text(statsX + 10.0f, y0 + 102.0f, buf, RGBAu32(255, 255, 255, 240), 1.0f);
+
+        if (tinyBtn(statsX + 10.0f, y0 + 136.0f, statsW - 20.0f, 24.0f, RGBAu32(120, 90, 150, 230), "RESET", 0.64f)) {
+            gSandboxMatCounterBase = totalMat;
         }
     }
 
-    x += 8.0f;
+    //Materiales
+    {
+        const float btn = 28.0f;
+        const float icon = 32.0f;
+        const float gap = 6.0f;
+        const float pad = 8.0f;
+        const float barH = 44.0f;
 
-    if (app->engine->paused) {
-        if (makeBtnColor(RGBAu32(250, 200, 200, 230))) app->engine->paused = false;
-        if (makeBtnColor(RGBAu32(180, 220, 180, 230))) app->engine->stepOnce = true;
-    }
-    else {
-        if (makeBtnColor(RGBAu32(200, 200, 200, 230))) app->engine->paused = true;
+        float x = pad;
+        float y = (float)app->framebufferSize.y - barH + 6.0f;
+
+        // fondo barra inferior
+        ui->Rect(0.0f, (float)app->framebufferSize.y - barH, vw, barH, bg);
+        ui->RectBorders(0.0f, (float)app->framebufferSize.y - barH, vw, barH, 1.0f, line);
+
+        auto makeBtnColor = [&](uint32 base, int i) {
+            float bx = x;
+            float by = y;
+
+            uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
+            bool clicked = app->ui->ImageButton(
+                app->ui->matAtlas,
+                bx, by, icon, icon,
+                AtlasRectPx{ 32 * i, 0, 32, 32 },
+                base, h, a, 5
+            );
+
+            if ((int)brushMat == i) {
+                ui->RectBorders(bx, by, icon, icon, 2.0f, RGBAu32(255, 255, 255, 180));
+            }
+
+            x += btn + gap;
+            return clicked;
+            };
+
+        for (int i = 0; i < 256; ++i) {
+            const MatProps& mp = matProps((uint8)i);
+            if (mp.name.length() > 0) {
+                uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
+                if (makeBtnColor(c, i)) brushMat = (Material)i;
+            }
+        }
     }
 }
 
@@ -648,15 +797,20 @@ void Scene_Sandbox::ScanLevels()
 
 std::string Scene_Sandbox::NextAutoName()
 {
-    int maxId = 0;
-    for (const auto& f : files) {
-        auto pos = f.find("custom_");
-        if (pos == std::string::npos) continue;
-        int id = std::atoi(f.c_str() + pos + 7);
-        if (id > maxId) maxId = id;
-        selected = id;
-    }
+    using namespace std::chrono;
+
+    auto now = system_clock::now();
+    std::time_t tt = system_clock::to_time_t(now);
+
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &tt);
+#else
+    localtime_r(&tt, &tm);
+#endif
+
     char buf[64];
-    std::snprintf(buf, sizeof(buf), "levels/custom/custom_%03d.lvl", maxId + 1);
+    std::strftime(buf, sizeof(buf), "levels/custom/custom_%Y%m%d_%H-%M-%S.lvl", &tm);
+
     return std::string(buf);
 }

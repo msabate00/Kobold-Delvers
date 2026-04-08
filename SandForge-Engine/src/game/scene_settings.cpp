@@ -39,6 +39,8 @@ void Scene_Settings::DrawUI(int&, Material&)
 
     ui->Cursor();
 
+    ui->Rect(0, 0, vw, vh, RGBAu32(20, 20, 26, 255));
+
     float scale = std::fmin(vw / 1280.0f, vh / 720.0f);
     if (scale < 0.85f) scale = 0.85f;
     if (scale > 1.15f) scale = 1.15f;
