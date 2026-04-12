@@ -64,6 +64,8 @@ private:
     std::vector<Cell> front, back;
     std::vector<uint8> mFront, mBack;
 
+    std::vector<uint8> consumedFront;
+
     std::vector<uint> chunkDirtyNow, chunkDirtyNext;
     std::vector<uint> chunkDirtyGPU;
     std::vector<uint8> chunkTTL;

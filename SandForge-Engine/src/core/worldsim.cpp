@@ -148,6 +148,7 @@ bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std:
     const int si = LinearIndex(x0, y0);
     const int ni = LinearIndex(nx, ny);
 
+    if (consumedFront[si]) return false;
     if (back[ni].m != (uint8)Material::Empty) return false;
     if (!occ.empty() && occ[ni] != 0 && !IgnoresNPCOcc(c.m)) return false;
 
@@ -157,6 +158,8 @@ bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std:
         back[si] = Cell{ (uint8)Material::Empty, 0 };
         mBack[si] = (uint8)Material::Empty;
     }
+
+    consumedFront[si] = 1;
 
     MarkChunkSim(x0, y0); MarkChunkSim(nx, ny);
     MarkChunkGPU(x0, y0); MarkChunkGPU(nx, ny);
@@ -181,6 +184,7 @@ bool WorldSim::TrySwap(int x0, int y0, int dx, int dy, const Cell& c, const std:
     const int si = LinearIndex(x0, y0);
     const int ni = LinearIndex(nx, ny);
     if (si == ni) return false;
+    if (consumedFront[si] || consumedFront[ni]) return false;
 
     const Cell& dst = front[ni];
     if (dst.m == (uint8)Material::Empty) return false;
@@ -191,6 +195,9 @@ bool WorldSim::TrySwap(int x0, int y0, int dx, int dy, const Cell& c, const std:
     back[si] = dst;
     mBack[ni] = c.m;
     mBack[si] = dst.m;
+
+    consumedFront[si] = 1;
+    consumedFront[ni] = 1;
 
     MarkChunkSim(x0, y0); MarkChunkSim(nx, ny);
     MarkChunkGPU(x0, y0); MarkChunkGPU(nx, ny);
@@ -218,6 +225,8 @@ void WorldSim::SetCell(int x, int y, uint8 m)
 
     back[i] = c;
     mBack[i] = c.m;
+    
+    consumedFront[i] = 1;
 
     MarkChunkSim(x, y);
     MarkChunkGPU(x, y);
@@ -229,6 +238,10 @@ void WorldSim::SetCell(int x, int y, uint8 m)
 
 void WorldSim::Step(Engine& engine, int parity)
 {
+    if (consumedFront.size() != front.size())
+        consumedFront.resize(front.size());
+    std::fill(consumedFront.begin(), consumedFront.end(), 0);
+
     for (int cy = chunksH - 1; cy >= 0; cy--) {
         const bool cl2r = ((cy ^ parity) & 1);
         const int cx0 = cl2r ? 0 : (chunksW - 1);
@@ -255,7 +268,10 @@ void WorldSim::Step(Engine& engine, int parity)
                 const int inc = l2r ? 1 : -1;
 
                 for (int x = xs; x != xe; x += inc) {
-                    const Cell c = front[LinearIndex(x, y)];
+                    const int i = LinearIndex(x, y);
+                    if (consumedFront[i]) continue;
+
+                    const Cell c = front[i];
                     if (c.m == (uint8)Material::Empty) continue;
                     if (isVolatile(c.m)) volatileSeen = true;
 
