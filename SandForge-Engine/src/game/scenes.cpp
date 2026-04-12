@@ -6,6 +6,7 @@
 #include "core/engine.h"
 #include "core/input.h"
 #include "ui/ui.h"
+#include "render/atlas.h"
 
 #include <algorithm>
 #include <cmath>
@@ -112,6 +113,62 @@ int Scene_Level::LevelIndex() const
     return (int)id - (int)SCENE_LEVEL1;
 }
 
+std::vector<Material> Scene_Level::GetSceneMaterials()
+{
+    switch (id)
+    {
+    case SCENE_LEVEL1:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL2:
+        return std::vector<Material>{ Material::Sand, Material::Water, Material::Stone };
+        break;
+    case SCENE_LEVEL3:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL4:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL5:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL6:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL7:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL8:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL9:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL10:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL11:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL12:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL13:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL14:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    case SCENE_LEVEL15:
+        return std::vector<Material>{ Material::Sand };
+        break;
+    default:
+        break;
+    }
+
+    return std::vector<Material>();
+}
+
 void Scene_Level::OnEnter()
 {
     app->engine->paused = false;
@@ -131,6 +188,9 @@ void Scene_Level::OnEnter()
     else {
         app->engine->ResetLevelSession();
     }
+
+    app->engine->brushMat = GetSceneMaterials()[0];
+
     app->ResetCamera();
 }
 
@@ -312,59 +372,47 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
     //SLIDER
     float y = app->framebufferSize.y - 50.0f;
-    //float x = ((float)app->framebufferSize.x / 2) - (((36.0 + 16) * Material::COUNT) / 2);
     float x = ((float)app->framebufferSize.x / 2) - 110;
     float v = (float)brushSize;
 
     app->ui->Slider(x, y, 220, 20.0f, 1.0f, 64.0f, v, true);
     brushSize = (int)(v + 0.5f);
-
-
-
-    //x = ((float)app->framebufferSize.x / 2) - ((((36.0+16)* 6)-27)/2);
     
     float s = 28.0f;
 
     //Down Materials
     {
-        x = ((float)app->framebufferSize.x / 2) - (((44.5*6)) /2);
+        std::vector<Material> levelsMaterials = GetSceneMaterials();
+
+        int materialCount = levelsMaterials.size();
+
+        //app->ui->Rect(app->framebufferSize.x / 2.0f, 0, 1, app->framebufferSize.y, RGBAu32(255,255,255,255));
+
+        x = ((float)app->framebufferSize.x / 2) - (((44.5* materialCount)) /2);
+        x += 20;
         y = app->framebufferSize.y - 100.0f;
 
         app->ui->Rect(0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, RGBAu32(24, 24, 24, 255));
 
-        auto makeBtnColor = [&](uint32 base, int i = 0) { 
-            uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
-
+        auto makeBtnColor = [&](Material mat) {
             //Background
-            if (app->engine->brushMat == i) {
+            if (app->engine->brushMat == mat) {
                 app->ui->Image(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, ui->hudMaterialBackgroundSelectedRect, RGBAu32(255,255,255,255), 4);
             }
             else {
                 app->ui->Image(app->ui->interfaceTex, x-21, y-21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
             }
 
-            //Fix, deberia de ser al pulsar el fondo, no el dibujito
-            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, AtlasRectPx{32 * i,0,32,32}, base, h, a, 5);
+            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, matProps(mat).rect, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 255), 5);
             x += 50;
-            /*if ((i+1) % 5 == 0) {
-                y += 32 + 16;
-                x = (float)app->framebufferSize.x * 0.20f - 36.0f;
-            }*/
-            
             return clicked; 
         };
 
-        for (int i = 0; i < 6; ++i) {
-            const MatProps& mp = matProps((uint8)i);
-
-            if (mp.name.length() > 0) {
-                //uint32 c = RGBAu32(mp.color.r, mp.color.g, mp.color.b, 230);
-                uint32 c = RGBAu32(255, 255, 255, 255);
-                if (makeBtnColor(c, i)) brushMat = (Material)i;
-            }
+        for (int i = 0; i < materialCount; ++i) {
+            if (makeBtnColor(levelsMaterials[i])) brushMat = levelsMaterials[i];
         }
 
-        x += 200.0f;
+        x = ((float)app->framebufferSize.x / 2) + 370;
 
         if (app->engine->paused && !levelFinished) {
 

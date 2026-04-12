@@ -177,21 +177,21 @@ static void SolidUpdate(Engine&, int, int, const Cell&) { /* inmóvil */ }
 
 void registerDefaultMaterials() {
 
-    //MatProp                                 //NAME         //Color                    //Densidad
-    g_mat[(uint8)Material::Empty] = { "Empty",          {0,0,0,0,},                 0,   nullptr };
-    g_mat[(uint8)Material::Sand] = { "Sand",           {217,191,77,255, 1},         3,   &SandUpdate };
-    g_mat[(uint8)Material::Water] = { "Water",          {51,102,230,200, 1},         1,   &WaterUpdate };
-    g_mat[(uint8)Material::Stone] = { "Stone",          {128,128,140,255, 1},        255, &SolidUpdate };
-    g_mat[(uint8)Material::Wood] = { "Wood",           {142,86,55,255, 1},          255, &WoodUpdate };
-    g_mat[(uint8)Material::Fire] = { "Fire",           {255,35,1,255, 5.5f},        255, &FireUpdate };
-    g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       255, &LavaUpdate };
-    g_mat[(uint8)Material::Smoke] = { "Smoke",          {28,13,2,255, 1},            255, &SmokeUpdate };
-    g_mat[(uint8)Material::Steam] = { "Steam",          {200,200,200,255, 1},        255, &SteamUpdate };
+    //MatProp                                 //NAME         //Color                //Densidad
+    g_mat[(uint8)Material::Empty] = { "Empty",          {0,0,0,0,},                 0,              AtlasRectPx{0,0, 32, 32},       nullptr };
+    g_mat[(uint8)Material::Sand] = { "Sand",           {217,191,77,255, 1},         3,              AtlasRectPx{32,0, 32, 32},      &SandUpdate };
+    g_mat[(uint8)Material::Water] = { "Water",          {51,102,230,200, 1},         1,             AtlasRectPx{64,0, 32, 32},      &WaterUpdate };
+    g_mat[(uint8)Material::Stone] = { "Stone",          {128,128,140,255, 1},        255,           AtlasRectPx{96,0, 32, 32},      &SolidUpdate };
+    g_mat[(uint8)Material::Wood] = { "Wood",           {142,86,55,255, 1},          255,            AtlasRectPx{128,0, 32, 32},     &WoodUpdate };
+    g_mat[(uint8)Material::Fire] = { "Fire",           {255,35,1,255, 5.5f},        255,            AtlasRectPx{160,0, 32, 32},     &FireUpdate };
+    g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       255,            AtlasRectPx{192,0, 32, 32},     &LavaUpdate };
+    g_mat[(uint8)Material::Smoke] = { "Smoke",          {28,13,2,255, 1},            255,           AtlasRectPx{224,0, 32, 32},     &SmokeUpdate };
+    g_mat[(uint8)Material::Steam] = { "Steam",          {200,200,200,255, 1},        255,           AtlasRectPx{256,0, 32, 32},     &SteamUpdate };
 
-    g_mat[(uint8)Material::NpcCell] = { "NPC",            {220, 40, 200,255},          0,   nullptr };
-    g_mat[(uint8)Material::NpcSpawnerCell] = { "Spawner", {80, 220, 255,255},          0,   nullptr };
-    g_mat[(uint8)Material::NpcGoalCell] = { "Goal",       {255, 220, 80,255},          0,   nullptr };
-    g_mat[(uint8)Material::NpcBonusCell] = { "Bonus",     {20, 20, 20,255},            0,   nullptr };
+    g_mat[(uint8)Material::NpcCell] = { "NPC",            {220, 40, 200,255},          0,           AtlasRectPx{288,0, 32, 32},     nullptr };
+    g_mat[(uint8)Material::NpcSpawnerCell] = { "Spawner", {80, 220, 255,255},          0,           AtlasRectPx{320,0, 32, 32},     nullptr };
+    g_mat[(uint8)Material::NpcGoalCell] = { "Goal",       {255, 220, 80,255},          0,           AtlasRectPx{352,0, 32, 32},     nullptr };
+    g_mat[(uint8)Material::NpcBonusCell] = { "Bonus",     {20, 20, 20,255},            0,           AtlasRectPx{384,0, 32, 32},     nullptr };
 }
 
 bool isVolatile(uint8 m)

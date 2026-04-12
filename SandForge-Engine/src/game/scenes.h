@@ -27,6 +27,8 @@ public:
     SceneId GetId() const override { return id; }
     bool HasWorld() const override { return true; }
 
+    std::vector<Material> GetSceneMaterials();
+
     void OnEnter() override;
     void OnExit() override;
     void Update(float dt) override;

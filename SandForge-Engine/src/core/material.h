@@ -3,6 +3,7 @@
 #include <array>
 #include <string_view>
 #include "app/defs.h"
+#include "render/atlas.h"
 
 struct Engine;
 
@@ -34,6 +35,7 @@ struct MatProps {
 
     RGBAI color;
     uint8 density = 1;
+    AtlasRectPx rect;
 
     void (*update)(Engine&, int x, int y, const Cell& self) = nullptr;
 };
