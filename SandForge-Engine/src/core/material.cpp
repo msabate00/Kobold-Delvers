@@ -39,6 +39,8 @@ static void WaterUpdate(Engine& E, int x, int y, const Cell& self) {
         return m == (uint8)Material::Empty || m == (uint8)Material::Water;
     };
 
+
+
     // Diagonal
     if (E.GetCell(x + da, y + 1).m == (uint8)Material::Empty && E.tryMove(x, y, da, +1, self)) return;
     if (E.GetCell(x + db, y + 1).m == (uint8)Material::Empty && E.tryMove(x, y, db, +1, self)) return;
@@ -73,6 +75,22 @@ static void WaterUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.GetCell(x + db * 2, y).m == (uint8)Material::Empty &&
         passable(x + db, y) &&
         E.tryMove(x, y, db * 2, 0, self)) return;
+
+    static const int8 dirs[4][2] = {
+                    {0,-1},
+            {-1, 0},       {1, 0},
+                    {0, 1}
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        int nx = x + dirs[i][0], ny = y + dirs[i][1];
+        if (!E.InRange(nx, ny)) continue;
+        if (E.GetCell(nx, ny).m == (uint8)Material::Lava) {
+            E.SetCell(x, y, (uint8)Material::Steam);
+            E.SetCell(nx, ny, (uint8)Material::Stone);
+            return;
+        }
+    } 
 }
 
 
@@ -184,7 +202,7 @@ void registerDefaultMaterials() {
     g_mat[(uint8)Material::Stone] = { "Stone",          {128,128,140,255, 1},        255,           AtlasRectPx{96,0, 32, 32},      &SolidUpdate };
     g_mat[(uint8)Material::Wood] = { "Wood",           {142,86,55,255, 1},          255,            AtlasRectPx{128,0, 32, 32},     &WoodUpdate };
     g_mat[(uint8)Material::Fire] = { "Fire",           {255,35,1,255, 5.5f},        255,            AtlasRectPx{160,0, 32, 32},     &FireUpdate };
-    g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       255,            AtlasRectPx{192,0, 32, 32},     &LavaUpdate };
+    g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       1,            AtlasRectPx{192,0, 32, 32},     &LavaUpdate };
     g_mat[(uint8)Material::Smoke] = { "Smoke",          {28,13,2,255, 1},            255,           AtlasRectPx{224,0, 32, 32},     &SmokeUpdate };
     g_mat[(uint8)Material::Steam] = { "Steam",          {200,200,200,255, 1},        255,           AtlasRectPx{256,0, 32, 32},     &SteamUpdate };
 
