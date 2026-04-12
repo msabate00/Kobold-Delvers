@@ -115,17 +115,34 @@ bool NPCSystem::Start()
         fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
         fall.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
 
-        auto& die = npcAnims.Add("die");
-        die.defaultTex = &npcTex;
-        die.fps = 6.0f;
-        die.loop = AnimLoopMode::None;
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,36,12,12 }, 0.1f));
-        die.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,0,0 }, 0.1f));
+        auto& dieFire = npcAnims.Add("dieFire");
+        dieFire.defaultTex = &npcTex;
+        dieFire.fps = 6.0f;
+        dieFire.loop = AnimLoopMode::None;
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,0,0 }, 0.1f));
+
+        auto& dieNormal = npcAnims.Add("dieNormal");
+        dieNormal.defaultTex = &npcTex;
+        dieNormal.fps = 6.0f;
+        dieNormal.loop = AnimLoopMode::None;
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 12,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 24,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,60,12,12 }, 0.1f));
     }
 
     spawnerAnims.Clear();
@@ -569,29 +586,30 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
         if (n.anim.CurrentName() == "die") continue;
         const int id = i + 1;
 
-        auto killNPC = [&]() {
-            n.anim.Play("die", false);
+        auto killNPC = [&](std::string animation) {
+
+            printf("c mamo");
+
+            n.anim.Play(animation, false);
             n.parked = false;
             n.goalId = -1;
-            n.oxygenTime = 0.0f;
-            n.drowning = false;
             n.speechTimer = 0.0f;
             n.speechMessage = -1;
         };
 
         const int hbX = n.x + n.hbOffX;
-        const int hbY = n.y + n.hbOffY;
+        const int hbY = n.y + n.hbOffY; 
 
         if (CheckNPCDie(world, hbX, hbY, n.hbW, n.hbH)) {
-            killNPC();
+            killNPC("dieFire");
             continue;
         }
 
         if (IsInWater(world, hbX, hbY, n.hbW, n.hbH) || IsBuriedInSand(world, hbX, hbY, n.hbW, n.hbH, id)) {
             n.oxygenTime += fixedTimeStep;
             n.drowning = true;
-            if (n.oxygenTime >= 3.0f) {
-                killNPC();
+            if (n.oxygenTime >= 1.0f) {
+                killNPC("dieNormal");
                 continue;
             }
         }
@@ -711,7 +729,7 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
             if (n.speechTimer <= 0.0f) n.speechMessage = -1;
         }
 
-        if (!n.alive || n.parked || n.anim.CurrentName() == "die") continue;
+        if (!n.alive || n.parked || n.anim.CurrentName() == "dieFire" || n.anim.CurrentName() == "dieNormal") continue;
         if (n.speechTimer > 0.0f) continue;
 
         if ((std::rand() % 1000) == 0) {
@@ -782,7 +800,7 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
         n.anim.Update(dt);
         n.anim.ApplyTo(n.sprite, n.dir < 0);
 
-        if (n.anim.CurrentName() == "die" && n.anim.IsFinished()) {
+        if ((n.anim.CurrentName() == "dieFire" || n.anim.CurrentName() == "dieNormal") && n.anim.IsFinished()) {
             n.alive = false;
             continue;
         }

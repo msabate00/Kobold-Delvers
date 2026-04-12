@@ -230,7 +230,7 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				Text(boxX + 6.0f + 30, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
 
 				const float progress = Clamp01(n.oxygenTime / 3);
-				const int stage = std::fmin(15, (int)std::floor(progress * 16.0f));
+				const int stage = std::fmin(15, (int)std::floor(progress * 48.0f));
 
 				for (int b = 0; b < 3; ++b) {
 					int bubbleStage = stage - b * 5;
