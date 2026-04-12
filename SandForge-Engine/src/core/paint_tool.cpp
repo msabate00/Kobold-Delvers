@@ -3,6 +3,7 @@
 #include "worldsim.h"
 #include "npc_system.h"
 #include "app/app.h"
+#include "game/scene_manager.h"
 #include <algorithm>
 #include <cmath>
 
@@ -106,7 +107,7 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
         const int rr = std::fmax(1, r);
         const int r2 = rr * rr;
 
-        if (m == Material::Empty) {
+        if (m == Material::Empty && app->scenes->CurrentId() == SceneId::SCENE_SANDBOX) {
             npcs.EraseEntitiesInCircle(world, pcx, pcy, rr, true, true, true, true);
         }
         const int xmin = std::fmax(0, pcx - rr);
