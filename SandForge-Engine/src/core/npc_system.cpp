@@ -583,7 +583,7 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
     for (int i = 0; i < (int)npcs.size(); ++i) {
         auto& n = npcs[i];
         if (!n.alive) continue;
-        if (n.anim.CurrentName() == "die") continue;
+        if (n.anim.CurrentName() == "dieFire" || n.anim.CurrentName() == "dieNormal") continue;
         const int id = i + 1;
 
         auto killNPC = [&](std::string animation) {
