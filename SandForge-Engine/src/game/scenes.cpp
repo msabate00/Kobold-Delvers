@@ -127,10 +127,10 @@ std::vector<Material> Scene_Level::GetSceneMaterials()
         return std::vector<Material>{  Material::Empty, Material::Sand };
         break;
     case SCENE_LEVEL4:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Steam };
         break;
     case SCENE_LEVEL5:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Water, Material::Wood, Material::Steam };
         break;
     case SCENE_LEVEL6:
         return std::vector<Material>{  Material::Empty, Material::Sand };

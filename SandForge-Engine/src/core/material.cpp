@@ -104,9 +104,10 @@ static void WoodUpdate(Engine& E, int x, int y, const Cell& self) {
     for (int i = 0; i < 4; ++i) {
         int nx = x + dirs[i][0], ny = y + dirs[i][1];
         if (!E.InRange(nx, ny)) continue;
-        if (E.GetCell(nx, ny).m == (uint8)Material::Fire) {
+        uint8 mat = E.GetCell(nx, ny).m;
+        if (mat == (uint8)Material::Fire || mat == (uint8)Material::Lava) {
             E.SetCell(x, y, (uint8)Material::Fire);
-            return;
+            return; 
         }
     }
 }

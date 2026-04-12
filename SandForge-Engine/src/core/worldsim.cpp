@@ -224,7 +224,7 @@ void WorldSim::SetCell(int x, int y, uint8 m)
     if (back[i].m == c.m && back[i].fromLevel == c.fromLevel) return;
 
     back[i] = c;
-    mBack[i] = c.m;
+     mBack[i] = c.m;
     
     consumedFront[i] = 1;
 
