@@ -1,4 +1,4 @@
-<img width="1063" height="503" alt="sSandForge Engine Logo" src="https://github.com/user-attachments/assets/74311002-bf4f-4506-8a66-a225a65b5d6b"/>
+<img width="720" height="467" alt="Kobold-Delvers Logo" src="https://github.com/user-attachments/assets/2f45c878-d1c7-4354-85b3-a4218b45e651" />
 
 **SandForge** is a lightweight **falling-sand simulation engine** written in **C++17** with **OpenGL 3.3 Core**.
 It provides a grid-based material simulation (cellular automata style), chunk-based updates, GPU rendering, basic UI/input, audio, and level I/O.
