@@ -258,7 +258,7 @@ void registerDefaultMaterials() {
     g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       1,            AtlasRectPx{192,0, 32, 32},     &LavaUpdate };
     g_mat[(uint8)Material::Smoke] = { "Smoke",          {28,13,2,255, 1},            255,           AtlasRectPx{224,0, 32, 32},     &SmokeUpdate };
     g_mat[(uint8)Material::Steam] = { "Steam",          {200,200,200,255, 1},        255,           AtlasRectPx{256,0, 32, 32},     &SteamUpdate };
-    g_mat[(uint8)Material::Vine] = { "Vine",            {70,180,70,255, 1},          255,         AtlasRectPx{256,0, 32, 32},     &VineUpdate };
+    g_mat[(uint8)Material::Vine] = { "Vine",            {70,180,70,255, 1},          255,         AtlasRectPx{0, 32, 32, 32},     &VineUpdate }; 
 
     g_mat[(uint8)Material::NpcCell] = { "NPC",            {220, 40, 200,255},          0,           AtlasRectPx{288,0, 32, 32},     nullptr };
     g_mat[(uint8)Material::NpcSpawnerCell] = { "Spawner", {80, 220, 255,255},          0,           AtlasRectPx{320,0, 32, 32},     nullptr };

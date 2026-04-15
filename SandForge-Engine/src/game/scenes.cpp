@@ -785,19 +785,19 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         ui->Rect(0.0f, (float)app->framebufferSize.y - barH, vw, barH, bg);
         ui->RectBorders(0.0f, (float)app->framebufferSize.y - barH, vw, barH, 1.0f, line);
 
-        auto makeBtnColor = [&](uint32 base, int i) {
+        auto makeBtnColor = [&](Material mat) {
             float bx = x;
             float by = y;
+            const MatProps& mp = matProps((uint8)mat);
              
-            uint32 h = MulRGBA(base, 1.15f), a = MulRGBA(base, 0.85f);
             bool clicked = app->ui->ImageButton(
                 app->ui->matAtlas,
                 bx, by, icon, icon,
-                AtlasRectPx{ 32 * i, 0, 32, 32 },
-                base, h, a, 5
+                mp.rect,
+                RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 205), 5
             );
 
-            if ((int)brushMat == i) {
+            if ((int)brushMat == mat) {
                 ui->RectBorders(bx, by, icon, icon, 2.0f, RGBAu32(255, 255, 255, 180));
             }
 
@@ -806,10 +806,8 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
             };
 
         for (int i = 0; i < 256; ++i) {
-            const MatProps& mp = matProps((uint8)i);
-            if (mp.name.length() > 0) {
-                uint32 c = RGBAu32(255,255,255, 255);
-                if (makeBtnColor(c, i)) brushMat = (Material)i;
+            if (i < Material::COUNT) {
+                if (makeBtnColor((Material)i)) brushMat = (Material)i;
             }
         }
     }
