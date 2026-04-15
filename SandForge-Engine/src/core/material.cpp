@@ -193,6 +193,58 @@ static void SteamUpdate(Engine& E, int x, int y, const Cell& self) {
 
 static void SolidUpdate(Engine&, int, int, const Cell&) { /* inmóvil */ }
 
+static void VineUpdate(Engine& E, int x, int y, const Cell& self) {
+    static const int8 dirs[4][2] = {
+                    {0,-1},
+            {-1, 0},       {1, 0},
+                    {0, 1}
+    };
+
+    //c quema
+    for (int i = 0; i < 4; ++i) {
+        int nx = x + dirs[i][0], ny = y + dirs[i][1];
+        if (!E.InRange(nx, ny)) continue;
+        uint8 mat = E.GetCell(nx, ny).m;
+        if (mat == (uint8)Material::Fire || mat == (uint8)Material::Lava) {
+            E.SetCell(x, y, (uint8)Material::Fire);
+            return;
+        }
+    }
+
+    //c expande
+    bool findWater = false;
+    for (int i = 0; i < 4; ++i) {
+        int nx = x + dirs[i][0], ny = y + dirs[i][1];
+        if (!E.InRange(nx, ny)) continue;
+       
+        if (E.GetCell(nx, ny).m == (uint8)Material::Water) {
+            findWater = true;
+        }
+    }
+
+    if (!findWater) return;
+
+
+    uint8 mat = E.GetCell(x, y - 1).m; 
+
+    if (E.InRange(x, y - 1) && (mat == (uint8)Material::Empty || mat == (uint8)Material::Water)) {
+        if (E.randrange(x, y, app->frames, 100, 70) < 20) {
+            E.SetCell(x, y - 1, (uint8)Material::Vine);
+            return;
+        }
+    }
+
+    if (E.randrange(x, y, app->frames, 100, 71) < 5) {
+        const int dir = E.randbit(x, y, app->frames) ? -1 : 1;
+        const int nx = x + dir;
+        mat = E.GetCell(nx, y).m;
+        if (E.InRange(nx, y) && (mat == (uint8)Material::Empty || mat == (uint8)Material::Water)) {
+            E.SetCell(nx, y, (uint8)Material::Vine);
+            return;
+        }
+    }
+}
+
 
 void registerDefaultMaterials() {
 
@@ -206,6 +258,7 @@ void registerDefaultMaterials() {
     g_mat[(uint8)Material::Lava] = { "Lava",           {205,15,1,255, 15.5f},       1,            AtlasRectPx{192,0, 32, 32},     &LavaUpdate };
     g_mat[(uint8)Material::Smoke] = { "Smoke",          {28,13,2,255, 1},            255,           AtlasRectPx{224,0, 32, 32},     &SmokeUpdate };
     g_mat[(uint8)Material::Steam] = { "Steam",          {200,200,200,255, 1},        255,           AtlasRectPx{256,0, 32, 32},     &SteamUpdate };
+    g_mat[(uint8)Material::Vine] = { "Vine",            {70,180,70,255, 1},          255,         AtlasRectPx{256,0, 32, 32},     &VineUpdate };
 
     g_mat[(uint8)Material::NpcCell] = { "NPC",            {220, 40, 200,255},          0,           AtlasRectPx{288,0, 32, 32},     nullptr };
     g_mat[(uint8)Material::NpcSpawnerCell] = { "Spawner", {80, 220, 255,255},          0,           AtlasRectPx{320,0, 32, 32},     nullptr };

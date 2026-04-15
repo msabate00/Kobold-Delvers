@@ -22,6 +22,7 @@ enum Material : uint8 {
     NpcSpawnerCell,
     NpcGoalCell,
     NpcBonusCell,
+    Vine,
     COUNT
 };
 
