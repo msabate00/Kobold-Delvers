@@ -98,7 +98,10 @@ private:
     bool RectFreeOnBack(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const;
     bool CheckNPCDie(const WorldSim& world, int x, int y, int w, int h) const;
     bool IsInWater(const WorldSim& world, int x, int y, int w, int h) const;
+    bool IsInVine(const WorldSim& world, int x, int y, int w, int h) const;
     bool IsBuriedInSand(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const;
+
+    bool HasVineBelow(const WorldSim& world, int x, int y, int w, int h) const;
 
     bool TrySpawnFromSpawner(WorldSim& world, int spawnerId);
     bool TryParkNPCInGoal(NPC& n);

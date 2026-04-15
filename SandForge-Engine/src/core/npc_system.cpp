@@ -57,7 +57,8 @@ static bool IsNPCPassableMat(uint8 m)
     return m == (uint8)Material::Empty
         || m == (uint8)Material::Water
         || m == (uint8)Material::Smoke
-        || m == (uint8)Material::Steam;
+        || m == (uint8)Material::Steam
+        || m == (uint8)Material::Vine;
 }
 
 static bool IsHazardMat(uint8 m)
@@ -143,6 +144,12 @@ bool NPCSystem::Start()
         dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 36,60,12,12 }, 0.1f));
         dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 48,60,12,12 }, 0.1f));
         dieNormal.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 60,60,12,12 }, 0.1f));
+
+        auto& climb = npcAnims.Add("climb");
+        climb.defaultTex = &npcTex;
+        climb.fps = 6.0f;
+        climb.loop = AnimLoopMode::Loop;
+        climb.frames.push_back(AnimFramePx(&npcTex, AtlasRectPx{ 0,0,12,12 }, 0.1f));
     }
 
     spawnerAnims.Clear();
@@ -461,6 +468,34 @@ bool NPCSystem::IsInWater(const WorldSim& world, int x, int y, int w, int h) con
     return false;
 }
 
+bool NPCSystem::IsInVine(const WorldSim& world, int x, int y, int w, int h) const
+{
+    for (int yy = 0; yy < h; ++yy) {
+        for (int xx = 0; xx < w; ++xx) {
+            const int gx = x + xx; 
+            const int gy = y + yy;
+            if (!world.InRange(gx, gy)) continue;
+            if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == (uint8)Material::Vine) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool NPCSystem::HasVineBelow(const WorldSim& world, int x, int y, int w, int h) const
+{
+    const int gy = y + h;
+    for (int xx = 0; xx < w; ++xx) {
+        const int gx = x + xx;
+        if (!world.InRange(gx, gy)) continue;
+        if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == Material::Vine) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool NPCSystem::IsBuriedInSand(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const
 {
     int topSand = 0;
@@ -587,9 +622,6 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
         const int id = i + 1;
 
         auto killNPC = [&](std::string animation) {
-
-            printf("c mamo");
-
             n.anim.Play(animation, false);
             n.parked = false;
             n.goalId = -1;
@@ -628,7 +660,31 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
             continue;
         }
 
-        if (RectFreeOnBack(world, hbX, hbY + 1, n.hbW, n.hbH, id)) {
+        const int nx = n.x + n.dir;
+
+        //Vine
+        if (IsInVine(world, hbX, hbY, n.hbW, n.hbH)) {
+            if (RectFreeOnBack(world, hbX, hbY - 1, n.hbW, n.hbH, id)) {
+                n.y -= 1;
+                TryTouchBonus(n);
+                if (!TryParkNPCInGoal(n)) {
+                    n.anim.Play("idle", false);
+                }
+                continue;
+            }
+
+            if (RectFreeOnBack(world, nx + n.hbOffX, hbY, n.hbW, n.hbH, id)) {
+                n.x = nx;
+                TryTouchBonus(n);
+                if (!TryParkNPCInGoal(n)) {
+                    n.anim.Play("walk", false);
+                }
+                continue;
+            }
+        }
+
+        //Gravity
+        if (!HasVineBelow(world, hbX, hbY, n.hbW, n.hbH) && RectFreeOnBack(world, hbX, hbY + 1, n.hbW, n.hbH, id)) {
             n.y += 1;
             TryTouchBonus(n);
             if (!TryParkNPCInGoal(n)) {
@@ -637,8 +693,8 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
             continue;
         }
 
-        const int nx = n.x + n.dir;
 
+        //Forward
         if (RectFreeOnBack(world, nx + n.hbOffX, hbY, n.hbW, n.hbH, id)) {
             n.x = nx;
             TryTouchBonus(n);
