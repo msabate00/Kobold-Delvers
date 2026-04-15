@@ -136,7 +136,7 @@ std::vector<Material> Scene_Level::GetSceneMaterials()
         return std::vector<Material>{  Material::Empty, Material::Sand, Material::Fire };
         break; 
     case SCENE_LEVEL7:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
+        return std::vector<Material>{  Material::Empty, Material::Water, Material::Steam, Material::Fire };
         break;
     case SCENE_LEVEL8:
         return std::vector<Material>{  Material::Empty, Material::Sand };
@@ -791,7 +791,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
             const MatProps& mp = matProps((uint8)mat);
              
             bool clicked = app->ui->ImageButton(
-                app->ui->matAtlas,
+                app->ui->matAtlas, 
                 bx, by, icon, icon,
                 mp.rect,
                 RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 205), 5
