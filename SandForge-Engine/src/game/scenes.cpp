@@ -367,6 +367,7 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
 
 
+    //background
     ui->Image(ui->interfaceTex, 0, app->framebufferSize.y - 150, app->framebufferSize.x, 150, ui->hudBackgroundRect, RGBAu32(255, 255, 255, 255), -10);
 
 
