@@ -23,6 +23,14 @@ enum Material : uint8 {
     NpcGoalCell,
     NpcBonusCell,
     Vine,
+    Snow,
+    Oil,
+    Coal,
+    HotCoal,
+    FlammableGas,
+    FragilePlatform,
+    Acid,
+    Dynamite,
     COUNT
 };
 
@@ -45,3 +53,9 @@ const MatProps& matProps(uint8 id);
 void registerDefaultMaterials();
 
 bool isVolatile(uint8 m);
+bool IsHeatMat(uint8 m);
+bool IsFlammableMat(uint8 m);
+bool IsAcidTarget(uint8 m);
+
+void ExplodeIntoFire(Engine& E, int cx, int cy, int radius);
+void TryIgniteNeighbours(Engine& E, int x, int y);

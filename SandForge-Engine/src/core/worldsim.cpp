@@ -135,8 +135,13 @@ void WorldSim::SetFrontCell(int x, int y, const Cell& c)
 
 static bool IgnoresNPCOcc(uint8 m)
 {
-    return  m == (uint8)Material::Smoke || m == (uint8)Material::Steam ||
-            m == (uint)Material::Water || m == (uint)Material::Lava;
+    return  m == (uint8)Material::Smoke
+        || m == (uint8)Material::Steam
+        || m == (uint8)Material::FlammableGas
+        || m == (uint8)Material::Water
+        || m == (uint8)Material::Lava
+        || m == (uint8)Material::Oil
+        || m == (uint8)Material::Acid;
 }
 
 bool WorldSim::TryMove(int x0, int y0, int dx, int dy, const Cell& c, const std::vector<int>& occ)

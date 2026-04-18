@@ -56,14 +56,20 @@ static bool IsNPCPassableMat(uint8 m)
 {
     return m == (uint8)Material::Empty
         || m == (uint8)Material::Water
+        || m == (uint8)Material::Oil
+        || m == (uint8)Material::Acid
         || m == (uint8)Material::Smoke
         || m == (uint8)Material::Steam
+        || m == (uint8)Material::FlammableGas
         || m == (uint8)Material::Vine;
 }
 
 static bool IsHazardMat(uint8 m)
 {
-    return m == (uint8)Material::Lava || m == (uint8)Material::Fire;
+    return m == (uint8)Material::Lava
+        || m == (uint8)Material::Fire
+        || m == (uint8)Material::HotCoal
+        || m == (uint8)Material::Acid;
 }
 
 static bool CircleIntersectsRect(int cx, int cy, int radius, int rx, int ry, int rw, int rh)
@@ -658,6 +664,22 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
         if (n.parked) {
             n.anim.Play("idle", false);
             continue;
+        }
+
+        //Breakable platform
+        const int footY = n.y + n.hbOffY + n.hbH;
+        bool broke = false;
+        for (int xx = 0; xx < n.hbW; ++xx) {
+            const int gx = n.x + n.hbOffX + xx;
+            if (!world.InRange(gx, footY)) continue;
+            const int wi = world.LinearIndex(gx, footY);
+            if (world.BackMatAtIndex(wi) == (uint8)Material::FragilePlatform) {
+                world.SetCell(gx, footY, (uint8)Material::Empty);
+                broke = true;
+            }
+        }
+        if (broke) {
+            RebuildOcc(world);
         }
 
         const int nx = n.x + n.dir;
