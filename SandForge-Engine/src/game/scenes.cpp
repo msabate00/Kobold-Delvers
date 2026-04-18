@@ -371,10 +371,11 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     DrawMaterialBudgetBar();
 
     //Tutorials
-    const float camW = 80.0f;
-    const float spawnW = 42.0f;
-    const float finishW = 42.0f;
-    const float bonusW = 42.0f;
+    const float camW = 80;
+    const float spawnW = 42;
+    const float finishW = 42;
+    const float bonusW = 42;
+    const float moveSidesW = 42;
 
     const float budgetX = ((float)app->framebufferSize.x / 2) - 810;
     const float budgetY = app->framebufferSize.y - 135.0f;
@@ -394,6 +395,16 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         ui->ImageWorld(ui->tutorialsTex, 165, 90, bonusW, KeepAspectH(bonusW, ui->bonusTutorialRect), ui->bonusTutorialRect, tutorialColor);
 
         ui->Image(ui->tutorialsTex, budgetX, budgetY, ui->budgetTutorialRect.w * 0.8f, ui->budgetTutorialRect.h*0.8f, ui->budgetTutorialRect, tutorialColor);
+    }
+
+    //Level 5
+    if (id == SceneId::SCENE_LEVEL5) {
+        ui->ImageWorld(ui->tutorialsTex, 70, 50, moveSidesW, KeepAspectH(moveSidesW, ui->moveSidesTutorialRect), ui->moveSidesTutorialRect, tutorialColor);
+    }
+
+    //Level 2
+    if (id == SceneId::SCENE_LEVEL6) {
+        ui->ImageWorld(ui->tutorialsTex, 110, 200, moveSidesW, KeepAspectH(moveSidesW, ui->moveUpTutorialRect), ui->moveUpTutorialRect, tutorialColor);
     }
     
 
