@@ -86,8 +86,11 @@ public:
     bool ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const;
 
 public:
+    void CycleSimSpeed();
+public:
     bool paused = false;
     bool stepOnce = false;
+    int simSpeed = 1;
     int parity = 0;
 
     bool levelCellsProtection = false;

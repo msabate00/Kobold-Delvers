@@ -23,9 +23,16 @@ bool Engine::Start()
 
 bool Engine::PreUpdate() { return true; }
 
+void Engine::CycleSimSpeed()
+{
+    if (simSpeed == 1) simSpeed = 2;
+    else if (simSpeed == 2) simSpeed = 4;
+    else simSpeed = 1;
+}
+
 bool Engine::Update(float dt)
 {
-    world.StepAccumulator() += dt;
+    world.StepAccumulator() += dt * (float)simSpeed;
 
     const float fixed = world.FixedTimeStep();
     while (world.StepAccumulator() >= fixed && (!paused || stepOnce)) {

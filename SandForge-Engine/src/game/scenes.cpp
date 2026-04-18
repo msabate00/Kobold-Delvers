@@ -173,6 +173,7 @@ void Scene_Level::OnEnter()
 {
     app->engine->paused = false;
     app->engine->stepOnce = false;
+    app->engine->simSpeed = 1;
     app->engine->levelCellsProtection = true;
 
     levelFinished = false;
@@ -455,30 +456,64 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
             if (makeBtnColor(levelsMaterials[i])) brushMat = levelsMaterials[i];
         }
 
-        x = ((float)app->framebufferSize.x / 2) + 370;
+        const float controlsCenterX = ((float)app->framebufferSize.x / 2) + 380.0f;
+        const float controlY = y - 21.0f;
+        const float controlGap = 8.0f;
+        const float controlBgSize = 42.0f;
+        const float controlIconSize = 32.0f;
+        const float controlsWidth = controlBgSize * 3.0f + controlGap * 2.0f;
+        const float controlsStartX = controlsCenterX - controlsWidth * 0.5f;
+
+        auto drawSpeedButton = [&](float bx, float by) {
+            uint32 tint = RGBAu32(255, 255, 255, 255);
+            if (app->engine->simSpeed == 2) tint = RGBAu32(210, 235, 255, 255);
+            else if (app->engine->simSpeed == 4) tint = RGBAu32(170, 225, 255, 255);
+
+            app->ui->Image(app->ui->interfaceTex, bx, by, controlBgSize, controlBgSize, ui->hudMaterialBackgroundRect, tint, 4);
+
+            if (app->ui->Button(bx + 5, by + 5, controlIconSize, controlIconSize,
+                RGBAu32(0, 0, 0, 0), RGBAu32(255, 255, 255, 30), RGBAu32(255, 255, 255, 55))) {
+                app->engine->CycleSimSpeed();
+            }
+
+            char speedLabel[8];
+            std::snprintf(speedLabel, sizeof(speedLabel), "x%d", app->engine->simSpeed);
+            app->ui->TextCentered(bx, by + 1, controlBgSize, controlBgSize, speedLabel, RGBAu32(250, 250, 250, 240), 0.72f);
+        };
+
+        const float speedBgX = controlsStartX;
+        const float pauseBgX = speedBgX + controlBgSize + controlGap;
+        const float stepBgX = pauseBgX + controlBgSize + controlGap;
+        const float pauseIconX = pauseBgX + (controlBgSize - controlIconSize) * 0.5f;
+        const float stepIconX = stepBgX + (controlBgSize - controlIconSize) * 0.5f;
+        const float controlIconY = y - 16.0f;
 
         if (app->engine->paused && !levelFinished) {
 
+            drawSpeedButton(speedBgX, controlY);
+
             //Pausa
-            app->ui->Image(app->ui->interfaceTex, x - 21 - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if(app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21, y - 16, 32, 32, ui->playIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = false;
+            app->ui->Image(app->ui->interfaceTex, pauseBgX, controlY, controlBgSize, controlBgSize, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if(app->ui->ImageButton(app->ui->interfaceTex, pauseIconX, controlIconY, controlIconSize, controlIconSize, ui->playIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = false;
 
             //Step
-            app->ui->Image(app->ui->interfaceTex, x - 21 - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5)) app->engine->stepOnce = true;
+            app->ui->Image(app->ui->interfaceTex, stepBgX, controlY, controlBgSize, controlBgSize, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->interfaceTex, stepIconX, controlIconY, controlIconSize, controlIconSize, ui->stepIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5)) app->engine->stepOnce = true;
         }
         else if (!levelFinished) {
-             
-            app->ui->Image(app->ui->interfaceTex, x - 21 - 21, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            if (app->ui->ImageButton(app->ui->interfaceTex, x - 16 - 21, y - 16, 32, 32, ui->pauseIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = true;
 
-            app->ui->Image(app->ui->interfaceTex, x - 21 - 21 + 16 + 48, y - 21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
-            app->ui->Image(app->ui->interfaceTex, x - 16 - 21 + 16 + 48, y - 16, 32, 32, ui->stepIcon, RGBAu32(255, 255, 255, 055), 5);
+            drawSpeedButton(speedBgX, controlY);
+
+            app->ui->Image(app->ui->interfaceTex, pauseBgX, controlY, controlBgSize, controlBgSize, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            if (app->ui->ImageButton(app->ui->interfaceTex, pauseIconX, controlIconY, controlIconSize, controlIconSize, ui->pauseIcon, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 200), RGBAu32(255, 255, 255, 55), 5))  app->engine->paused = true;
+
+            app->ui->Image(app->ui->interfaceTex, stepBgX, controlY, controlBgSize, controlBgSize, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+            app->ui->Image(app->ui->interfaceTex, stepIconX, controlIconY, controlIconSize, controlIconSize, ui->stepIcon, RGBAu32(255, 255, 255, 055), 5);
         }
 
 
         //Timer:
-        app->ui->TextCentered(x, y+50, s, s, app->engine->sceneTimer.ReadString().c_str(), RGBAu32(250, 250, 250, 240), 1.2f);
+        app->ui->TextCentered(controlsCenterX - s * 0.5f, y+50, s, s, app->engine->sceneTimer.ReadString().c_str(), RGBAu32(250, 250, 250, 240), 1.2f);
     }
 
     //Separadores
@@ -523,6 +558,7 @@ void Scene_Sandbox::OnEnter()
 {
     app->engine->paused = false;
     app->engine->stepOnce = false;
+    app->engine->simSpeed = 1;
     app->engine->levelCellsProtection = false;
     requestRescan = true;
 
@@ -598,10 +634,21 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
     // Botones arriba derecha
     {
         const float b = 28.0f;
+        const float speedW = 36.0f;
         const float by = 8.0f;
         const float bxBack = vw - 8.0f - b;
         const float bxSet = bxBack - 34.0f;
         const float bxGrid = bxSet - 34.0f;
+        const float bxSpeed = bxGrid - 6.0f - speedW;
+
+        char speedLabel[8];
+        std::snprintf(speedLabel, sizeof(speedLabel), "x%d", app->engine->simSpeed);
+        uint32 speedC = RGBAu32(84, 104, 160, 220);
+        if (app->engine->simSpeed == 2) speedC = RGBAu32(110, 145, 210, 230);
+        else if (app->engine->simSpeed == 4) speedC = RGBAu32(90, 180, 230, 235);
+        if (tinyBtn(bxSpeed, by, speedW, b, speedC, speedLabel, 0.62f)) {
+            app->engine->CycleSimSpeed();
+        }
 
         // Back
         if (tinyBtn(bxBack, by, b, b, RGBAu32(200, 80, 80, 230), "<", 0.85f)) {
