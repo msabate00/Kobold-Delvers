@@ -86,7 +86,8 @@ static void WaterUpdate(Engine& E, int x, int y, const Cell& self) {
         int nx = x + dirs[i][0], ny = y + dirs[i][1];
         if (!E.InRange(nx, ny)) continue;
         if (E.GetCell(nx, ny).m == (uint8)Material::Lava) {
-            E.SetCell(x, y, (uint8)Material::Steam);
+            E.SetCell(x, y-1, (uint8)Material::Steam);
+            E.SetCell(x, y, (uint8)Material::Stone);
             E.SetCell(nx, ny, (uint8)Material::Stone);
             return;
         }

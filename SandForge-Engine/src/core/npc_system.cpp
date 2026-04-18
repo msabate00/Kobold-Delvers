@@ -684,11 +684,24 @@ void NPCSystem::MoveNPCs(WorldSim& world, float fixedTimeStep)
         }
 
         //Gravity
-        if (!HasVineBelow(world, hbX, hbY, n.hbW, n.hbH) && RectFreeOnBack(world, hbX, hbY + 1, n.hbW, n.hbH, id)) {
+        if (!HasVineBelow(world, hbX, hbY, n.hbW, n.hbH) &&
+            RectFreeOnBack(world, hbX, hbY + 1, n.hbW, n.hbH, id)) {
+            n.y += 1;
+            TryTouchBonus(n);
+            if (!TryParkNPCInGoal(n) &&
+                RectFreeOnBack(world, hbX, hbY + 2, n.hbW, n.hbH, id)) {
+                n.anim.Play("fall", false);
+            }
+            continue;
+        }
+
+        //Step down
+        if (RectFreeOnBack(world, nx + n.hbOffX, hbY + 1, n.hbW, n.hbH, id)) {
+            n.x = nx;
             n.y += 1;
             TryTouchBonus(n);
             if (!TryParkNPCInGoal(n)) {
-                n.anim.Play("fall", false);
+                n.anim.Play("walk", false);
             }
             continue;
         }
