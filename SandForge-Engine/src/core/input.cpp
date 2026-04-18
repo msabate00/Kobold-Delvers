@@ -1,6 +1,5 @@
-﻿#include "input.h"
+#include "input.h"
 #include "../core/engine.h"
-#include "../core/particles.h"
 #include "../core/material.h"
 #include "../app/app.h"
 #include "../ui/ui.h"
@@ -63,11 +62,13 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
     if (this->KeyDown(GLFW_KEY_F11)) app->RequestScreenshot(true);
 
 
-    float sp = 300 * app->dt;
-    if (KeyRepeat(GLFW_KEY_A)) app->SetCameraRect(app->camera.pos.x - sp, app->camera.pos.y , app->camera.size.x, app->camera.size.y);
-    if (KeyRepeat(GLFW_KEY_D)) app->SetCameraRect(app->camera.pos.x + sp, app->camera.pos.y, app->camera.size.x, app->camera.size.y);
-    if (KeyRepeat(GLFW_KEY_W)) app->SetCameraRect(app->camera.pos.x, app->camera.pos.y - sp, app->camera.size.x, app->camera.size.y);
-    if (KeyRepeat(GLFW_KEY_S)) app->SetCameraRect(app->camera.pos.x, app->camera.pos.y + sp, app->camera.size.x, app->camera.size.y);
+    if (!app->engine->HasPlayer()) {
+        float sp = 300 * app->dt;
+        if (KeyRepeat(GLFW_KEY_A)) app->SetCameraRect(app->camera.pos.x - sp, app->camera.pos.y , app->camera.size.x, app->camera.size.y);
+        if (KeyRepeat(GLFW_KEY_D)) app->SetCameraRect(app->camera.pos.x + sp, app->camera.pos.y, app->camera.size.x, app->camera.size.y);
+        if (KeyRepeat(GLFW_KEY_W)) app->SetCameraRect(app->camera.pos.x, app->camera.pos.y - sp, app->camera.size.x, app->camera.size.y);
+        if (KeyRepeat(GLFW_KEY_S)) app->SetCameraRect(app->camera.pos.x, app->camera.pos.y + sp, app->camera.size.x, app->camera.size.y);
+    }
 
 
     app->shiftPressed = KeyRepeat(GLFW_KEY_LEFT_SHIFT) || KeyRepeat(GLFW_KEY_RIGHT_SHIFT);
@@ -119,7 +120,6 @@ void Input::ProcessBindings(Material& brushMat, int& brushSize) {
 
             //Aumentamos los pixeles
             app->pixelsPerCell = std::clamp(app->pixelsPerCell + steps, kMinPpc, kMaxPpc);
-            printf("%d", app->pixelsPerCell);
 
             //Ajustamos la resolu
             const float camW = app->framebufferSize.x / (float)app->pixelsPerCell;

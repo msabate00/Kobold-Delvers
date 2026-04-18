@@ -10,6 +10,7 @@ bool Engine::Awake()
 {
     if (!world.Awake(app)) return false;
     npcs.Awake(world);
+    players.Awake(world);
     paint.Clear();
     ResetLevelSession();
     SetLevelMaterialLimits(0, 0);
@@ -18,10 +19,26 @@ bool Engine::Awake()
 
 bool Engine::Start()
 {
-    return npcs.Start();
+    if (!npcs.Start()) return false;
+    return players.Start();
 }
 
 bool Engine::PreUpdate() { return true; }
+
+void Engine::RebuildOcc()
+{
+    npcs.RebuildOcc(world);
+
+    const Player* player = players.GetPlayer();
+    if (!player || !player->alive) return;
+
+    npcs.AddOccRect(world,
+        player->x + player->hbOffX,
+        player->y + player->hbOffY,
+        player->hbW,
+        player->hbH,
+        -1);
+}
 
 void Engine::CycleSimSpeed()
 {
@@ -38,10 +55,13 @@ bool Engine::Update(float dt)
     while (world.StepAccumulator() >= fixed && (!paused || stepOnce)) {
         world.CopyFrontToBack();
 
-        npcs.RebuildOcc(world);
+        RebuildOcc();
         world.Step(*this, parity);
+
+        players.Move(world, npcs.Occ(), fixed);
+        RebuildOcc();
         npcs.MoveNPCs(world, fixed);
-        npcs.RebuildOcc(world);
+        RebuildOcc();
 
         world.SwapBuffers();
 
@@ -51,7 +71,19 @@ bool Engine::Update(float dt)
         if (paused) { stepOnce = false; break; }
     }
 
+    players.Animate(*this, dt);
     npcs.AnimateNPCs(*this, dt);
+
+    if (const Player* player = players.GetPlayer()) {
+        if (player->alive) {
+            const float targetX = player->x + player->w * 0.5f - app->camera.size.x * 0.5f;
+            const float targetY = player->y + player->h * 0.5f - app->camera.size.y * 0.5f;
+            const float t = std::clamp(dt * 10.0f, 0.0f, 1.0f);
+            const float camX = app->camera.pos.x + (targetX - app->camera.pos.x) * t;
+            const float camY = app->camera.pos.y + (targetY - app->camera.pos.y) * t;
+            app->SetCameraRect(camX, camY, app->camera.size.x, app->camera.size.y);
+        }
+    }
 
     if (paused) world.StepAccumulator() = 0.0f;
 
@@ -91,7 +123,7 @@ void Engine::ResizeGrid(int w, int h, bool keepContent)
     world.StepAccumulator() = 0.0f;
 
     ResetLevelSession();
-    npcs.RebuildOcc(world);
+    RebuildOcc();
 
     // Camara
     if (wasFit) {
@@ -106,13 +138,14 @@ void Engine::ClearWorld(uint8 fill)
 {
     world.Clear(fill);
     npcs.Clear(world);
+    players.Clear(world);
     paint.Clear();
 
     parity = 0;
     stepOnce = false;
 
     ResetLevelSession();
-    npcs.RebuildOcc(world);
+    RebuildOcc();
 }
 
 bool Engine::tryMove(int x0, int y0, int x1, int y1, const Cell& c)
@@ -151,9 +184,17 @@ void Engine::SetLevelMaterialLimits(int maxUse, int starUse)
     }
 }
 
+
+void Engine::SetEditorPlayerTriggerMaterial(Material m)
+{
+    if (m >= Material::Sand && m <= Material::Dynamite) {
+        editorPlayerTriggerMaterial = m;
+    }
+}
+
 void Engine::Paint(int screenX, int screenY, Material m, int r)
 {
-    paint.Paint(*this, world, npcs, screenX, screenY, m, r);
+    paint.Paint(*this, world, npcs, players, screenX, screenY, m, r);
 }
 
 void Engine::StopPaint()
@@ -239,5 +280,17 @@ bool Engine::ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const
     outX = std::clamp(outX, 0, world.GridW() - 1);
     outY = std::clamp(outY, 0, world.GridH() - 1);
 
+    return true;
+}
+
+bool Engine::GetPlayerPlaceTargetCellFromMouse(int mouseScreenX, int mouseScreenY, int& outX, int& outY) const
+{
+    int mouseWorldX = 0;
+    int mouseWorldY = 0;
+    if (!ScreenToWorldCell(mouseScreenX, mouseScreenY, mouseWorldX, mouseWorldY)) return false;
+    if (!players.GetPlaceTargetCell(mouseWorldX, mouseWorldY, outX, outY)) return false;
+
+    outX = std::clamp(outX, 0, world.GridW() - 1);
+    outY = std::clamp(outY, 0, world.GridH() - 1);
     return true;
 }

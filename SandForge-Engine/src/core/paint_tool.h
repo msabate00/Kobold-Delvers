@@ -7,13 +7,14 @@
 struct Engine;
 class WorldSim;
 class NPCSystem;
+class PlayerSystem;
 
 class PaintTool
 {
 public:
     void Clear();
 
-    void Paint(Engine& engine, WorldSim& world, NPCSystem& npcs, int screenX, int screenY, Material m, int radius);
+    void Paint(Engine& engine, WorldSim& world, NPCSystem& npcs, PlayerSystem& players, int screenX, int screenY, Material m, int radius);
     void StopPaint(Engine& engine);
 
 private:

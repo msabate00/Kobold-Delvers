@@ -4,7 +4,7 @@
 
 #include "app/defs.h"
 
-static const uint32 LVL_VERSION = 4;
+static const uint32 LVL_VERSION = 5;
 
 struct LevelHeaderV2 {
     uint32 version;
@@ -22,6 +22,18 @@ struct LevelHeaderV3 {
     uint32 goalCount;
 };
 
+struct LevelHeaderV4 {
+    uint32 version;
+    uint32 w;
+    uint32 h;
+    uint32 npcCount;
+    uint32 spawnerCount;
+    uint32 goalCount;
+    uint32 bonusCount;
+    int materialBudgetMax;
+    int materialBudgetStar;
+};
+
 struct LevelHeader {
     uint32 version;
     uint32 w;
@@ -30,6 +42,8 @@ struct LevelHeader {
     uint32 spawnerCount;
     uint32 goalCount;
     uint32 bonusCount;
+    uint32 playerCount;
+    uint32 playerTriggerCount;
     int materialBudgetMax;
     int materialBudgetStar;
 };
@@ -62,6 +76,21 @@ struct LevelBonus {
     uint8 claimed = false;
 };
 
+
+struct LevelPlayer {
+    int x = 0, y = 0;
+    int w = 12, h = 12;
+    int dir = 1;
+    int heldMaterial = (int)0;
+    uint8 alive = true;
+};
+
+struct LevelPlayerTrigger {
+    int x = 0, y = 0;
+    int w = 12, h = 12;
+    int material = (int)1;
+};
+
 struct LevelRules {
     int materialBudgetMax = 0;
     int materialBudgetStar = 0;
@@ -74,6 +103,9 @@ struct Level {
     std::vector<LevelSpawner> spawners;
     std::vector<LevelGoal> goals;
     std::vector<LevelBonus> bonuses;
+    bool hasPlayer = false;
+    LevelPlayer player;
+    std::vector<LevelPlayerTrigger> playerTriggers;
     LevelRules rules;
 
     bool IsValid() const;

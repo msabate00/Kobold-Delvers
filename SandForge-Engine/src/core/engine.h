@@ -7,6 +7,7 @@
 #include "worldsim.h"
 #include "paint_tool.h"
 #include "npc_system.h"
+#include "player_system.h"
 #include "level_io.h"
 #include <app/timer.h>
 
@@ -57,33 +58,34 @@ public:
     bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh) { return world.PopChunkDirtyGPURect(x, y, rw, rh); }
 
     //Entidades
-    NPC& AddNPC(int x, int y, int dir = 1) { return npcs.AddNPC(world, x, y, dir); }
-    NPCSpawner& AddSpawner(int x, int y) { return npcs.AddSpawner(world, x, y); }
-    NPCGoal& AddGoal(int x, int y) { return npcs.AddGoal(world, x, y); }
-    NPCBonus& AddBonus(int x, int y) { return npcs.AddBonus(world, x, y); }
 
     const std::vector<NPC>& GetNPCs() const { return npcs.GetNPCs(); }
     const std::vector<NPCSpawner>& GetSpawners() const { return npcs.GetSpawners(); }
     const std::vector<NPCGoal>& GetGoals() const { return npcs.GetGoals(); }
     const std::vector<NPCBonus>& GetBonuses() const { return npcs.GetBonuses(); }
+    bool HasPlayer() const { return players.HasPlayer(); }
+    const Player* GetPlayer() const { return players.GetPlayer(); }
     bool BonusTriggered() const { return npcs.AnyBonusClaimed(); }
     int CapturedGoalCount() const { return npcs.TotalCapturedCount(); }
 
     //Levels
-    void ExportLevel(Level& out) const { levelio.ExportLevel(world, npcs, out); }
-    bool ImportLevel(const Level& in) { return levelio.ImportLevel(*this, world, npcs, in); }
-    bool SaveLevel(const char* path) const { return levelio.SaveLevel(world, npcs, path); }
-    bool LoadLevel(const char* path) { return levelio.LoadLevel(*this, world, npcs, path); }
+    void ExportLevel(Level& out) const { levelio.ExportLevel(world, npcs, players, out); }
+    bool ImportLevel(const Level& in) { return levelio.ImportLevel(*this, world, npcs, players, in); }
+    bool SaveLevel(const char* path) const { return levelio.SaveLevel(world, npcs, players, path); }
+    bool LoadLevel(const char* path) { return levelio.LoadLevel(*this, world, npcs, players, path); }
 
     void SetLevelMaterialLimits(int maxUse, int starUse);
     int LevelMaterialBudgetMax() const { return levelMaterialBudgetMax; }
     int LevelMaterialBudgetStar() const { return levelMaterialBudgetStar; }
     int MaterialUsed() const { return materialUsed; }
     bool MaterialBudgetEnabled() const { return levelMaterialBudgetMax > 0; }
+    void SetEditorPlayerTriggerMaterial(Material m);
+    Material GetEditorPlayerTriggerMaterial() const { return editorPlayerTriggerMaterial; }
 
     //Dimensiones
     bool WorldRectToScreen(float x, float y, float w, float h, int vw, int vh, float& sx, float& sy, float& sw, float& sh);
     bool ScreenToWorldCell(int inX, int inY, int& outX, int& outY) const;
+    bool GetPlayerPlaceTargetCellFromMouse(int mouseScreenX, int mouseScreenY, int& outX, int& outY) const;
 
 public:
     void CycleSimSpeed();
@@ -101,10 +103,14 @@ public:
 private:
     WorldSim world;
     PaintTool paint;
+    void RebuildOcc();
+
     NPCSystem npcs;
+    PlayerSystem players;
     LevelIO levelio;
 
     int levelMaterialBudgetMax = 0;
     int levelMaterialBudgetStar = 0;
     int materialUsed = 0;
+    Material editorPlayerTriggerMaterial = Material::Sand;
 };

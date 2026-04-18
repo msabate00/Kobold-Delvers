@@ -36,10 +36,6 @@ public:
 
     bool Button(float x, float y, float w, float h,
         uint32 rgba, uint32 rgbaHover, uint32 rgbaActive);
-    // Botón con textura (atlas) + fondo tintado (se renderiza vía SpriteBatch en el primer pass)
-    bool ButtonAtlas(float x, float y, float w, float h,
-        int atlasIndex, uint32 rgba, uint32 rgbaHover, uint32 rgbaActive);
-
     bool Slider(float x, float y, float w, float h,
         float minv, float maxv, float& v, uint32 track, uint32 knob);
     bool Slider(float x, float y, float w, float h,
@@ -82,17 +78,10 @@ private:
 
 public:
     Texture2D matAtlas;
-    bool matAtlasReady = false;
-
     Texture2D interfaceTex;
-    bool interfaceTexReady = false;
-
     Texture2D npcInteractionsTex;
-    bool npcInteractionsTexReady = false;
 
     Texture2D tutorialsTex;
-    bool tutorialsTexReady = false;
-
     AtlasRectPx speechBoxWhite{ 0,0,31,13 };
     AtlasRectPx speechBoxRed{ 31,0,31,13 };
     std::array<AtlasRectPx, 6> oxygenBubble{{
@@ -170,7 +159,6 @@ private:
     
 
     Texture2D cursorTex;
-    bool curorTexReady = false;
 
 };
 
@@ -188,18 +176,3 @@ static inline uint32 MulRGBA(uint32_t c, float m) {
     return (r) | (g << 8) | (b << 16) | (a << 24);
 }
 
-// materialAtlas.png: 10 iconos (coords en píxeles dentro de la textura)
-// Orden: 0..9 (Material::Empty..Material::NpcCell)
-// Ajusta estos valores a mano según tu atlas.
-static constexpr AtlasRectPx kMatAtlasPx[10] = {
-    {   0,      0,  32, 32 }, // 0
-    {   32,     0,  32, 32 }, // 1
-    {   64,     0,  32, 32 }, // 2
-    {   96,     0,  32, 32 }, // 3
-    {   128,    0,  32, 32 }, // 4
-    {   160,    0,  32, 32 }, // 5
-    {   192,    0,  32, 32 }, // 6
-    {   224,    0,  32, 32 }, // 7
-    {   256,    0,  32, 32 }, // 8
-    {   288,    0,  32, 32 }, // 9
-};

@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <chrono>
 #include <ctime>
+#include <utility>
 
 static uint32_t Hash32(const std::string& s)
 {
@@ -868,6 +869,11 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         const float gap = 6.0f;
         const float pad = 8.0f;
         const float barH = 44.0f;
+        const bool showTriggerRow = app->engine->HasPlayer();
+
+        auto isTriggerMaterial = [](Material m) {
+            return m >= Material::Sand && m <= Material::Dynamite;
+        };
 
         float x = pad;
         float y = (float)app->framebufferSize.y - barH + 6.0f;
@@ -876,6 +882,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         ui->Rect(0.0f, (float)app->framebufferSize.y - barH, vw, barH, bg);
         ui->RectBorders(0.0f, (float)app->framebufferSize.y - barH, vw, barH, 1.0f, line);
 
+        std::vector<std::pair<float, Material>> triggerSlots;
         auto makeBtnColor = [&](Material mat) {
             float bx = x;
             float by = y;
@@ -892,13 +899,38 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
                 ui->RectBorders(bx, by, icon, icon, 2.0f, RGBAu32(255, 255, 255, 180));
             }
 
+            if (showTriggerRow && isTriggerMaterial(mat)) {
+                triggerSlots.push_back({ bx, mat });
+            }
             x += btn + gap;
             return clicked;
             };
 
         for (int i = 0; i < 256; ++i) {
-            if (i < Material::COUNT) {
-                if (makeBtnColor((Material)i)) brushMat = (Material)i;
+            if (i >= Material::COUNT) continue;
+            Material mat = (Material)i;
+            if (mat == Material::PlayerTriggerCell) continue;
+            if (makeBtnColor(mat)) brushMat = mat;
+        }
+
+        if (showTriggerRow) {
+            const float rowY = y - 28.0f;
+            for (const auto& slot : triggerSlots) {
+                const float bx = slot.first + 4.0f;
+                const Material triggerMat = slot.second;
+                const float size = 24.0f;
+                const bool selected = brushMat == Material::PlayerTriggerCell && app->engine->GetEditorPlayerTriggerMaterial() == triggerMat;
+
+                uint32 baseTint = selected ? RGBAu32(255, 210, 235, 255) : RGBAu32(255, 235, 215, 210);
+                if (ui->ImageButton(app->ui->matAtlas, bx, rowY, size, size, matProps((uint8)triggerMat).rect,
+                    baseTint, MulRGBA(baseTint, 0.92f), MulRGBA(baseTint, 0.78f), 5)) {
+                    app->engine->SetEditorPlayerTriggerMaterial(triggerMat);
+                    brushMat = Material::PlayerTriggerCell;
+                }
+
+                if (selected) {
+                    ui->RectBorders(bx, rowY, size, size, 2.0f, RGBAu32(255, 170, 220, 220));
+                }
             }
         }
     }

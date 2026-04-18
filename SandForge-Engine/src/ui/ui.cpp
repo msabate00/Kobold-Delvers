@@ -52,11 +52,11 @@ bool UI::Awake() {
 }
 bool UI::Start() {
 	fontReady = font.Load("assets/fonts/PixeloidSans.ttf", 24.0f, 512, 512, false); //cambiar pixel height para mayor calidad
-	matAtlasReady = matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
-	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
-	interfaceTexReady = interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
-	npcInteractionsTexReady = npcInteractionsTex.Load(SPRITE_DIR "/KoboldInteractions.png");
-	tutorialsTexReady = tutorialsTex.Load(SPRITE_DIR "/Tutorials.png");
+	matAtlas.Load(SPRITE_DIR "/materialAtlas.png");
+	cursorTex.Load(SPRITE_DIR "/cursor.png");
+	interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
+	npcInteractionsTex.Load(SPRITE_DIR "/KoboldInteractions.png");
+	tutorialsTex.Load(SPRITE_DIR "/Tutorials.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }
@@ -69,13 +69,10 @@ bool UI::CleanUp() {
 	font.Destroy();
 	fontReady = false;
 	matAtlas.Destroy();
-	matAtlasReady = false;
 	interfaceTex.Destroy();
-	interfaceTexReady = false;
 	npcInteractionsTex.Destroy();
-	npcInteractionsTexReady = false;
+	tutorialsTex.Destroy();
 	cursorTex.Destroy();
-	curorTexReady = false;
 
 	if (vbo) glDeleteBuffers(1, &vbo);
 	if (vao) glDeleteVertexArrays(1, &vao);
@@ -92,16 +89,38 @@ void UI::Begin(int viewW, int viewH) {
 
 void UI::Draw(int& brushSize, Material& brushMat) {
 
-	const MatProps actualMat = matProps((uint8)brushMat);
-
-
-	
+	Material auxMat = brushMat;
+	if (app->engine->HasPlayer()) {
+		if (const Player* player = app->engine->GetPlayer()) {
+			if (player->heldMaterial >= Material::Sand && player->heldMaterial <= Material::Dynamite) {
+				auxMat = player->heldMaterial;
+			}
+		}
+	}
+	const MatProps actualMat = matProps((uint8)auxMat);
 
 	if (app->engine->levelCellsProtection) {
 		LevelCellsProtectionMark(brushSize);
 	}
 
-	Ring(mx, my, brushSize, 2, RGBAu32(actualMat.color.r, actualMat.color.g, actualMat.color.b, 100), 12);
+	float ringX = (float)mx;
+	float ringY = (float)my;
+	int ringRadius = brushSize;
+	if (app->engine->HasPlayer()) {
+		ringRadius = 2;
+		int wx = 0;
+		int wy = 0;
+		if (app->engine->GetPlayerPlaceTargetCellFromMouse((int)mx, (int)my, wx, wy)) {
+			float sx = 0.0f, sy = 0.0f, sw = 0.0f, sh = 0.0f;
+			if (app->engine->WorldRectToScreen((float)wx, (float)wy, 1.0f, 1.0f,
+				app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh)) {
+				ringX = std::floor(sx + sw * 0.5f);
+				ringY = std::floor(sy + sh * 0.5f);
+			}
+		}
+	}
+
+	Ring(ringX, ringY, ringRadius, 2, RGBAu32(actualMat.color.r, actualMat.color.g, actualMat.color.b, 100), 12);
 
 	Cursor();
 
@@ -209,46 +228,45 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 		TextCentered(sx, sy - 14.0f, sw, 12.0f, buf, RGBAu32(255, 245, 180, 240), 0.65f);
 	}
 
-	if (npcInteractionsTexReady) {
-		const auto& npcs = app->engine->GetNPCs();
-		for (const NPC& n : npcs) {
-			if (!n.alive) continue;
+	
+	const auto& npcs = app->engine->GetNPCs();
+	for (const NPC& n : npcs) {
+		if (!n.alive) continue;
 
-			float sx, sy, sw, sh;
-			if (!app->engine->WorldRectToScreen(
-				(float)n.x, (float)n.y, (float)n.w, (float)n.h,
-				app->framebufferSize.x, app->framebufferSize.y,
-				sx, sy, sw, sh))
-				continue;
+		float sx, sy, sw, sh;
+		if (!app->engine->WorldRectToScreen(
+			(float)n.x, (float)n.y, (float)n.w, (float)n.h,
+			app->framebufferSize.x, app->framebufferSize.y,
+			sx, sy, sw, sh))
+			continue;
 
-			const float boxW = 42.0f;
-			const float boxH = 26.0f;
-			const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
-			const float boxY = std::floor(sy - boxH - 8.0f);
+		const float boxW = 42.0f;
+		const float boxH = 26.0f;
+		const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
+		const float boxY = std::floor(sy - boxH - 8.0f);
 
-			if (n.drowning && n.oxygenTime > 0.0f) {
-				Image(npcInteractionsTex, boxX+30, boxY+23, boxW+20, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
-				Text(boxX + 6.0f + 30, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
+		if (n.drowning && n.oxygenTime > 0.0f) {
+			Image(npcInteractionsTex, boxX+30, boxY+23, boxW+20, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
+			Text(boxX + 6.0f + 30, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
 
-				const float progress = Clamp01(n.oxygenTime / 3);
-				const int stage = std::fmin(15, (int)std::floor(progress * 48.0f));
+			const float progress = Clamp01(n.oxygenTime / 3);
+			const int stage = std::fmin(15, (int)std::floor(progress * 48.0f));
 
-				for (int b = 0; b < 3; ++b) {
-					int bubbleStage = stage - b * 5;
-					bubbleStage = std::clamp(bubbleStage, 0, 5);
-					Image(npcInteractionsTex, boxX + b * 10.0f + 30 + 30, boxY + 26, 10.0f, 10.0f, oxygenBubble[(size_t)bubbleStage], RGBAu32(255, 255, 255, 255), 4);
-				}
-				continue;
+			for (int b = 0; b < 3; ++b) {
+				int bubbleStage = stage - b * 5;
+				bubbleStage = std::clamp(bubbleStage, 0, 5);
+				Image(npcInteractionsTex, boxX + b * 10.0f + 30 + 30, boxY + 26, 10.0f, 10.0f, oxygenBubble[(size_t)bubbleStage], RGBAu32(255, 255, 255, 255), 4);
 			}
+			continue;
+		}
 
-			if (n.speechTimer > 0.0f && n.speechMessage >= 0 && n.speechMessage < (int)npcsMessages.size()) {
-				Image(npcInteractionsTex, boxX+30, boxY + 23, boxW, boxH, speechBoxWhite, RGBAu32(255, 255, 255, 255), 3);
-				TextCentered(boxX + 6.0f + 30, boxY + 23.0f, boxW - 12.0f, boxH - 8.0f,
-					npcsMessages[(size_t)n.speechMessage], RGBAu32(35, 30, 25, 255), 0.42f);
-			}
+		if (n.speechTimer > 0.0f && n.speechMessage >= 0 && n.speechMessage < (int)npcsMessages.size()) {
+			Image(npcInteractionsTex, boxX+30, boxY + 23, boxW, boxH, speechBoxWhite, RGBAu32(255, 255, 255, 255), 3);
+			TextCentered(boxX + 6.0f + 30, boxY + 23.0f, boxW - 12.0f, boxH - 8.0f,
+				npcsMessages[(size_t)n.speechMessage], RGBAu32(35, 30, 25, 255), 0.42f);
 		}
 	}
-
+	
 	if (app->showGridBounds) {
 		RectBordersWorld(0, 0, app->gridSize.x, app->gridSize.y, 2.0f, RGBAu32(120, 220, 255, 200));
 	}
@@ -496,53 +514,6 @@ bool UI::Button(float x, float y, float w, float h,
 
 
 
-
-bool UI::ButtonAtlas(float x, float y, float w, float h,
-    int atlasIndex, uint32 c, uint32 cH, uint32 cA)
-{
-    const bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
-    const uint32 bg = hover ? (md ? cA : cH) : c;
-    const bool clicked = hover && !md && mdPrev;
-
-    if (hover && (md || clicked)) mouseConsumed = true;
-
-    // Render pass only
-    if (!noRender) {
-        if (matAtlasReady && atlasIndex >= 0 && atlasIndex < 10) {
-            // Fondo
-            const UVRect white = WhitePixelUV(matAtlas);
-            Sprite bgS{};
-            bgS.tex = &matAtlas;
-            bgS.x = x; bgS.y = y; bgS.w = w; bgS.h = h;
-            bgS.u0 = white.u0; bgS.v0 = white.v0;
-            bgS.u1 = white.u1; bgS.v1 = white.v1;
-            bgS.color = bg;
-            bgS.layer = RenderLayer::UI;
-            app->renderer->Queue(bgS);
-
-            // Icono
-            const UVRect uv = UVFromPx(matAtlas, kMatAtlasPx[atlasIndex]);
-            const float iw = w * 0.75f;
-            const float ih = h * 0.75f;
-            const float ix = x + (w - iw) * 0.5f;
-            const float iy = y + (h - ih) * 0.5f;
-
-            Sprite ic{};
-            ic.tex = &matAtlas;
-            ic.x = ix; ic.y = iy; ic.w = iw; ic.h = ih;
-            ic.u0 = uv.u0; ic.v0 = uv.v0; ic.u1 = uv.u1; ic.v1 = uv.v1;
-            ic.color = 0xFFFFFFFF;
-            ic.layer = RenderLayer::UI;
-            app->renderer->Queue(ic);
-        }
-        else {
-            // Fallback: rect simple si no hay atlas/índice válido
-            Rect(x, y, w, h, bg);
-        }
-    }
-
-    return noRender ? clicked : false;
-}
 
 bool UI::Slider(float x, float y, float w, float h,
 	float minv, float maxv, float& v,

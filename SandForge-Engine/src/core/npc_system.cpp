@@ -421,6 +421,21 @@ void NPCSystem::RebuildOcc(const WorldSim& world)
     }
 }
 
+void NPCSystem::AddOccRect(const WorldSim& world, int x, int y, int w, int h, int occId)
+{
+    if (w <= 0 || h <= 0) return;
+    if (occ.empty()) return;
+
+    for (int yy = 0; yy < h; ++yy) {
+        for (int xx = 0; xx < w; ++xx) {
+            const int gx = x + xx;
+            const int gy = y + yy;
+            if (!world.InRange(gx, gy)) continue;
+            occ[world.LinearIndex(gx, gy)] = occId;
+        }
+    }
+}
+
 bool NPCSystem::RectFreeOnBack(const WorldSim& world, int x, int y, int w, int h, int ignoreId) const
 {
     for (int yy = 0; yy < h; ++yy)

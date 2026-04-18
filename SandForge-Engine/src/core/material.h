@@ -31,6 +31,8 @@ enum Material : uint8 {
     FragilePlatform,
     Acid,
     Dynamite,
+    PlayerCell,
+    PlayerTriggerCell,
     COUNT
 };
 

@@ -504,6 +504,8 @@ void registerDefaultMaterials()
     g_mat[(uint8)Material::NpcSpawnerCell] = {"Spawner",        {80, 220, 255,255},         0,                  AtlasRectPx{320,0, 32, 32},     nullptr };
     g_mat[(uint8)Material::NpcGoalCell] = { "Goal",             {255, 220, 80,255},         0,                  AtlasRectPx{352,0, 32, 32},     nullptr };
     g_mat[(uint8)Material::NpcBonusCell] = {"Bonus",            {20, 20, 20,255},           0,                  AtlasRectPx{384,0, 32, 32},     nullptr };
+    g_mat[(uint8)Material::PlayerCell] = {  "Player",           {255, 150, 215,255},        0,                  AtlasRectPx{288,0, 32, 32},     nullptr };
+    g_mat[(uint8)Material::PlayerTriggerCell] = {"PlayerTrigger", {255, 200, 120,255},      0,                  AtlasRectPx{384,0, 32, 32},     nullptr };
 }
 
 bool isVolatile(uint8 m)

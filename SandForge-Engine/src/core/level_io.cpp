@@ -3,13 +3,14 @@
 #include "engine.h"
 #include "worldsim.h"
 #include "npc_system.h"
+#include "player_system.h"
 #include "app/app.h"
 #include "app/log.h"
 
 #include <algorithm>
 #include <cstring>
 
-void LevelIO::ExportLevel(const WorldSim& world, const NPCSystem& npcs, Level& out) const
+void LevelIO::ExportLevel(const WorldSim& world, const NPCSystem& npcs, const PlayerSystem& players, Level& out) const
 {
     out.w = world.GridW();
     out.h = world.GridH();
@@ -72,11 +73,35 @@ void LevelIO::ExportLevel(const WorldSim& world, const NPCSystem& npcs, Level& o
         out.bonuses.push_back(lb);
     }
 
+    out.hasPlayer = false;
+    if (const Player* p = players.GetPlayer()) {
+        out.hasPlayer = true;
+        out.player.x = p->x;
+        out.player.y = p->y;
+        out.player.w = p->w;
+        out.player.h = p->h;
+        out.player.dir = p->dir;
+        out.player.heldMaterial = (int)p->heldMaterial;
+        out.player.alive = (uint8)p->alive;
+    }
+
+    out.playerTriggers.clear();
+    out.playerTriggers.reserve(players.GetPlayerMaterialTriggers().size());
+    for (const auto& t : players.GetPlayerMaterialTriggers()) {
+        LevelPlayerTrigger lt{};
+        lt.x = t.x;
+        lt.y = t.y;
+        lt.w = t.w;
+        lt.h = t.h;
+        lt.material = (int)t.material;
+        out.playerTriggers.push_back(lt);
+    }
+
     out.rules.materialBudgetMax = app->engine->LevelMaterialBudgetMax();
     out.rules.materialBudgetStar = app->engine->LevelMaterialBudgetStar();
 }
 
-bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const Level& in)
+bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, PlayerSystem& players, const Level& in)
 {
     if (!in.IsValid()) {
         LOG("ERROR: ImportLevel failed (invalid level)");
@@ -99,6 +124,7 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
 
     // entidades
     npcs.Clear(world);
+    players.Clear(world);
 
     for (const auto& ls : in.spawners) {
         NPCSpawner& sp = npcs.AddSpawner(world, ls.x, ls.y);
@@ -119,6 +145,25 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
         b.w = lb.w;
         b.h = lb.h;
         b.claimed = (lb.claimed != 0);
+    }
+
+    if (in.hasPlayer) {
+        Player& p = players.AddPlayer(world, in.player.x, in.player.y, (Material)in.player.heldMaterial);
+        p.w = in.player.w;
+        p.h = in.player.h;
+        p.dir = in.player.dir;
+        p.alive = (in.player.alive != 0);
+        p.heldMaterial = (in.player.heldMaterial >= (int)Material::Sand && in.player.heldMaterial <= (int)Material::Dynamite)
+            ? (Material)in.player.heldMaterial : Material::Empty;
+    }
+
+    for (const auto& lt : in.playerTriggers) {
+        PlayerMaterialTrigger& t = players.AddPlayerMaterialTrigger(world, lt.x, lt.y, (Material)lt.material);
+        t.w = lt.w;
+        t.h = lt.h;
+        if (lt.material < (int)Material::Sand || lt.material > (int)Material::Dynamite) {
+            t.material = Material::Sand;
+        }
     }
 
     for (const auto& ln : in.npcs) {
@@ -143,6 +188,11 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
     engine.SetLevelMaterialLimits(in.rules.materialBudgetMax, in.rules.materialBudgetStar);
 
     npcs.RebuildOcc(world);
+    if (const Player* p = players.GetPlayer()) {
+        if (p->alive) {
+            npcs.AddOccRect(world, p->x + p->hbOffX, p->y + p->hbOffY, p->hbW, p->hbH, -1);
+        }
+    }
 
     if (engine.app) {
         engine.app->SetCameraRect(engine.app->camera.pos.x, engine.app->camera.pos.y,
@@ -152,21 +202,21 @@ bool LevelIO::ImportLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, cons
     return true;
 }
 
-bool LevelIO::SaveLevel(const WorldSim& world, const NPCSystem& npcs, const char* path) const
+bool LevelIO::SaveLevel(const WorldSim& world, const NPCSystem& npcs, const PlayerSystem& players, const char* path) const
 {
     if (!path || !path[0]) {
         LOG("ERROR: SaveLevel called with empty path");
         return false;
     }
     Level lvl;
-    ExportLevel(world, npcs, lvl);
+    ExportLevel(world, npcs, players, lvl);
     const bool ok = SaveLevelFile(path, lvl);
     if (!ok) LOG("ERROR: SaveLevelFile failed for '%s'", path);
-    else LOG("Saved level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size());
+    else LOG("Saved level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu, player=%d, playerTriggers=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size(), lvl.hasPlayer ? 1 : 0, lvl.playerTriggers.size());
     return ok;
 }
 
-bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const char* path)
+bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, PlayerSystem& players, const char* path)
 {
     if (!path || !path[0]) {
         LOG("ERROR: LoadLevel called with empty path");
@@ -177,9 +227,9 @@ bool LevelIO::LoadLevel(Engine& engine, WorldSim& world, NPCSystem& npcs, const 
         LOG("ERROR: LoadLevelFile failed for '%s'", path);
         return false;
     }
-    const bool ok = ImportLevel(engine, world, npcs, lvl);
+    const bool ok = ImportLevel(engine, world, npcs, players, lvl);
     if (!ok) LOG("ERROR: ImportLevel failed for '%s'", path);
-    else LOG("Loaded level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size());
+    else LOG("Loaded level '%s' (%dx%d, npcs=%zu, spawners=%zu, goals=%zu, bonuses=%zu, player=%d, playerTriggers=%zu)", path, lvl.w, lvl.h, lvl.npcs.size(), lvl.spawners.size(), lvl.goals.size(), lvl.bonuses.size(), lvl.hasPlayer ? 1 : 0, lvl.playerTriggers.size());
 
     app->ResetCamera();
 

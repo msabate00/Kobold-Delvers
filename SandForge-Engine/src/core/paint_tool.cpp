@@ -2,6 +2,7 @@
 #include "engine.h"
 #include "worldsim.h"
 #include "npc_system.h"
+#include "player_system.h"
 #include "app/app.h"
 #include "game/scene_manager.h"
 #include <algorithm>
@@ -16,7 +17,7 @@ void PaintTool::Clear()
     paintInstance = {};
 }
 
-void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
+void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs, PlayerSystem& players,
     int screenX, int screenY, Material m, int r)
 {
     int cx = 0, cy = 0;
@@ -57,6 +58,28 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
     }
     else {
         paintAxis = PaintAxis::None;
+    }
+
+    // Player manual
+    if (m == Material::PlayerCell) {
+        if (!npcDrawed) {
+            players.AddPlayer(world, tx - 6, ty - 6);
+            npcDrawed = true;
+        }
+        paintLast = { tx, ty };
+        paintShiftPrev = app->shiftPressed;
+        return;
+    }
+
+    // Player material trigger
+    if (m == Material::PlayerTriggerCell) {
+        if (!npcDrawed) {
+            players.AddPlayerMaterialTrigger(world, tx - 6, ty - 6, engine.GetEditorPlayerTriggerMaterial());
+            npcDrawed = true;
+        }
+        paintLast = { tx, ty };
+        paintShiftPrev = app->shiftPressed;
+        return;
     }
 
     // NPC manual
@@ -109,6 +132,7 @@ void PaintTool::Paint(Engine& engine, WorldSim& world, NPCSystem& npcs,
 
         if (m == Material::Empty && app->scenes->CurrentId() == SceneId::SCENE_SANDBOX) {
             npcs.EraseEntitiesInCircle(world, pcx, pcy, rr, true, true, true, true);
+            players.EraseEntitiesInCircle(world, pcx, pcy, rr, true, true);
         }
         const int xmin = std::fmax(0, pcx - rr);
         const int xmax = std::fmin(world.GridW() - 1, pcx + rr);

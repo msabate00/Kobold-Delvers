@@ -36,6 +36,8 @@ bool SaveLevelFile(const char* path, const Level& lvl)
     hdr.spawnerCount = (uint32)lvl.spawners.size();
     hdr.goalCount = (uint32)lvl.goals.size();
     hdr.bonusCount = (uint32)lvl.bonuses.size();
+    hdr.playerCount = lvl.hasPlayer ? 1u : 0u;
+    hdr.playerTriggerCount = (uint32)lvl.playerTriggers.size();
     hdr.materialBudgetMax = lvl.rules.materialBudgetMax;
     hdr.materialBudgetStar = lvl.rules.materialBudgetStar;
 
@@ -89,6 +91,26 @@ bool SaveLevelFile(const char* path, const Level& lvl)
         if (std::fwrite(&b.claimed, sizeof(b.claimed), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write bonus.claimed failed '%s'", path); return false; }
     }
 
+    if (lvl.hasPlayer) {
+        const LevelPlayer& p = lvl.player;
+        if (std::fwrite(&p.x, sizeof(p.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.x failed '%s'", path); return false; }
+        if (std::fwrite(&p.y, sizeof(p.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.y failed '%s'", path); return false; }
+        if (std::fwrite(&p.w, sizeof(p.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.w failed '%s'", path); return false; }
+        if (std::fwrite(&p.h, sizeof(p.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.h failed '%s'", path); return false; }
+        if (std::fwrite(&p.dir, sizeof(p.dir), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.dir failed '%s'", path); return false; }
+        if (std::fwrite(&p.heldMaterial, sizeof(p.heldMaterial), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.heldMaterial failed '%s'", path); return false; }
+        if (std::fwrite(&p.alive, sizeof(p.alive), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write player.alive failed '%s'", path); return false; }
+    }
+
+    for (const LevelPlayerTrigger& t : lvl.playerTriggers)
+    {
+        if (std::fwrite(&t.x, sizeof(t.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write playerTrigger.x failed '%s'", path); return false; }
+        if (std::fwrite(&t.y, sizeof(t.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write playerTrigger.y failed '%s'", path); return false; }
+        if (std::fwrite(&t.w, sizeof(t.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write playerTrigger.w failed '%s'", path); return false; }
+        if (std::fwrite(&t.h, sizeof(t.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write playerTrigger.h failed '%s'", path); return false; }
+        if (std::fwrite(&t.material, sizeof(t.material), 1, f) != 1) { std::fclose(f); LOG("ERROR: SaveLevelFile write playerTrigger.material failed '%s'", path); return false; }
+    }
+
     std::fclose(f);
     return true;
 }
@@ -137,12 +159,27 @@ bool LoadLevelFile(const char* path, Level& lvl)
         hdr.materialBudgetMax = 0;
         hdr.materialBudgetStar = 0;
     }
+    else if (version == 4) {
+        LevelHeaderV4 hdr4{};
+        hdr4.version = version;
+        if (std::fread(&hdr4.w, sizeof(LevelHeaderV4) - sizeof(uint32), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read v4 header failed '%s'", path); return false; }
+        hdr.w = hdr4.w;
+        hdr.h = hdr4.h;
+        hdr.npcCount = hdr4.npcCount;
+        hdr.spawnerCount = hdr4.spawnerCount;
+        hdr.goalCount = hdr4.goalCount;
+        hdr.bonusCount = hdr4.bonusCount;
+        hdr.playerCount = 0;
+        hdr.playerTriggerCount = 0;
+        hdr.materialBudgetMax = hdr4.materialBudgetMax;
+        hdr.materialBudgetStar = hdr4.materialBudgetStar;
+    }
     else if (version == LVL_VERSION) {
         if (std::fread(&hdr.w, sizeof(LevelHeader) - sizeof(uint32), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read header failed '%s'", path); return false; }
     }
     else {
         std::fclose(f);
-        LOG("ERROR: LoadLevelFile version mismatch '%s' (file=%u expected=%u, 3 or 2)", path, version, (unsigned)LVL_VERSION);
+        LOG("ERROR: LoadLevelFile version mismatch '%s' (file=%u expected=%u, 4, 3 or 2)", path, version, (unsigned)LVL_VERSION);
         return false;
     }
 
@@ -153,6 +190,8 @@ bool LoadLevelFile(const char* path, Level& lvl)
     if (hdr.spawnerCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile spawnerCount invalid '%s' (spawnerCount=%u)", path, hdr.spawnerCount); return false; }
     if (hdr.goalCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile goalCount invalid '%s' (goalCount=%u)", path, hdr.goalCount); return false; }
     if (hdr.bonusCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile bonusCount invalid '%s' (bonusCount=%u)", path, hdr.bonusCount); return false; }
+    if (hdr.playerCount > 1) { std::fclose(f); LOG("ERROR: LoadLevelFile playerCount invalid '%s' (playerCount=%u)", path, hdr.playerCount); return false; }
+    if (hdr.playerTriggerCount > hdr.w * hdr.h) { std::fclose(f); LOG("ERROR: LoadLevelFile playerTriggerCount invalid '%s' (playerTriggerCount=%u)", path, hdr.playerTriggerCount); return false; }
 
     const size_t gridBytes = (size_t)hdr.w * (size_t)hdr.h;
 
@@ -167,6 +206,10 @@ bool LoadLevelFile(const char* path, Level& lvl)
     lvl.goals.reserve(hdr.goalCount);
     lvl.bonuses.clear();
     lvl.bonuses.reserve(hdr.bonusCount);
+    lvl.hasPlayer = false;
+    lvl.player = LevelPlayer{};
+    lvl.playerTriggers.clear();
+    lvl.playerTriggers.reserve(hdr.playerTriggerCount);
     lvl.rules.materialBudgetMax = std::fmax(0, hdr.materialBudgetMax);
     lvl.rules.materialBudgetStar = std::fmax(0, hdr.materialBudgetStar);
     if (lvl.rules.materialBudgetStar > lvl.rules.materialBudgetMax) {
@@ -247,6 +290,32 @@ bool LoadLevelFile(const char* path, Level& lvl)
             if (std::fread(&b.h, sizeof(b.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.h failed '%s'", path); return false; }
             if (std::fread(&b.claimed, sizeof(b.claimed), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read bonus.claimed failed '%s'", path); return false; }
             lvl.bonuses.push_back(b);
+        }
+    }
+
+    if (version >= 5 && hdr.playerCount > 0) {
+        LevelPlayer p{};
+        if (std::fread(&p.x, sizeof(p.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.x failed '%s'", path); return false; }
+        if (std::fread(&p.y, sizeof(p.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.y failed '%s'", path); return false; }
+        if (std::fread(&p.w, sizeof(p.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.w failed '%s'", path); return false; }
+        if (std::fread(&p.h, sizeof(p.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.h failed '%s'", path); return false; }
+        if (std::fread(&p.dir, sizeof(p.dir), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.dir failed '%s'", path); return false; }
+        if (std::fread(&p.heldMaterial, sizeof(p.heldMaterial), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.heldMaterial failed '%s'", path); return false; }
+        if (std::fread(&p.alive, sizeof(p.alive), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read player.alive failed '%s'", path); return false; }
+        lvl.hasPlayer = true;
+        lvl.player = p;
+    }
+
+    if (version >= 5) {
+        for (uint32 i = 0; i < hdr.playerTriggerCount; ++i)
+        {
+            LevelPlayerTrigger t{};
+            if (std::fread(&t.x, sizeof(t.x), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read playerTrigger.x failed '%s'", path); return false; }
+            if (std::fread(&t.y, sizeof(t.y), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read playerTrigger.y failed '%s'", path); return false; }
+            if (std::fread(&t.w, sizeof(t.w), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read playerTrigger.w failed '%s'", path); return false; }
+            if (std::fread(&t.h, sizeof(t.h), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read playerTrigger.h failed '%s'", path); return false; }
+            if (std::fread(&t.material, sizeof(t.material), 1, f) != 1) { std::fclose(f); LOG("ERROR: LoadLevelFile read playerTrigger.material failed '%s'", path); return false; }
+            lvl.playerTriggers.push_back(t);
         }
     }
 
