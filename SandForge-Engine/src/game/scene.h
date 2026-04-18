@@ -23,9 +23,6 @@ enum SceneId : int {
     SCENE_LEVEL10,
     SCENE_LEVEL11,
     SCENE_LEVEL12,
-    SCENE_LEVEL13,
-    SCENE_LEVEL14,
-    SCENE_LEVEL15,
 
     SCENE_COUNT
 };

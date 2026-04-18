@@ -114,6 +114,16 @@ int Scene_Level::LevelIndex() const
     return (int)id - (int)SCENE_LEVEL1;
 }
 
+bool Scene_Level::IsSpecialLevel() const
+{
+    return LevelStarSlots() == 1;
+}
+
+int Scene_Level::LevelStarSlots() const
+{
+    return app->progress.MaxStarsFor(LevelIndex());
+}
+
 std::vector<Material> Scene_Level::GetSceneMaterials()
 {
     switch (id)
@@ -152,15 +162,6 @@ std::vector<Material> Scene_Level::GetSceneMaterials()
         return std::vector<Material>{  Material::Empty, Material::Sand };
         break;
     case SCENE_LEVEL12:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
-        break;
-    case SCENE_LEVEL13:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
-        break;
-    case SCENE_LEVEL14:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
-        break;
-    case SCENE_LEVEL15:
         return std::vector<Material>{  Material::Empty, Material::Sand };
         break;
     default:
@@ -202,19 +203,48 @@ void Scene_Level::OnExit()
     app->engine->paused = false;
 }
 
+bool Scene_Level::PlayerTouchesGoal() const
+{
+    const Player* player = app->engine->GetPlayer();
+    if (!player || !player->alive) return false;
+
+    const int hx = player->x + player->hbOffX;
+    const int hy = player->y + player->hbOffY;
+    for (const auto& goal : app->engine->GetGoals()) {
+        if (hx < goal.x + goal.w && hx + player->hbW > goal.x && hy < goal.y + goal.h && hy + player->hbH > goal.y) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Scene_Level::CheckLevelCompleted()
 {
     if (levelFinished) return;
-    if (app->engine->CapturedGoalCount() < 5) return;
 
-    levelFinished = true;
-    app->engine->paused = true;
+    if (IsSpecialLevel()) {
+        if (!PlayerTouchesGoal()) return;
 
-    bonusStarEarned = app->engine->BonusTriggered();
-    budgetStarEarned = app->engine->MaterialBudgetEnabled() &&
-        app->engine->MaterialUsed() <= app->engine->LevelMaterialBudgetStar();
+        levelFinished = true;
+        app->engine->paused = true;
 
-    levelStarsEarned = (uint8)(1 + (bonusStarEarned ? 1 : 0) + (budgetStarEarned ? 1 : 0));
+        bonusStarEarned = false;
+        budgetStarEarned = false;
+        levelStarsEarned = 1;
+    }
+    else {
+        if (app->engine->CapturedGoalCount() < 5) return;
+
+        levelFinished = true;
+        app->engine->paused = true;
+
+        bonusStarEarned = app->engine->BonusTriggered();
+        budgetStarEarned = app->engine->MaterialBudgetEnabled() &&
+            app->engine->MaterialUsed() <= app->engine->LevelMaterialBudgetStar();
+
+        levelStarsEarned = (uint8)(1 + (bonusStarEarned ? 1 : 0) + (budgetStarEarned ? 1 : 0));
+    }
 
     if (levelResultSaved) return;
 
@@ -247,6 +277,7 @@ void Scene_Level::Update(float)
 
 void Scene_Level::DrawMaterialBudgetBar()
 {
+    if (IsSpecialLevel()) return;
     if (!app->engine->MaterialBudgetEnabled()) return;
 
     UI* ui = app->ui;
@@ -310,7 +341,7 @@ void Scene_Level::DrawLevelCompleteModal()
     ui->Rect(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 150));
 
     const float panelW = 360.0f;
-    const float panelH = 220.0f;
+    const float panelH = IsSpecialLevel() ? 200.0f : 220.0f;
     const float px = (vw - panelW) * 0.5f;
     const float py = (vh - panelH) * 0.5f - 40.0f;
      
@@ -318,12 +349,13 @@ void Scene_Level::DrawLevelCompleteModal()
     ui->RectBorders(px, py, panelW, panelH, 3.0f, RGBAu32(235, 235, 235, 60));
     ui->TextCentered(px, py + 14.0f, panelW, 34.0f, "LEVEL COMPLETE", RGBAu32(250, 250, 250, 245), 1.0f);
 
+    const int starSlots = LevelStarSlots();
     const float starY = py + 78.0f;
     const float starR = 22.0f;
     const float starGap = 70.0f;
-    const float startX = px + panelW * 0.5f - starGap;
+    const float startX = px + panelW * 0.5f - starGap * 0.5f * (starSlots - 1);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < starSlots; ++i) {
         const float sx = startX + i * starGap;
         const bool filled = i < (int)levelStarsEarned;
         ui->StarOutline(sx, starY, starR,
@@ -332,16 +364,22 @@ void Scene_Level::DrawLevelCompleteModal()
     }
 
     char line[128];
-    std::snprintf(line, sizeof(line), "Bonus: %s", bonusStarEarned ? "OK" : "NO");
-    ui->TextCentered(px, py + 118.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
-
-    if (app->engine->MaterialBudgetEnabled()) {
-        std::snprintf(line, sizeof(line), "Material: %d / %d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetStar());
+    if (IsSpecialLevel()) {
+        std::snprintf(line, sizeof(line), "Congratulations");
+        ui->TextCentered(px, py + 126.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
     }
     else {
-        std::snprintf(line, sizeof(line), "Material: no limit set");
+        std::snprintf(line, sizeof(line), "Bonus: %s", bonusStarEarned ? "OK" : "NO");
+        ui->TextCentered(px, py + 118.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+
+        if (app->engine->MaterialBudgetEnabled()) {
+            std::snprintf(line, sizeof(line), "Material: %d / %d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetStar());
+        }
+        else {
+            std::snprintf(line, sizeof(line), "Material: no limit set");
+        }
+        ui->TextCentered(px, py + 138.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
     }
-    ui->TextCentered(px, py + 138.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
 
     const float btnW = 120.0f;
     const float btnH = 34.0f;

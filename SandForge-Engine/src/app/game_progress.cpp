@@ -4,6 +4,11 @@
 #include <string>
 #include <cstdio>
 
+static bool IsSpecialLevelIndex(int levelIndex)
+{
+	return levelIndex == 3 || levelIndex == 7 || levelIndex == 11;
+}
+
 GameProgress::GameProgress(){
 
 	Reset();
@@ -30,7 +35,8 @@ uint8 GameProgress::StarsFor(int levelIndex) const{
 bool GameProgress::SetStarsFor(int levelIndex, uint8 starsEarned){
 
 	if (levelIndex < 0 || levelIndex >= LEVELS) return false;
-	if (starsEarned > 3) starsEarned = 3;
+	const uint8 maxStars = MaxStarsFor(levelIndex);
+	if (starsEarned > maxStars) starsEarned = maxStars;
 
 	if (starsEarned > stars[levelIndex]) {
 		stars[levelIndex] = starsEarned;
@@ -41,32 +47,32 @@ bool GameProgress::SetStarsFor(int levelIndex, uint8 starsEarned){
 
 }
 
-int GameProgress::UnlockRequirement(int levelIndex) const{
+
+int GameProgress::MaxStarsFor(int levelIndex) const {
+	return (levelIndex == 3 || levelIndex == 7 || levelIndex == 11) ? 1 : 3;
+}
 
 
-
+int GameProgress::UnlockRequirement(int levelIndex) const {
 	if (levelIndex <= 0) return 0;
 
 	switch (levelIndex)
 	{
 		case 1: return 1;
 		case 2: return 2;
-		case 3: return 4;
+		case 3: return 9;
 		case 4: return 6;
 		case 5: return 8;
-		case 6: return 10;
-		case 7: return 13;
+		case 6: return 13;
+		case 7: return 18;
 		case 8: return 16;
 		case 9: return 19;
 		case 10: return 22;
-		case 11: return 25;
-		case 12: return 29;
-		case 13: return 34;
-		case 14: return 38;
+		case 11: return 27;
 	default:
 		break;
 	}
-	return 3 * levelIndex;
+	return 0;
 }
 
 bool GameProgress::IsLevelUnlocked(int levelIndex) const{
@@ -99,7 +105,8 @@ bool GameProgress::Load(const char* path){
 
 			if (idx >= 1 && idx <= LEVELS) {
 				if (val < 0) val = 0;
-				if (val > 3) val = 3;
+				const int maxStars = MaxStarsFor(idx - 1);
+				if (val > maxStars) val = maxStars;
 				stars[idx - 1] = (uint8)val;
 			}
 		}

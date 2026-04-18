@@ -86,12 +86,12 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 	}
 
 	// --- Thumbnails
-	constexpr int LEVEL_COUNT = 15;
+	constexpr int LEVEL_COUNT = 12;
 	static Texture2D sThumb[LEVEL_COUNT];
 	static bool sThumbTried[LEVEL_COUNT] = { false };
 
 	// Grid 5x3
-	constexpr int cols = 5;
+	constexpr int cols = 4;
 	constexpr int rows = 3;
 
 	// Espaciados
@@ -107,9 +107,9 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 
 	//Mouse for hover and click on images
 	const SceneId levelScenes[LEVEL_COUNT] = {
-		SCENE_LEVEL1, SCENE_LEVEL2, SCENE_LEVEL3, SCENE_LEVEL4, SCENE_LEVEL5,
-		SCENE_LEVEL6, SCENE_LEVEL7, SCENE_LEVEL8, SCENE_LEVEL9, SCENE_LEVEL10,
-		SCENE_LEVEL11, SCENE_LEVEL12, SCENE_LEVEL13, SCENE_LEVEL14, SCENE_LEVEL15
+		SCENE_LEVEL1, SCENE_LEVEL2, SCENE_LEVEL3, SCENE_LEVEL4,
+		SCENE_LEVEL5, SCENE_LEVEL6, SCENE_LEVEL7, SCENE_LEVEL8,
+		SCENE_LEVEL9, SCENE_LEVEL10, SCENE_LEVEL11, SCENE_LEVEL12
 	};
 
 	for (int i = 0; i < LEVEL_COUNT; ++i) {
@@ -120,12 +120,19 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		const float y = padTop + rr * (tileH + gap);
 
 		const bool unlocked = app->progress.IsLevelUnlocked(i);
+		const bool special = app->progress.MaxStarsFor(i) == 1;
 
 		// Panel image
 		
-		uint32 tint = unlocked ? RGBAu32(235, 235, 235, 255) : RGBAu32(255, 255, 255, 90);
-		uint32 hover = unlocked ? RGBAu32(255, 255, 255, 255) : RGBAu32(255, 255, 255, 90);
-		uint32 active = unlocked ? RGBAu32(210, 210, 210, 255) : RGBAu32(255, 255, 255, 90);
+		uint32 tint = unlocked
+			? (special ? RGBAu32(230, 220, 255, 255) : RGBAu32(235, 235, 235, 255))
+			: (special ? RGBAu32(210, 200, 235, 90) : RGBAu32(255, 255, 255, 90));
+		uint32 hover = unlocked
+			? (special ? RGBAu32(245, 235, 255, 255) : RGBAu32(255, 255, 255, 255))
+			: tint;
+		uint32 active = unlocked
+			? (special ? RGBAu32(205, 190, 235, 255) : RGBAu32(210, 210, 210, 255))
+			: tint;
 		const bool clicked = ui->ImageButton(ui->interfaceTex, x, y, tileW, tileH, ui->panelLevelRect, tint, hover, active);
 		if (clicked && unlocked) mgr->Request(levelScenes[i]);
 			
@@ -171,21 +178,24 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 
 		const float nameY = frameY + frameH + S(5.0f);
 		ui->Text(x + S(12.0f), nameY, name,
-			unlocked ? RGBAu32(240, 240, 245, 235) : RGBAu32(185, 185, 195, 170),
+			unlocked
+				? (special ? RGBAu32(245, 235, 255, 235) : RGBAu32(240, 240, 245, 235))
+				: (special ? RGBAu32(200, 190, 210, 170) : RGBAu32(185, 185, 195, 170)),
 			unlocked ? 0.90f * s : 0.60f * s);
 
 		// Stars
 		if (unlocked) {
 			const uint8 earned = app->progress.StarsFor(i);
+			const int starSlots = app->progress.MaxStarsFor(i);
 
 			const float starSize = S(18.0f);
 			const float stepX = S(22.0f);
 			const float marginR = S(14.0f);
 
 			const float starY = y + tileH - S(10.0f) - starSize;
-			const float startX = x + tileW - marginR - starSize - stepX * 2.0f;
+			const float startX = x + tileW - marginR - starSize - stepX * (starSlots - 1);
 
-			for (int st = 0; st < 3; ++st) {
+			for (int st = 0; st < starSlots; ++st) {
 				const float sx = startX + st * stepX;
 				if (st < (int)earned) {
 					ui->Image(ui->interfaceTex, sx, starY, starSize, starSize, ui->starIconRect, RGBAu32(250, 210, 70, 240));

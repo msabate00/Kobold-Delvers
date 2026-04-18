@@ -29,6 +29,9 @@ public:
 
     std::vector<Material> GetSceneMaterials();
 
+    bool IsSpecialLevel() const;
+    int LevelStarSlots() const;
+
     void OnEnter() override;
     void OnExit() override;
     void Update(float dt) override;
@@ -37,6 +40,7 @@ public:
 protected:
     int LevelIndex() const;
     void CheckLevelCompleted();
+    bool PlayerTouchesGoal() const;
     void DrawMaterialBudgetBar();
     void DrawLevelCompleteModal();
 

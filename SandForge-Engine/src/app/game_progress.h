@@ -7,7 +7,7 @@ class GameProgress
 
 public:
 
-	static const int LEVELS = 15;
+	static const int LEVELS = 12;
 
 	GameProgress();
 
@@ -18,6 +18,7 @@ public:
 	uint8 StarsFor(int levelIndex) const;
 	bool SetStarsFor(int levelIndex, uint8 starsEarned);
 
+	int MaxStarsFor(int levelIndex) const;
 	int UnlockRequirement(int levelIndex) const;
 
 	bool IsLevelUnlocked(int levelIndex) const;
