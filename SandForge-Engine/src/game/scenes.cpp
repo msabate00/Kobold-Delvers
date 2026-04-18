@@ -440,15 +440,16 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 
         auto makeBtnColor = [&](Material mat) {
             //Background
+            bool clicked = false;
             if (app->engine->brushMat == mat) {
-                app->ui->Image(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, ui->hudMaterialBackgroundSelectedRect, RGBAu32(255,255,255,255), 4);
+                clicked = app->ui->ImageButton(app->ui->interfaceTex, x-27.5, y-27.5, 55, 55, ui->hudMaterialBackgroundSelectedRect, RGBAu32(255,255,255,255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 255), 4);
             }
             else {
-                app->ui->Image(app->ui->interfaceTex, x-21, y-21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), 4);
+                clicked = app->ui->ImageButton(app->ui->interfaceTex, x-21, y-21, 42, 42, ui->hudMaterialBackgroundRect, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 255), 4);
             }
-
-            bool clicked = app->ui->ImageButton(app->ui->matAtlas, x-16, y-16, 32, 32, matProps(mat).rect, RGBAu32(255, 255, 255, 255), RGBAu32(255, 255, 255, 155), RGBAu32(255, 255, 255, 255), 5);
+            app->ui->Image(app->ui->matAtlas, x-16, y-16, 32, 32, matProps(mat).rect, RGBAu32(255, 255, 255, 255), 5);
             x += 50;
+
             return clicked; 
         };
 
