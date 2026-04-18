@@ -419,7 +419,7 @@ static void DynamiteUpdate(Engine& E, int x, int y, const Cell& self)
             const int ny = y + dy;
             if (!E.InRange(nx, ny)) continue;
             if (IsHeatMat(E.GetCell(nx, ny).m)) {
-                ExplodeIntoFire(E, x, y, 5);
+                ExplodeIntoFire(E, x, y, 10);
                 return;
             }
         }
