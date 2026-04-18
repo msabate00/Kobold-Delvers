@@ -365,6 +365,15 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     ui->Draw(brushSize, brushMat);
     DrawMaterialBudgetBar();
 
+    //Tutorials
+    //Level 1
+    if (id == SceneId::SCENE_LEVEL1) {
+        ui->Image(ui->tutorialsTex, (app->framebufferSize.x / 2) - (ui->cameraTutorialRect.w / 2), 100, ui->cameraTutorialRect.w, ui->cameraTutorialRect.h, ui->cameraTutorialRect, RGBAu32(255, 255, 255, 255));
+        ui->Image(ui->tutorialsTex, 100, 150, ui->spawnTutorialRect.w, ui->spawnTutorialRect.h, ui->spawnTutorialRect, RGBAu32(255, 255, 255, 255));
+        ui->Image(ui->tutorialsTex, (app->framebufferSize.x) - 100 - ui->spawnTutorialRect.w, 150, ui->spawnTutorialRect.w, ui->spawnTutorialRect.h, ui->spawnTutorialRect, RGBAu32(255, 255, 255, 255));
+        ui->Image(ui->tutorialsTex, (app->framebufferSize.x / 2) - (ui->bonusTutorialRect.w / 2) + 200, 500, ui->bonusTutorialRect.w, ui->bonusTutorialRect.h, ui->bonusTutorialRect, RGBAu32(255, 255, 255, 255));
+    }
+    
 
 
     //background

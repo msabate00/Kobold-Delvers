@@ -56,6 +56,7 @@ bool UI::Start() {
 	curorTexReady = cursorTex.Load(SPRITE_DIR "/cursor.png");
 	interfaceTexReady = interfaceTex.Load(SPRITE_DIR "/UI/interface.png");
 	npcInteractionsTexReady = npcInteractionsTex.Load(SPRITE_DIR "/KoboldInteractions.png");
+	tutorialsTexReady = tutorialsTex.Load(SPRITE_DIR "/Tutorials.png");
 	return true;
 }
 bool UI::PreUpdate() { return true; }

@@ -89,6 +89,9 @@ public:
     Texture2D npcInteractionsTex;
     bool npcInteractionsTexReady = false;
 
+    Texture2D tutorialsTex;
+    bool tutorialsTexReady = false;
+
     AtlasRectPx speechBoxWhite{ 0,0,31,13 };
     AtlasRectPx speechBoxRed{ 31,0,31,13 };
     std::array<AtlasRectPx, 6> oxygenBubble{{
@@ -138,6 +141,15 @@ public:
     AtlasRectPx pauseIcon{ 194, 195, 26, 34};
     AtlasRectPx playIcon{ 230, 194, 29, 34};
     AtlasRectPx stepIcon{ 266, 198, 35, 26};
+
+
+    AtlasRectPx cameraTutorialRect{ 0, 0, 463, 178};
+    AtlasRectPx budgetTutorialRect{ 0, 182, 315, 102};
+    AtlasRectPx spawnTutorialRect{ 467, 0, 315, 102};
+    AtlasRectPx finishTutorialRect{ 787, 0, 315, 102};
+    AtlasRectPx bonusTutorialRect{ 467, 106, 397, 102};
+    AtlasRectPx moveUpTutorialRect{ 1106, 0, 235, 178};
+    AtlasRectPx moveSidesTutorialRect{ 1346, 0, 229, 178};
 
 private:
 
