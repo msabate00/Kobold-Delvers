@@ -438,12 +438,12 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     }
 
     //Level 5
-    if (id == SceneId::SCENE_LEVEL5) {
+    if (id == SceneId::SCENE_LEVEL6) {
         ui->ImageWorld(ui->tutorialsTex, 70, 50, moveSidesW, KeepAspectH(moveSidesW, ui->moveSidesTutorialRect), ui->moveSidesTutorialRect, tutorialColor);
     }
-
+     
     //Level 2
-    if (id == SceneId::SCENE_LEVEL6) {
+    if (id == SceneId::SCENE_LEVEL7) {
         ui->ImageWorld(ui->tutorialsTex, 110, 200, moveSidesW, KeepAspectH(moveSidesW, ui->moveUpTutorialRect), ui->moveUpTutorialRect, tutorialColor);
     }
     
