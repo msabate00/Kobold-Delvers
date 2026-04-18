@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 static Player MakeDefaultPlayer(const Texture2D* tex, const SpriteAnimLibrary* anims, int x, int y)
 {
@@ -31,6 +32,9 @@ static Player MakeDefaultPlayer(const Texture2D* tex, const SpriteAnimLibrary* a
 
     p.dir = 1;
     p.alive = true;
+    p.oxygenTime = 0.0f;
+    p.drowning = false;
+
     p.jumpCellsLeft = 0;
     p.heldMaterial = Material::Empty;
     p.placeCooldown = 0.0f;
@@ -71,6 +75,19 @@ static bool IsPlayerPassableMat(uint8 m)
         || m == (uint8)Material::Steam
         || m == (uint8)Material::FlammableGas
         || m == (uint8)Material::Vine;
+}
+
+static bool IsHazardMat(uint8 m)
+{
+    return m == (uint8)Material::Lava
+        || m == (uint8)Material::Fire
+        || m == (uint8)Material::HotCoal
+        || m == (uint8)Material::Acid;
+}
+
+static bool IsPlayerDyingAnim(const Player& p)
+{
+    return p.anim.CurrentName() == "dieFire" || p.anim.CurrentName() == "dieNormal";
 }
 
 static bool IsPlayerUsableMaterial(Material m)
@@ -117,6 +134,35 @@ bool PlayerSystem::Start()
         fall.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
         fall.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
 
+        auto& dieFire = playerAnims.Add("dieFire");
+        dieFire.defaultTex = &playerTex;
+        dieFire.fps = 6.0f;
+        dieFire.loop = AnimLoopMode::None;
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 0,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 12,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 24,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 36,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 48,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 60,36,12,12 }, 0.1f));
+        dieFire.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 0,0,0,0 }, 0.1f));
+
+        auto& dieNormal = playerAnims.Add("dieNormal");
+        dieNormal.defaultTex = &playerTex;
+        dieNormal.fps = 6.0f;
+        dieNormal.loop = AnimLoopMode::None;
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 0,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 12,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 24,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 36,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 48,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 60,48,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 0,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 12,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 24,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 36,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 48,60,12,12 }, 0.1f));
+        dieNormal.frames.push_back(AnimFramePx(&playerTex, AtlasRectPx{ 60,60,12,12 }, 0.1f));
+
         auto& climb = playerAnims.Add("climb");
         climb.defaultTex = &playerTex;
         climb.fps = 6.0f;
@@ -132,6 +178,7 @@ void PlayerSystem::Clear(const WorldSim&)
     player = Player{};
     hasPlayer = false;
     playerTriggers.clear();
+    deathFinished = false;
     moveAcc = 0.0f;
 }
 
@@ -140,6 +187,7 @@ Player& PlayerSystem::AddPlayer(WorldSim& world, int x, int y, Material startMat
     player = MakeDefaultPlayer(&playerTex, &playerAnims, x, y);
     player.heldMaterial = IsPlayerUsableMaterial(startMaterial) ? startMaterial : Material::Empty;
     hasPlayer = true;
+    deathFinished = false;
 
     world.MarkChunksInRect(x, y, player.w, player.h);
     return player;
@@ -169,6 +217,7 @@ bool PlayerSystem::EraseEntitiesInCircle(WorldSim& world, int cx, int cy, int ra
 
     if (erasePlayer && hasPlayer && CircleIntersectsRect(cx, cy, radius, player.x, player.y, player.w, player.h)) {
         hasPlayer = false;
+        deathFinished = false;
         player = Player{};
         removedAny = true;
     }
@@ -208,6 +257,66 @@ bool PlayerSystem::RectFreeOnBack(const WorldSim& world, const std::vector<int>&
     }
 
     return true;
+}
+
+bool PlayerSystem::CheckPlayerDie(const WorldSim& world, int x, int y, int w, int h) const
+{
+    auto isHazard = [&](int gx, int gy) -> bool {
+        if (!world.InRange(gx, gy)) return false;
+        return IsHazardMat(world.BackMatAtIndex(world.LinearIndex(gx, gy)));
+    };
+
+    for (int yy = 0; yy < h; ++yy)
+        for (int xx = 0; xx < w; ++xx)
+            if (isHazard(x + xx, y + yy)) return true;
+
+    for (int xx = 0; xx < w; ++xx) {
+        if (isHazard(x + xx, y - 1)) return true;
+        if (isHazard(x + xx, y + h)) return true;
+    }
+    for (int yy = 0; yy < h; ++yy) {
+        if (isHazard(x - 1, y + yy)) return true;
+        if (isHazard(x + w, y + yy)) return true;
+    }
+
+    return false;
+}
+
+bool PlayerSystem::IsInWater(const WorldSim& world, int x, int y, int w, int h) const
+{
+    for (int yy = 0; yy < h - 5; ++yy) {
+        for (int xx = 0; xx < w; ++xx) {
+            const int gx = x + xx;
+            const int gy = y + yy;
+            if (!world.InRange(gx, gy)) continue;
+            if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == (uint8)Material::Water) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool PlayerSystem::IsBuriedInSand(const WorldSim& world, const std::vector<int>& occ, int x, int y, int w, int h, int ignoreId) const
+{
+    int topSand = 0;
+    for (int xx = 0; xx < w; ++xx) {
+        const int gx = x + xx;
+        const int gy = y - 1;
+        if (!world.InRange(gx, gy)) continue;
+        if (world.BackMatAtIndex(world.LinearIndex(gx, gy)) == (uint8)Material::Sand) {
+            ++topSand;
+        }
+    }
+
+    if (topSand <= 0) return false;
+
+    const bool canRise = RectFreeOnBack(world, occ, x, y - 1, w, h, ignoreId);
+    const bool canMoveLeft = RectFreeOnBack(world, occ, x - 1, y, w, h, ignoreId);
+    const bool canMoveRight = RectFreeOnBack(world, occ, x + 1, y, w, h, ignoreId);
+
+    return !canRise && !canMoveLeft && !canMoveRight;
 }
 
 bool PlayerSystem::IsInVine(const WorldSim& world, int x, int y, int w, int h) const
@@ -332,6 +441,8 @@ void PlayerSystem::Move(WorldSim& world, const std::vector<int>& occ, float fixe
 {
     if (!hasPlayer || !player.alive || !app || !app->input) return;
 
+    if (IsPlayerDyingAnim(player)) return;
+
     const bool moveLeft = app->input->KeyRepeat(GLFW_KEY_A);
     const bool moveRight = app->input->KeyRepeat(GLFW_KEY_D);
     const bool moveDown = app->input->KeyRepeat(GLFW_KEY_S);
@@ -356,6 +467,37 @@ void PlayerSystem::Move(WorldSim& world, const std::vector<int>& occ, float fixe
     int hbX = player.x + player.hbOffX;
     int hbY = player.y + player.hbOffY;
     const int id = -1;
+
+    auto killPlayer = [&](const char* animation) {
+        player.anim.Play(animation, false);
+        player.jumpCellsLeft = 0;
+        player.jumpBuffer = 0.0f;
+        player.coyoteTime = 0.0f;
+        player.placeCooldown = 0.0f;
+        moveAcc = 0.0f;
+        if (std::strcmp(animation, "dieFire") == 0) {
+            player.oxygenTime = 0.0f;
+            player.drowning = false;
+        }
+    };
+
+    if (CheckPlayerDie(world, hbX, hbY, player.hbW, player.hbH)) {
+        killPlayer("dieFire");
+        return;
+    }
+
+    if (IsInWater(world, hbX, hbY, player.hbW, player.hbH) || IsBuriedInSand(world, occ, hbX, hbY, player.hbW, player.hbH, id)) {
+        player.oxygenTime += fixedTimeStep;
+        player.drowning = true;
+        if (player.oxygenTime >= 3.0f) {
+            killPlayer("dieNormal");
+            return;
+        }
+    }
+    else {
+        player.oxygenTime = 0.0f;
+        player.drowning = false;
+    }
 
     const bool inVine = IsInVine(world, hbX, hbY, player.hbW, player.hbH);
     const bool grounded = !RectFreeOnBack(world, occ, hbX, hbY + 1, player.hbW, player.hbH, id)
@@ -498,36 +640,44 @@ void PlayerSystem::Animate(Engine& engine, float dt)
     if (hasPlayer && player.alive) {
         player.anim.Update(dt);
         player.anim.ApplyTo(player.sprite, player.dir < 0);
-        player.sprite.color = RGBAu32(255, 165, 220, 255);
 
-        if (engine.WorldRectToScreen((float)player.x, (float)player.y, (float)player.w, (float)player.h,
-            app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh)) {
+        if (IsPlayerDyingAnim(player) && player.anim.IsFinished()) {
+            player.alive = false;
+            deathFinished = true;
+        }
 
-            player.sprite.x = std::floor(sx);
-            player.sprite.y = std::floor(sy);
-            player.sprite.w = std::floor(sw);
-            player.sprite.h = std::floor(sh);
-            player.sprite.layer = RenderLayer::WORLD;
-            player.sprite.sort = 5;
-            app->renderer->Queue(player.sprite);
+        if (player.alive) {
+            player.sprite.color = RGBAu32(255, 165, 220, 255);
 
-            if (triggerIconsTex.id != 0 && IsPlayerUsableMaterial(player.heldMaterial)) {
-                Sprite icon{};
-                icon.tex = &triggerIconsTex;
-                icon.x = std::floor(sx + sw * 0.25f);
-                icon.y = std::floor(sy - sh * 0.45f);
-                icon.w = std::floor(sw * 0.5f);
-                icon.h = std::floor(sh * 0.5f);
-                icon.layer = RenderLayer::WORLD;
-                icon.sort = 6;
-                icon.color = RGBAu32(255, 255, 255, 235);
+            if (engine.WorldRectToScreen((float)player.x, (float)player.y, (float)player.w, (float)player.h,
+                app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh)) {
 
-                const UVRect uv = UVFromPx(triggerIconsTex, matProps((uint8)player.heldMaterial).rect);
-                icon.u0 = uv.u0;
-                icon.v0 = uv.v0;
-                icon.u1 = uv.u1;
-                icon.v1 = uv.v1;
-                app->renderer->Queue(icon);
+                player.sprite.x = std::floor(sx);
+                player.sprite.y = std::floor(sy);
+                player.sprite.w = std::floor(sw);
+                player.sprite.h = std::floor(sh);
+                player.sprite.layer = RenderLayer::WORLD;
+                player.sprite.sort = 5;
+                app->renderer->Queue(player.sprite);
+
+                if (!IsPlayerDyingAnim(player) && triggerIconsTex.id != 0 && IsPlayerUsableMaterial(player.heldMaterial)) {
+                    Sprite icon{};
+                    icon.tex = &triggerIconsTex;
+                    icon.x = std::floor(sx + sw * 0.25f);
+                    icon.y = std::floor(sy - sh * 0.45f);
+                    icon.w = std::floor(sw * 0.5f);
+                    icon.h = std::floor(sh * 0.5f);
+                    icon.layer = RenderLayer::WORLD;
+                    icon.sort = 6;
+                    icon.color = RGBAu32(255, 255, 255, 235);
+
+                    const UVRect uv = UVFromPx(triggerIconsTex, matProps((uint8)player.heldMaterial).rect);
+                    icon.u0 = uv.u0;
+                    icon.v0 = uv.v0;
+                    icon.u1 = uv.u1;
+                    icon.v1 = uv.v1;
+                    app->renderer->Queue(icon);
+                }
             }
         }
     }

@@ -229,6 +229,36 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	}
 
 	
+	if (const Player* player = app->engine->GetPlayer()) {
+		if (player->alive) {
+			float sx, sy, sw, sh;
+			if (app->engine->WorldRectToScreen(
+				(float)player->x, (float)player->y, (float)player->w, (float)player->h,
+				app->framebufferSize.x, app->framebufferSize.y,
+				sx, sy, sw, sh))
+			{
+				const float boxW = 42.0f;
+				const float boxH = 26.0f;
+				const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
+				const float boxY = std::floor(sy - boxH - 8.0f);
+
+				if (player->drowning && player->oxygenTime > 0.0f) {
+					Image(npcInteractionsTex, boxX + 30, boxY + 23, boxW + 20, boxH, speechBoxRed, RGBAu32(255, 255, 255, 255), 3);
+					Text(boxX + 36.0f, boxY + 26.0f, "GLUB!", RGBAu32(255, 245, 245, 255), 0.45f);
+
+					const float progress = Clamp01(player->oxygenTime / 3);
+					const int stage = std::fmin(15, (int)std::floor(progress * 16.0f));
+
+					for (int b = 0; b < 3; ++b) {
+						int bubbleStage = stage - b * 5;
+						bubbleStage = std::clamp(bubbleStage, 0, 5);
+						Image(npcInteractionsTex, boxX + b * 10.0f + 60, boxY + 26, 10.0f, 10.0f, oxygenBubble[(size_t)bubbleStage], RGBAu32(255, 255, 255, 255), 4);
+					}
+				}
+			}
+		}
+	}
+
 	const auto& npcs = app->engine->GetNPCs();
 	for (const NPC& n : npcs) {
 		if (!n.alive) continue;

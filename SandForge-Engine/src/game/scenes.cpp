@@ -203,6 +203,12 @@ void Scene_Level::OnExit()
     app->engine->paused = false;
 }
 
+void Scene_Level::RestartLevel()
+{
+    app->engine->StopPaint();
+    OnEnter();
+}
+
 bool Scene_Level::PlayerTouchesGoal() const
 {
     const Player* player = app->engine->GetPlayer();
@@ -259,11 +265,16 @@ void Scene_Level::CheckLevelCompleted()
 
 void Scene_Level::Update(float)
 {
+    if (!levelFinished && app->engine->PlayerDeathFinished()) {
+        RestartLevel();
+        return;
+    }
+
     CheckLevelCompleted();
 
     if (levelFinished) {
         if (app->input->KeyDown(GLFW_KEY_R)) {
-            OnEnter();
+            RestartLevel();
             return;
         }
         if (app->input->KeyDown(GLFW_KEY_ESCAPE) || app->input->KeyDown(GLFW_KEY_ENTER)) {

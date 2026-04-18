@@ -65,6 +65,7 @@ public:
     const std::vector<NPCBonus>& GetBonuses() const { return npcs.GetBonuses(); }
     bool HasPlayer() const { return players.HasPlayer(); }
     const Player* GetPlayer() const { return players.GetPlayer(); }
+    bool PlayerDeathFinished() const { return players.PlayerDeathFinished(); }
     bool BonusTriggered() const { return npcs.AnyBonusClaimed(); }
     int CapturedGoalCount() const { return npcs.TotalCapturedCount(); }
 

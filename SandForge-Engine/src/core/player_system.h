@@ -24,6 +24,9 @@ struct Player {
     int dir = 1;
     bool alive = true;
 
+    float oxygenTime = 0.0f;
+    bool drowning = false;
+
     int jumpCellsLeft = 0;
     Material heldMaterial = Material::Empty;
     float placeCooldown = 0.0f;
@@ -66,11 +69,15 @@ public:
     void Move(WorldSim& world, const std::vector<int>& occ, float fixedTimeStep);
     void Animate(Engine& engine, float dt);
 
+    bool PlayerDeathFinished() const { return deathFinished; }
     bool GetPlaceTargetCell(int mouseWorldX, int mouseWorldY, int& outX, int& outY) const;
 
 private:
     bool RectFreeOnBack(const WorldSim& world, const std::vector<int>& occ,
         int x, int y, int w, int h, int ignoreId) const;
+    bool CheckPlayerDie(const WorldSim& world, int x, int y, int w, int h) const;
+    bool IsInWater(const WorldSim& world, int x, int y, int w, int h) const;
+    bool IsBuriedInSand(const WorldSim& world, const std::vector<int>& occ, int x, int y, int w, int h, int ignoreId) const;
     bool IsInVine(const WorldSim& world, int x, int y, int w, int h) const;
     bool HasVineBelow(const WorldSim& world, int x, int y, int w, int h) const;
     bool TryTouchMaterialTrigger(Player& p);
@@ -85,6 +92,7 @@ private:
     Texture2D triggerIconsTex;
     SpriteAnimLibrary playerAnims;
 
+    bool deathFinished = false;
     float moveAcc = 0.0f;
     float cellsPerSec = 32.0f;
 };

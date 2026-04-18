@@ -39,6 +39,7 @@ public:
 
 protected:
     int LevelIndex() const;
+    void RestartLevel();
     void CheckLevelCompleted();
     bool PlayerTouchesGoal() const;
     void DrawMaterialBudgetBar();
