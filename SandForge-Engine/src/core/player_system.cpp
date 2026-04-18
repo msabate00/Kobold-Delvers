@@ -335,9 +335,9 @@ void PlayerSystem::Move(WorldSim& world, const std::vector<int>& occ, float fixe
     const bool moveLeft = app->input->KeyRepeat(GLFW_KEY_A);
     const bool moveRight = app->input->KeyRepeat(GLFW_KEY_D);
     const bool moveDown = app->input->KeyRepeat(GLFW_KEY_S);
-    const bool jumpPressed = app->input->KeyDown(GLFW_KEY_W);
-    const bool jumpHeld = app->input->KeyRepeat(GLFW_KEY_W);
-    const bool placeHeld = app->input->KeyRepeat(GLFW_KEY_SPACE);
+    const bool jumpPressed = (app->input->KeyDown(GLFW_KEY_W) || app->input->KeyDown(GLFW_KEY_SPACE));
+    const bool jumpHeld = (app->input->KeyRepeat(GLFW_KEY_W) || app->input->KeyRepeat(GLFW_KEY_SPACE));
+    const bool placeHeld = app->input->MouseDown(GLFW_MOUSE_BUTTON_1);
 
     if (moveLeft != moveRight) {
         player.dir = moveLeft ? -1 : 1;
@@ -366,7 +366,7 @@ void PlayerSystem::Move(WorldSim& world, const std::vector<int>& occ, float fixe
     }
 
     if (player.jumpBuffer > 0.0f && (player.coyoteTime > 0.0f || inVine)) {
-        player.jumpCellsLeft = 4;
+        player.jumpCellsLeft = 16;
         player.jumpBuffer = 0.0f;
         if (!inVine) {
             player.coyoteTime = 0.0f;

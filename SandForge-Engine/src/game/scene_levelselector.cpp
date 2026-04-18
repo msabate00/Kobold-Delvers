@@ -125,13 +125,13 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 		// Panel image
 		
 		uint32 tint = unlocked
-			? (special ? RGBAu32(230, 220, 255, 255) : RGBAu32(235, 235, 235, 255))
-			: (special ? RGBAu32(210, 200, 235, 90) : RGBAu32(255, 255, 255, 90));
+			? (special ? RGBAu32(145, 61, 235, 255) : RGBAu32(235, 235, 235, 255))
+			: (special ? RGBAu32(145, 61, 235, 90) : RGBAu32(255, 255, 255, 90));
 		uint32 hover = unlocked
-			? (special ? RGBAu32(245, 235, 255, 255) : RGBAu32(255, 255, 255, 255))
+			? (special ? RGBAu32(125, 81, 255, 255) : RGBAu32(255, 255, 255, 255))
 			: tint;
 		uint32 active = unlocked
-			? (special ? RGBAu32(205, 190, 235, 255) : RGBAu32(210, 210, 210, 255))
+			? (special ? RGBAu32(135, 91, 255, 255) : RGBAu32(210, 210, 210, 255))
 			: tint;
 		const bool clicked = ui->ImageButton(ui->interfaceTex, x, y, tileW, tileH, ui->panelLevelRect, tint, hover, active);
 		if (clicked && unlocked) mgr->Request(levelScenes[i]);
