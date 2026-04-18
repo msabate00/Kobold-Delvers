@@ -453,6 +453,32 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, con
 	return false;
 }
 
+void UI::ImageWorld(const Texture2D& t, float wx, float wy, float ww, float wh, const AtlasRectPx& srcPx, uint32 tint, RenderLayer layer, int sort)
+{
+	if (!noRender) return;
+
+	float sx, sy, sw, sh;
+	if (!app->engine->WorldRectToScreen(wx, wy, ww, wh, app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh)) return;
+
+	const UVRect uv = UVFromPx(t, srcPx);
+
+	Sprite s{};
+	s.tex = &t;
+	s.x = sx;
+	s.y = sy;
+	s.w = sw;
+	s.h = sh;
+	s.u0 = uv.u0;
+	s.v0 = uv.v0;
+	s.u1 = uv.u1;
+	s.v1 = uv.v1;
+	s.color = tint;
+	s.layer = layer;
+	s.sort = sort;
+
+	app->renderer->Queue(s);
+}
+
 
 
 bool UI::Button(float x, float y, float w, float h,

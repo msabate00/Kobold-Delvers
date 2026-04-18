@@ -358,6 +358,11 @@ void Scene_Level::DrawLevelCompleteModal()
     ui->TextCentered(backX, btnY, btnW, btnH, "LEVELS", RGBAu32(245, 245, 245, 240), 0.85f);
 }
 
+static float KeepAspectH(float worldW, const AtlasRectPx& r)
+{
+    return worldW * ((float)r.h / (float)r.w);
+}
+
 void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
 {
     UI* ui = app->ui;
@@ -366,12 +371,29 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     DrawMaterialBudgetBar();
 
     //Tutorials
+    const float camW = 80.0f;
+    const float spawnW = 42.0f;
+    const float finishW = 42.0f;
+    const float bonusW = 42.0f;
+
+    const float budgetX = ((float)app->framebufferSize.x / 2) - 810;
+    const float budgetY = app->framebufferSize.y - 135.0f;
+    const float barW = 201;
+    const float barH = 34;
+
+    uint32 tutorialColor = RGBAu32(255, 255, 255, 055);
+
+
     //Level 1
     if (id == SceneId::SCENE_LEVEL1) {
-        ui->Image(ui->tutorialsTex, (app->framebufferSize.x / 2) - (ui->cameraTutorialRect.w / 2), 100, ui->cameraTutorialRect.w, ui->cameraTutorialRect.h, ui->cameraTutorialRect, RGBAu32(255, 255, 255, 255));
-        ui->Image(ui->tutorialsTex, 100, 150, ui->spawnTutorialRect.w, ui->spawnTutorialRect.h, ui->spawnTutorialRect, RGBAu32(255, 255, 255, 255));
-        ui->Image(ui->tutorialsTex, (app->framebufferSize.x) - 100 - ui->spawnTutorialRect.w, 150, ui->spawnTutorialRect.w, ui->spawnTutorialRect.h, ui->spawnTutorialRect, RGBAu32(255, 255, 255, 255));
-        ui->Image(ui->tutorialsTex, (app->framebufferSize.x / 2) - (ui->bonusTutorialRect.w / 2) + 200, 500, ui->bonusTutorialRect.w, ui->bonusTutorialRect.h, ui->bonusTutorialRect, RGBAu32(255, 255, 255, 255));
+        ui->ImageWorld(ui->tutorialsTex, 160-40, 10, camW, KeepAspectH(camW, ui->cameraTutorialRect), ui->cameraTutorialRect, tutorialColor);
+
+        ui->ImageWorld(ui->tutorialsTex, 10, 46, spawnW, KeepAspectH(spawnW, ui->spawnTutorialRect), ui->spawnTutorialRect, tutorialColor);
+        ui->ImageWorld(ui->tutorialsTex, 260, 46, finishW, KeepAspectH(finishW, ui->finishTutorialRect), ui->spawnTutorialRect, tutorialColor);
+
+        ui->ImageWorld(ui->tutorialsTex, 165, 90, bonusW, KeepAspectH(bonusW, ui->bonusTutorialRect), ui->bonusTutorialRect, tutorialColor);
+
+        ui->Image(ui->tutorialsTex, budgetX, budgetY, ui->budgetTutorialRect.w * 0.8f, ui->budgetTutorialRect.h*0.8f, ui->budgetTutorialRect, tutorialColor);
     }
     
 

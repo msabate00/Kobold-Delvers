@@ -63,6 +63,7 @@ public:
     bool ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort = 0);
     bool ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort = 0);
     bool ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, const AtlasRectPx& srcPxHover, const AtlasRectPx& srcPxActive, uint32 tint_rgba, int sort = 0);
+    void ImageWorld(const Texture2D& t, float wx, float wy, float ww, float wh, const AtlasRectPx& srcPx, uint32 tint = 0xFFFFFFFF, RenderLayer layer = RenderLayer::BG, int sort = 0);
 
     void Text(float x, float y, const char* text, uint32 rgba, float scale = 1.0f);
     void TextCentered(float x, float y, float w, float h, const char* text, uint32 rgba, float scale = 1.0f);
