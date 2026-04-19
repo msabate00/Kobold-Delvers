@@ -138,31 +138,31 @@ std::vector<Material> Scene_Level::GetSceneMaterials()
         return std::vector<Material>{  Material::Empty, Material::Sand };
         break;
     case SCENE_LEVEL4:
-        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Steam };
+        return std::vector<Material>{  Material::Empty };
         break;
     case SCENE_LEVEL5:
-        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Water, Material::Wood, Material::Steam };  
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Steam };
         break;
     case SCENE_LEVEL6:
-        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Fire };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Water, Material::Wood, Material::Steam };
         break; 
     case SCENE_LEVEL7:
-        return std::vector<Material>{  Material::Empty, Material::Water, Material::Steam, Material::Fire };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Fire /*Material::Empty, Material::Water, Material::Steam, Material::Fire*/ };
         break;
     case SCENE_LEVEL8:
-        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Water, Material::Fire, Material::Snow };
+        return std::vector<Material>{  Material::Empty,  };
         break;
     case SCENE_LEVEL9:
-        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Vine, Material::Coal, Material::FlammableGas };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Water, Material::Fire, Material::Snow  };
         break;
     case SCENE_LEVEL10:
-        return std::vector<Material>{  Material::Empty, Material::Water, Material::Vine, Material::Snow, Material::Coal };
+        return std::vector<Material>{  Material::Empty, Material::Sand, Material::Vine, Material::Coal, Material::FlammableGas };
         break;
     case SCENE_LEVEL11:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
+        return std::vector<Material>{  Material::Empty, Material::Snow, Material::Coal, Material::Dynamite };
         break;
     case SCENE_LEVEL12:
-        return std::vector<Material>{  Material::Empty, Material::Sand };
+        return std::vector<Material>{  Material::Empty };
         break;
     default:
         break;
