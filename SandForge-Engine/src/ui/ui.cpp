@@ -236,8 +236,8 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				(float)player->x, (float)player->y, (float)player->w, (float)player->h,
 				app->framebufferSize.x, app->framebufferSize.y,
 				sx, sy, sw, sh))
-			{
-				const float boxW = 42.0f;
+			{ 
+				const float boxW = 42.0f; 
 				const float boxH = 26.0f;
 				const float boxX = std::floor(sx + (sw - boxW) * 0.5f);
 				const float boxY = std::floor(sy - boxH - 8.0f);
