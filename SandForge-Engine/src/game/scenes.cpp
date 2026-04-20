@@ -8,6 +8,7 @@
 #include "ui/ui.h"
 #include "ui/ui_anim.h"
 #include "render/atlas.h"
+#include "render/renderer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -55,12 +56,159 @@ void Scene_MainMenu::OnEnter()
 	sandboxHoverT = 0.0f;
 	settingsHoverT = 0.0f;
 	quitHoverT = 0.0f;
+
+	if (menuNpcTex.id == 0)
+		menuNpcTex.Load("assets/sprites/KoboldMiner.png");
+
+	if (!menuNpcAnims.Find("fall")) {
+		menuNpcAnims.Clear();
+
+		auto& fall = menuNpcAnims.Add("fall");
+		fall.defaultTex = &menuNpcTex;
+		fall.fps = 6.0f;
+		fall.loop = AnimLoopMode::PingPong;
+		fall.frames.push_back(AnimFramePx(&menuNpcTex, AtlasRectPx{ 0,24,12,12 }, 0.1f));
+		fall.frames.push_back(AnimFramePx(&menuNpcTex, AtlasRectPx{ 12,24,12,12 }, 0.1f));
+		fall.frames.push_back(AnimFramePx(&menuNpcTex, AtlasRectPx{ 24,24,12,12 }, 0.1f));
+	}
+
+	if (!logoLoaded)
+		logoLoaded = logoTex.Load("assets/sprites/logo.png");
+
+	float vw = (float)app->framebufferSize.x;
+	float vh = (float)app->framebufferSize.y;
+	if (vw <= 0.0f) vw = 1280.0f;
+	if (vh <= 0.0f) vh = 720.0f;
+
+	if (bgNpcs.empty()) bgNpcs.resize(10);
+	if (bgMats.empty()) bgMats.resize(18);
+
+	for (int i = 0; i < (int)bgNpcs.size(); ++i) {
+		bgNpcs[i].anim.SetLibrary(&menuNpcAnims);
+		ResetBgNpc(i, vw, vh, true);
+	}
+
+	for (int i = 0; i < (int)bgMats.size(); ++i)
+		ResetBgMat(i, vw, vh, true);
+}
+
+void Scene_MainMenu::ResetBgNpc(int i, float vw, float vh, bool firstTime)
+{
+	BgNpc& n = bgNpcs[i];
+	++n.respawn;
+
+	bool leftSide = (std::rand() % 2) == 0;
+	float minX = leftSide ? vw * 0.06f : vw * 0.64f;
+	float maxX = leftSide ? vw * 0.36f : vw * 0.94f;
+
+	n.baseX = minX + (float)(std::rand() % (int)std::fmax(1.0f, maxX - minX));
+	n.x = n.baseX;
+	n.size = 1.85f + (float)(std::rand() % 7) * 0.08f;
+	n.alpha = 90.0f + (float)(std::rand() % 46);
+	n.speed = 92.0f + (float)(std::rand() % 28);
+	n.anim.Play("fall", true);
+	n.anim.Update((float)(std::rand() % 25) * 0.01f);
+	n.swayT = (float)(std::rand() % 628) * 0.01f;
+	n.swayAmp = 4.0f + (float)(std::rand() % 6);
+	n.swaySpeed = 0.95f + (float)(std::rand() % 36) * 0.01f;
+
+	if (firstTime)
+		n.y = -(float)(std::rand() % (int)(vh + 180.0f));
+	else
+		n.y = -(40.0f + (float)(std::rand() % 120));
+}
+
+void Scene_MainMenu::ResetBgMat(int i, float vw, float vh, bool firstTime)
+{
+	static const Material mats[] = {
+		Material::Sand,
+		Material::Water,
+		Material::Stone,
+		Material::Wood,
+		Material::Fire,
+		Material::Steam,
+		Material::Snow,
+		Material::Oil,
+		Material::Coal,
+		Material::Vine
+	};
+
+	BgMat& d = bgMats[i];
+	++d.respawn;
+
+	bool leftSide = (std::rand() % 2) == 0;
+	float minX = leftSide ? vw * 0.04f : vw * 0.72f;
+	float maxX = leftSide ? vw * 0.28f : vw * 0.96f;
+
+	d.baseX = minX + (float)(std::rand() % (int)std::fmax(1.0f, maxX - minX));
+	d.x = d.baseX;
+	d.size = 18.0f + (float)(std::rand() % 14);
+	d.alpha = 92.0f + (float)(std::rand() % 40);
+	d.speed = 110.0f + (float)(std::rand() % 32);
+	d.swayT = (float)(std::rand() % 628) * 0.01f;
+	d.swayAmp = 3.0f + (float)(std::rand() % 4);
+	d.swaySpeed = 1.05f + (float)(std::rand() % 31) * 0.01f;
+	d.mat = mats[std::rand() % (int)std::size(mats)];
+
+	if (firstTime)
+		d.y = -(float)(std::rand() % (int)(vh + 140.0f));
+	else
+		d.y = -(24.0f + (float)(std::rand() % 110));
 }
 
 void Scene_MainMenu::Update(float dt)
 {
 	uiIntroTimer += dt;
 	logoBobTimer += dt;
+
+	float vw = (float)app->framebufferSize.x;
+	float vh = (float)app->framebufferSize.y;
+	if (vw <= 0.0f) vw = 1280.0f;
+	if (vh <= 0.0f) vh = 720.0f;
+
+	for (int i = 0; i < (int)bgNpcs.size(); ++i) {
+		BgNpc& n = bgNpcs[i];
+		n.y += n.speed * dt;
+		n.anim.Update(dt);
+		n.swayT += dt * n.swaySpeed;
+		n.x = n.baseX + std::sin(n.swayT) * n.swayAmp;
+		if (n.y > vh + 60.0f)
+			ResetBgNpc(i, vw, vh, false);
+	}
+
+	for (int i = 0; i < (int)bgMats.size(); ++i) {
+		BgMat& d = bgMats[i];
+		d.y += d.speed * dt;
+		d.swayT += dt * d.swaySpeed;
+		d.x = d.baseX + std::sin(d.swayT) * d.swayAmp;
+		if (d.y > vh + d.size + 24.0f)
+			ResetBgMat(i, vw, vh, false);
+	}
+}
+
+void Scene_MainMenu::DrawMenuBackground(float vw, float vh)
+{
+	UI* ui = app->ui;
+
+	ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
+
+	for (const BgMat& d : bgMats) {
+		ui->Image(ui->matAtlas, d.x, d.y, d.size, d.size, matProps((uint8)d.mat).rect, RGBAu32(255, 255, 255, (unsigned)d.alpha));
+	}
+
+	if (menuNpcTex.id != 0) {
+		for (const BgNpc& n : bgNpcs) {
+			Sprite s{};
+			s.x = n.x;
+			s.y = n.y;
+			s.w = 12.0f * n.size;
+			s.h = 12.0f * n.size;
+			s.color = RGBAu32(255, 255, 255, (unsigned)n.alpha);
+			s.layer = RenderLayer::UI;
+			n.anim.ApplyTo(s, false);
+			app->renderer->Queue(s);
+		}
+	}
 }
 
 bool Scene_MainMenu::DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT)
@@ -97,16 +245,11 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 	float vh = (float)app->framebufferSize.y;
 
 	//bACKGROUND
-	ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
+	DrawMenuBackground(vw, vh);
 
 	ui->Cursor();
 
 	// Logo
-	static Texture2D sLogo;
-	static bool sLogoLoaded = false;
-	if (!sLogoLoaded) {
-		sLogoLoaded = sLogo.Load("assets/sprites/logo.png");
-	}
 
 	float logoW = 768.0f;
 	float logoH = 498.0f;
@@ -121,9 +264,9 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 	float logoX = (vw - logoW) * 0.5f;
 	float logoY = 40.0f;
 
-	if (sLogoLoaded) {
+	if (logoLoaded) {
 		float bob = std::sin(logoBobTimer * 1.15f) * 2.0f + std::sin(logoBobTimer * 0.58f + 0.7f) * 0.8f;
-		ui->Image(sLogo, logoX, logoY + bob, logoW, logoH, 0xFFFFFFFF);
+		ui->Image(logoTex, logoX, logoY + bob, logoW, logoH, 0xFFFFFFFF);
 	}
 
 	//Botones

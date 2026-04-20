@@ -2,6 +2,8 @@
 
 #include "scene.h"
 
+#include "render/anim.h"
+#include "render/texture.h"
 #include <string>
 #include <vector>
 
@@ -19,8 +21,39 @@ public:
 
 private:
     bool DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT);
+    void ResetBgNpc(int i, float vw, float vh, bool firstTime);
+    void ResetBgMat(int i, float vw, float vh, bool firstTime);
+    void DrawMenuBackground(float vw, float vh);
 
 private:
+    struct BgNpc {
+        float x = 0.0f;
+        float y = 0.0f;
+        float baseX = 0.0f;
+        float speed = 0.0f;
+        float size = 1.0f;
+        float alpha = 255.0f;
+        SpriteAnimPlayer anim;
+        float swayT = 0.0f;
+        float swayAmp = 0.0f;
+        float swaySpeed = 0.0f;
+        int respawn = 0;
+    };
+
+    struct BgMat {
+        float x = 0.0f;
+        float y = 0.0f;
+        float baseX = 0.0f;
+        float speed = 0.0f;
+        float size = 24.0f;
+        float alpha = 255.0f;
+        float swayT = 0.0f;
+        float swayAmp = 0.0f;
+        float swaySpeed = 0.0f;
+        Material mat = Material::Sand;
+        int respawn = 0;
+    };
+
     SceneManager* mgr = nullptr;
     float uiIntroTimer = 0.0f;
     float logoBobTimer = 0.0f;
@@ -28,6 +61,14 @@ private:
     float sandboxHoverT = 0.0f;
     float settingsHoverT = 0.0f;
     float quitHoverT = 0.0f;
+
+    Texture2D menuNpcTex;
+    SpriteAnimLibrary menuNpcAnims;
+    Texture2D logoTex;
+    bool logoLoaded = false;
+
+    std::vector<BgNpc> bgNpcs;
+    std::vector<BgMat> bgMats;
 };
 
 //NIVEL ESTANDARD
