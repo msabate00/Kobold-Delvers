@@ -908,6 +908,7 @@ void NPCSystem::AnimateNPCs(Engine& engine, float dt)
 
         if ((n.anim.CurrentName() == "dieFire" || n.anim.CurrentName() == "dieNormal") && n.anim.IsFinished()) {
             n.alive = false;
+            app->engine->MarkChunkRect(n.x, n.y, n.w, n.h);
             continue;
         }
         if (!n.alive) continue;

@@ -56,6 +56,7 @@ public:
     const std::vector<uint>& GetChunks() const { return world.ChunksDirtyNow(); }
     void GetChunkRect(int chunkIndex, int& x, int& y, int& w, int& h) { world.GetChunkRect(chunkIndex, x, y, w, h); }
     bool PopChunkDirtyGPURect(int& x, int& y, int& rw, int& rh) { return world.PopChunkDirtyGPURect(x, y, rw, rh); }
+    void MarkChunkRect(int& x, int& y, int& rw, int& rh){ world.MarkChunksInRect(x, y, rw, rh); }
 
     //Entidades
 
