@@ -236,9 +236,9 @@ static void HotCoalUpdate(Engine& E, int x, int y, const Cell& self)
         }
     }
 
-    if (E.randrange(x, y, app->frames, 100, 84) < 2) {
+    /*if (E.randrange(x, y, app->frames, 100, 84) < 2) {
         E.SetCell(x, y, (uint8)Material::Coal);
-    }
+    }*/
 }
 
 static void FireUpdate(Engine& E, int x, int y, const Cell& self)
@@ -513,7 +513,6 @@ bool isVolatile(uint8 m)
     return m == (uint8)Material::Fire
         || m == (uint8)Material::Smoke
         || m == (uint8)Material::Steam
-        || m == (uint8)Material::HotCoal
         || m == (uint8)Material::FlammableGas;
 }
 
