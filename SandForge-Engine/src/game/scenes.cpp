@@ -6,6 +6,7 @@
 #include "core/engine.h"
 #include "core/input.h"
 #include "ui/ui.h"
+#include "ui/ui_anim.h"
 #include "render/atlas.h"
 
 #include <algorithm>
@@ -46,67 +47,106 @@ static int CountFilledCells(const uint8* plane, int count)
 static int gSandboxMatCounterBase = 0;
 static bool gSandboxResetMatCounter = true;
 
+void Scene_MainMenu::OnEnter()
+{
+	uiIntroTimer = 0.0f;
+	logoBobTimer = 0.0f;
+	levelsHoverT = 0.0f;
+	sandboxHoverT = 0.0f;
+	settingsHoverT = 0.0f;
+	quitHoverT = 0.0f;
+}
+
+void Scene_MainMenu::Update(float dt)
+{
+	uiIntroTimer += dt;
+	logoBobTimer += dt;
+}
+
+bool Scene_MainMenu::DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT)
+{
+	UI* ui = app->ui;
+
+	float mx = (float)app->input->MouseX();
+	float my = (float)app->input->MouseY();
+
+	float introAlpha = UIAnim::IntroAlpha(uiIntroTimer, delay, 0.30f);
+	float introMove = UIAnim::IntroMove(uiIntroTimer, delay, 0.38f);
+	float bx = x + (1.0f - introMove) * introDir * 120.0f;
+
+	bool hover = (mx >= bx && mx <= bx + w && my >= y && my <= y + h);
+	hoverT = UIAnim::Hover(hoverT, hover, 7.5f, app->dt);
+
+	float scale = 1.0f + hoverT * 0.08f;
+	float drawW = w * scale;
+	float drawH = h * scale;
+	float drawX = bx - (drawW - w) * 0.5f;
+	float drawY = y - (drawH - h) * 0.5f - hoverT * 3.0f;
+
+	if (ui->ImageButton(ui->interfaceTex, drawX, drawY, drawW, drawH, ui->buttonUp, ui->buttonDown, ui->buttonDown, UIAnim::AlphaRGBA(color, introAlpha)))
+		return true;
+
+	ui->TextCentered(drawX + 2, drawY - 2, drawW, drawH, text, RGBAu32(240, 240, 240, (unsigned)(230.0f * introAlpha)), 1.0f + hoverT * 0.04f);
+	return false;
+}
+
 void Scene_MainMenu::DrawUI(int&, Material&)
 {
-    UI* ui = app->ui;
-    float vw = (float)app->framebufferSize.x;
-    float vh = (float)app->framebufferSize.y;
+	UI* ui = app->ui;
+	float vw = (float)app->framebufferSize.x;
+	float vh = (float)app->framebufferSize.y;
 
-    //bACKGROUND
-    ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
+	//bACKGROUND
+	ui->Rect(0, 0, vw, vh, RGBAu32(50, 47, 44, 255));
 
-    ui->Cursor();
+	ui->Cursor();
 
-    // Logo
-    static Texture2D sLogo;
-    static bool sLogoLoaded = false;
-    if (!sLogoLoaded) {
-        sLogoLoaded = sLogo.Load("assets/sprites/logo.png");
-    }
+	// Logo
+	static Texture2D sLogo;
+	static bool sLogoLoaded = false;
+	if (!sLogoLoaded) {
+		sLogoLoaded = sLogo.Load("assets/sprites/logo.png");
+	}
 
-    float logoW = 768.0f;
-    float logoH = 498.0f;
+	float logoW = 768.0f;
+	float logoH = 498.0f;
 
-    float maxW = vw * 0.40f;
-    if (logoW > maxW) {
-        float sc = maxW / logoW;
-        logoW *= sc;
-        logoH *= sc;
-    }
+	float maxW = vw * 0.40f;
+	if (logoW > maxW) {
+		float sc = maxW / logoW;
+		logoW *= sc;
+		logoH *= sc;
+	}
 
-    float logoX = (vw - logoW) * 0.5f;
-    float logoY = 40.0f;
+	float logoX = (vw - logoW) * 0.5f;
+	float logoY = 40.0f;
 
-    if (sLogoLoaded) {
-        ui->Image(sLogo, logoX, logoY, logoW, logoH, 0xFFFFFFFF);
-    }
+	if (sLogoLoaded) {
+		float bob = std::sin(logoBobTimer * 1.15f) * 2.0f + std::sin(logoBobTimer * 0.58f + 0.7f) * 0.8f;
+		ui->Image(sLogo, logoX, logoY + bob, logoW, logoH, 0xFFFFFFFF);
+	}
 
-    //Botones
-    float bw = 260.0f;
-    float bh = 70.0f;
-    float spacing = 8.0f;
-    float cx = (vw - bw) * 0.5f;
-    float cy = logoY + logoH + 28.0f;
+	//Botones
+	float bw = 260.0f;
+	float bh = 70.0f;
+	float spacing = 8.0f;
+	float cx = (vw - bw) * 0.5f;
+	float cy = logoY + logoH + 28.0f;
 
-    //if (ui->Button(cx, cy, bw, bh, base, hover, act)) mgr->Request(SCENE_LEVELSELECTOR);
-    if(ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(180, 180, 220, 220)))
-        mgr->Request(SCENE_LEVELSELECTOR);
-    ui->TextCentered(cx+2, cy-2, bw, bh, "LEVELS", RGBAu32(240, 240, 240, 230), 1.0f);
+	if (DrawMainMenuButton(cx, cy, bw, bh, "LEVELS", RGBAu32(180, 180, 220, 220), 0.10f, -1.0f, levelsHoverT))
+		mgr->Request(SCENE_LEVELSELECTOR);
 
-    cy += bh + spacing;
-    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(170, 220, 170, 220)))
-        mgr->Request(SCENE_SANDBOX);
-    ui->TextCentered(cx+2, cy-2, bw, bh, "SANDBOX", RGBAu32(240, 240, 240, 230), 1.0f);
+	cy += bh + spacing;
+	if (DrawMainMenuButton(cx, cy, bw, bh, "SANDBOX", RGBAu32(170, 220, 170, 220), 0.18f, 1.0f, sandboxHoverT))
+		mgr->Request(SCENE_SANDBOX);
 
-    cy += bh + spacing;
-    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(102, 161, 255, 220)))
-        mgr->OpenSettings(SCENE_MAINMENU);
-    ui->TextCentered(cx+2, cy-2, bw, bh, "SETTINGS", RGBAu32(240, 240, 240, 230), 1.0f);
+	cy += bh + spacing;
+	if (DrawMainMenuButton(cx, cy, bw, bh, "SETTINGS", RGBAu32(102, 161, 255, 220), 0.26f, -1.0f, settingsHoverT))
+		mgr->OpenSettings(SCENE_MAINMENU);
 
-    cy += bh + spacing;
-    if (ui->ImageButton(ui->interfaceTex, cx, cy, bw, bh, ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(220, 170, 170, 220)))
-        app->RequestQuit();
-    ui->TextCentered(cx+2, cy-2, bw, bh, "QUIT", RGBAu32(240, 240, 240, 230), 1.0f);
+	cy += bh + spacing;
+	if (DrawMainMenuButton(cx, cy, bw, bh, "QUIT", RGBAu32(220, 170, 170, 220), 0.34f, 1.0f, quitHoverT))
+		app->RequestQuit();
 }
 
 int Scene_Level::LevelIndex() const

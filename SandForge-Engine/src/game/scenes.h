@@ -13,9 +13,21 @@ public:
     Scene_MainMenu(App* app, SceneManager* mgr) : Scene(app), mgr(mgr) {}
     SceneId GetId() const override { return SCENE_MAINMENU; }
     bool HasWorld() const override { return false; }
+    void OnEnter() override;
+    void Update(float dt) override;
     void DrawUI(int& brushSize, Material& brushMat) override;
+
+private:
+    bool DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT);
+
 private:
     SceneManager* mgr = nullptr;
+    float uiIntroTimer = 0.0f;
+    float logoBobTimer = 0.0f;
+    float levelsHoverT = 0.0f;
+    float sandboxHoverT = 0.0f;
+    float settingsHoverT = 0.0f;
+    float quitHoverT = 0.0f;
 };
 
 //NIVEL ESTANDARD
