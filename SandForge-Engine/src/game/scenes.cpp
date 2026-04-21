@@ -9,6 +9,7 @@
 #include "ui/ui_anim.h"
 #include "render/atlas.h"
 #include "render/renderer.h"
+#include "audio/audio.h"
 
 #include <algorithm>
 #include <cmath>

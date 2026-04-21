@@ -69,6 +69,8 @@ public:
 private:
 
     void Flush();
+    void RegisterHoverItem(bool hover, bool audible = true);
+    static bool HasVisibleAlpha(uint32 rgba);
 
     bool SliderLogic(float x, float y, float w, float h,
         float minv, float maxv, float& v,
@@ -152,6 +154,11 @@ private:
     double mx = 0.0, my = 0.0; bool md = false, mdPrev = false;
     bool mouseConsumed = false;
     bool noRender = false;
+
+    uint32 hoverItemCounter = 0;
+    uint32 hoveredItemPrev = 0;
+    uint32 hoveredItemCurrent = 0;
+    uint32 hoverSoundCandidate = 0;
 
     FontTTF font;
     bool fontReady = false;

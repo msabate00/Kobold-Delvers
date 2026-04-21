@@ -3,6 +3,7 @@
 #include "scene_settings.h"
 #include "scene_levelSelector.h"
 #include "app/app.h"
+#include "audio/audio.h"
 #include "render/renderer.h"
 #include <cmath>
 
@@ -39,6 +40,7 @@ bool SceneManager::Awake()
 bool SceneManager::Start()
 {
     if (scenes[currentId]) scenes[currentId]->OnEnter();
+    SyncSceneMusic(currentId, 0.0f);
     return true;
 }
 
@@ -95,10 +97,34 @@ void SceneManager::OpenSettings(SceneId returnTo)
     Request(SCENE_SETTINGS);
 }
 
+
 bool SceneManager::WorldActive() const
 {
     Scene* s = scenes[currentId];
     return s ? s->HasWorld() : false;
+}
+
+void SceneManager::SyncSceneMusic(SceneId id, float fadeSec)
+{
+    if (!app || !app->audio) return;
+
+    const char* key = nullptr;
+    switch (id) {
+    case SCENE_MAINMENU:
+    case SCENE_LEVELSELECTOR:
+        key = "main_menu";
+        break;
+    case SCENE_SANDBOX:
+        key = "sandbox";
+        break;
+    case SCENE_SETTINGS:
+        return;
+    default:
+        key = "in_game";
+        break;
+    }
+
+    app->audio->PlayMusic(key, fadeSec);
 }
 
 void SceneManager::ApplyPending()
@@ -114,6 +140,8 @@ void SceneManager::ApplyPending()
 
     Scene* nxt = scenes[currentId];
     if (nxt) nxt->OnEnter();
+
+    SyncSceneMusic(currentId, fadeEnabled ? 0.35f : 0.0f);
 
     hasPending = false;
 

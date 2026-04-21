@@ -84,6 +84,9 @@ public:
     float SfxVolume() const { return sfxVolume; }
     void SetVoicePosition(const std::string& key, AudioInstance id, int x, int y);
 
+    void PlayMusic(const std::string& key, float fadeSec = 0.35f);
+    void StopMusic(float fadeSec = 0.25f);
+    const std::string& CurrentMusicKey() const { return currentMusicKey; }
 
 private:
 
@@ -91,6 +94,8 @@ private:
     void ReapplyBusVolumes(AudioBus b);
     void LoadAudiosInMemory();
     AudioInstance Play(const std::string& key, float vol = 1.0f, bool loop = false);
+    void StartMusicTransition(const std::string& nextKey, float fadeSec);
+    void UpdateMusicTransition(float dt);
 
     SFX* FindSfx(const std::string& key) { auto it = sfx.find(key); return it == sfx.end() ? nullptr : &it->second; }
     const SFX* FindSfxConst(const std::string& key) const { auto it = sfx.find(key); return it == sfx.end() ? nullptr : &it->second; }
@@ -112,4 +117,12 @@ private:
 
     float musicVolume = 1.0f;
     float sfxVolume = 1.0f;
+
+    std::string currentMusicKey;
+    AudioInstance currentMusic = AudioInstance::null();
+    std::string prevMusicKey;
+    AudioInstance prevMusic = AudioInstance::null();
+    float musicFadeTimer = 0.0f;
+    float musicFadeDuration = 0.0f;
+    bool musicTransitionActive = false;
 };

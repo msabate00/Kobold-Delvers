@@ -32,6 +32,7 @@ bool Audio::Start() {
 bool Audio::PreUpdate() { return true; }
 
 bool Audio::Update(float dt) {
+    UpdateMusicTransition(dt);
 	return true;
 }
 bool Audio::PostUpdate() { return true; }
@@ -224,12 +225,130 @@ void Audio::SetVoicePosition(const std::string& key, AudioInstance id, int x, in
     ma_sound_set_pan(&v->snd, pan);
 }
 
+void Audio::PlayMusic(const std::string& key, float fadeSec)
+{
+    if (key.empty()) return;
+    if (currentMusicKey == key && currentMusic.valid()) {
+        if (musicTransitionActive) {
+            musicTransitionActive = false;
+            musicFadeTimer = 0.0f;
+            musicFadeDuration = 0.0f;
+            if (prevMusic.valid() && !prevMusicKey.empty()) {
+                Stop(prevMusicKey, prevMusic);
+                prevMusic = AudioInstance::null();
+                prevMusicKey.clear();
+            }
+            SetVolume(currentMusicKey, currentMusic, 1.0f);
+        }
+        return;
+    }
 
+    StartMusicTransition(key, fadeSec);
+}
+
+void Audio::StopMusic(float fadeSec)
+{
+    if (currentMusicKey.empty() || !currentMusic.valid()) return;
+    StartMusicTransition(std::string(), fadeSec);
+}
+
+void Audio::StartMusicTransition(const std::string& nextKey, float fadeSec)
+{
+    if (musicTransitionActive && prevMusic.valid() && !prevMusicKey.empty()) {
+        Stop(prevMusicKey, prevMusic);
+        prevMusic = AudioInstance::null();
+        prevMusicKey.clear();
+    }
+
+    prevMusicKey = currentMusicKey;
+    prevMusic = currentMusic;
+
+    currentMusicKey.clear();
+    currentMusic = AudioInstance::null();
+
+    if (!nextKey.empty()) {
+        currentMusic = Play(nextKey, 0.0f, true);
+        if (!currentMusic.valid()) {
+            currentMusicKey.clear();
+            currentMusic = AudioInstance::null();
+        }
+        else {
+            currentMusicKey = nextKey;
+        }
+    }
+
+    if ((!prevMusic.valid() || prevMusicKey.empty()) && (!currentMusic.valid() || currentMusicKey.empty())) {
+        musicTransitionActive = false;
+        musicFadeTimer = 0.0f;
+        musicFadeDuration = 0.0f;
+        return;
+    }
+
+    musicFadeDuration = std::fmax(0.001f, fadeSec);
+    musicFadeTimer = 0.0f;
+    musicTransitionActive = true;
+
+    if (!prevMusic.valid() || prevMusicKey.empty()) {
+        SetVolume(currentMusicKey, currentMusic, 1.0f);
+        musicTransitionActive = false;
+        musicFadeTimer = 0.0f;
+        musicFadeDuration = 0.0f;
+    }
+}
+
+void Audio::UpdateMusicTransition(float dt)
+{
+    if (!musicTransitionActive) return;
+
+    musicFadeTimer += std::fmax(0.0f, dt);
+    const float t = std::clamp(musicFadeTimer / musicFadeDuration, 0.0f, 1.0f);
+
+    if (prevMusic.valid() && !prevMusicKey.empty()) {
+        if (GetVoice(prevMusicKey, prevMusic)) {
+            SetVolume(prevMusicKey, prevMusic, 1.0f - t);
+        }
+        else {
+            prevMusic = AudioInstance::null();
+            prevMusicKey.clear();
+        }
+    }
+
+    if (currentMusic.valid() && !currentMusicKey.empty()) {
+        if (GetVoice(currentMusicKey, currentMusic)) {
+            SetVolume(currentMusicKey, currentMusic, t);
+        }
+        else {
+            currentMusic = AudioInstance::null();
+            currentMusicKey.clear();
+        }
+    }
+
+    if (t < 1.0f) return;
+
+    if (prevMusic.valid() && !prevMusicKey.empty()) {
+        Stop(prevMusicKey, prevMusic);
+    }
+    prevMusic = AudioInstance::null();
+    prevMusicKey.clear();
+
+    if (currentMusic.valid() && !currentMusicKey.empty()) {
+        SetVolume(currentMusicKey, currentMusic, 1.0f);
+    }
+
+    musicTransitionActive = false;
+    musicFadeTimer = 0.0f;
+    musicFadeDuration = 0.0f;
+}
 
 void Audio::LoadAudiosInMemory()
 {
 	Load("ignite", AUDIO_DIR  "/ignite.wav", 16);
 	Load("paint", AUDIO_DIR  "/paint.wav", 8);
+    Load("hover_button", AUDIO_DIR  "/hover_button.wav", 8);
+	Load("in_game", AUDIO_DIR  "/music/in_game.wav", 2, AudioBus::Music);
+	Load("main_menu", AUDIO_DIR  "/music/main_menu.wav", 2, AudioBus::Music);
+	Load("sandbox", AUDIO_DIR  "/music/sandbox.wav", 2, AudioBus::Music);
+	
 }
 
 bool Audio::Load(const std::string& key, const char* path, int voices, AudioBus bus)

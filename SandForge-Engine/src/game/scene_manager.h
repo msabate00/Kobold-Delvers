@@ -26,6 +26,7 @@ public:
 private:
     void ApplyPending();
     void UpdateFade(float dt);
+    void SyncSceneMusic(SceneId id, float fadeSec);
 
 private:
     Scene* scenes[SCENE_COUNT] = {};

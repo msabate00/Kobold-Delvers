@@ -5,6 +5,7 @@
 #include <cstring>
 #include "app/module.h"  
 #include "app/app.h"
+#include "audio/audio.h"
 #include "core/utils.h"
 #include "core/engine.h"
 #include "render/renderer.h"
@@ -85,6 +86,11 @@ bool UI::CleanUp() {
 
 void UI::Begin(int viewW, int viewH) {
 	vw = viewW; vh = viewH; verts.clear();
+	if (noRender) {
+		hoverItemCounter = 0;
+		hoveredItemCurrent = 0;
+		hoverSoundCandidate = 0;
+	}
 }
 
 void UI::Draw(int& brushSize, Material& brushMat) {
@@ -308,13 +314,35 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 }
 
 void UI::End() {
-
-	if (noRender) return;
+	if (noRender) {
+		if (hoverSoundCandidate != 0 && hoverSoundCandidate == hoveredItemCurrent && app && app->audio) {
+			app->audio->PlayOneShot("hover_button", 1.0f);
+		}
+		hoveredItemPrev = hoveredItemCurrent;
+		return;
+	}
 	Flush();
 }
 
 void UI::SetMouse(double x, double y, bool down) {
 	mdPrev = md; md = down; mx = x; my = y; mouseConsumed = false;
+}
+
+bool UI::HasVisibleAlpha(uint32 rgba)
+{
+	return ((rgba >> 24) & 255u) != 0u;
+}
+
+void UI::RegisterHoverItem(bool hover, bool audible)
+{
+	if (!noRender) return;
+	const uint32 id = ++hoverItemCounter;
+	if (!hover) return;
+
+	hoveredItemCurrent = id;
+	if (audible && hoveredItemPrev != id) {
+		hoverSoundCandidate = id;
+	}
 }
 
 void UI::Flush() {
@@ -457,6 +485,7 @@ void UI::Image(const Texture2D& t, float x, float y, float w, float h,
 bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort)
 {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+	RegisterHoverItem(hover, HasVisibleAlpha(tint_rgba) || HasVisibleAlpha(tint_rgbaHover) || HasVisibleAlpha(tint_rgbaActive));
 
 	uint32 cc = hover ? (md ? tint_rgbaActive : tint_rgbaHover) : tint_rgba;
 	bool clicked = hover && !md && mdPrev;
@@ -474,6 +503,7 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, uin
 bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, uint32 tint_rgba, uint32 tint_rgbaHover, uint32 tint_rgbaActive, int sort)
 {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+	RegisterHoverItem(hover, HasVisibleAlpha(tint_rgba) || HasVisibleAlpha(tint_rgbaHover) || HasVisibleAlpha(tint_rgbaActive));
 
 	uint32 cc = hover ? (md ? tint_rgbaActive : tint_rgbaHover) : tint_rgba;
 	bool clicked = hover && !md && mdPrev;
@@ -489,6 +519,7 @@ bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, con
 bool UI::ImageButton(const Texture2D& t, float x, float y, float w, float h, const AtlasRectPx& srcPx, const AtlasRectPx& srcPxHover, const AtlasRectPx& srcPxActive, uint32 tint_rgba, int sort)
 {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+	RegisterHoverItem(hover, HasVisibleAlpha(tint_rgba));
 
 	AtlasRectPx rect = hover ? (md ? srcPxActive : srcPxHover) : srcPx;
 	bool clicked = hover && !md && mdPrev;
@@ -532,6 +563,7 @@ void UI::ImageWorld(const Texture2D& t, float wx, float wy, float ww, float wh, 
 bool UI::Button(float x, float y, float w, float h,
 	uint32 c, uint32 cH, uint32 cA) {
 	bool hover = (mx >= x && mx <= x + w && my >= y && my <= y + h);
+	RegisterHoverItem(hover, HasVisibleAlpha(c) || HasVisibleAlpha(cH) || HasVisibleAlpha(cA));
 	uint32 cc = hover ? (md ? cA : cH) : c;
 	Rect(x, y, w, h, cc);
 
