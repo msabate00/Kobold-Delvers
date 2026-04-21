@@ -278,7 +278,7 @@ void Scene_MainMenu::DrawUI(int&, Material&)
     ui->Text(50, vh - 30, "Learn more about this project", RGBAu32(255, 255, 255, 255), 0.8F);
     ui->Text(317, vh - 30, "here", RGBAu32(88, 191, 105, 255), 0.8F);
     if (ui->Button(312, vh - 30, 50, 20, RGBAu32(88, 191, 105, 0), RGBAu32(88, 191, 105, 55), RGBAu32(88, 191, 105, 155))) {
-        OpenUrl("https://msabate00.github.io/");
+        OpenUrl("https://msabate00.github.io/project.html?id=kobold-delvers");
     }
     
 
