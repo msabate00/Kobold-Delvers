@@ -17,6 +17,21 @@
 #include <chrono>
 #include <ctime>
 #include <utility>
+#include <windows.h>
+#include <shellapi.h>
+
+static void OpenUrl(const std::string& url)
+{
+#if defined(_WIN32)
+    ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#elif defined(__APPLE__)
+    std::string cmd = "open \"" + url + "\"";
+    std::system(cmd.c_str());
+#else
+    std::string cmd = "xdg-open \"" + url + "\" >/dev/null 2>&1";
+    std::system(cmd.c_str());
+#endif
+}
 
 static uint32_t Hash32(const std::string& s)
 {
@@ -249,6 +264,23 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 	DrawMenuBackground(vw, vh);
 
 	ui->Cursor();
+
+    //info
+    ui->Text(vw - 150, vh - 30, "v21.04.2026", RGBAu32(255,255,255,255), 0.8F);
+
+
+    ui->Text(50, vh - 60, "Created by", RGBAu32(255,255,255,255), 0.8F);
+    ui->Text(150, vh - 60, "Marti Sabate", RGBAu32(82,186,255,255), 0.8F);
+    if (ui->Button(145, vh - 60, 115, 20, RGBAu32(82, 186, 255, 0), RGBAu32(82, 186, 255, 55), RGBAu32(82, 186, 255, 155))) {
+        OpenUrl("https://msabate00.github.io/");
+    }
+
+    ui->Text(50, vh - 30, "Learn more about this project", RGBAu32(255, 255, 255, 255), 0.8F);
+    ui->Text(317, vh - 30, "here", RGBAu32(88, 191, 105, 255), 0.8F);
+    if (ui->Button(312, vh - 30, 50, 20, RGBAu32(88, 191, 105, 0), RGBAu32(88, 191, 105, 55), RGBAu32(88, 191, 105, 155))) {
+        OpenUrl("https://msabate00.github.io/");
+    }
+    
 
 	// Logo
 
