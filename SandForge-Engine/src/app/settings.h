@@ -12,8 +12,8 @@ enum class WindowMode : uint8 {
 };
 
 struct SettingsData {
-    float musicVolume = 1.0f;
-    float sfxVolume   = 1.0f;
+    float musicVolume = 0.1f;
+    float sfxVolume   = 0.5f;
     bool  vsync       = true;
     WindowMode windowMode = WindowMode::Windowed;
     int windowW = 1280;
