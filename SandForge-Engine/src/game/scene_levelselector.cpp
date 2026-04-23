@@ -223,7 +223,8 @@ void Scene_LevelSelector::DrawUI(int&, Material&)
 
 		//Title
 		char name[32];
-		std::snprintf(name, sizeof(name), "LEVEL %02d", i + 1);
+		const std::vector<std::string> levelTitles{ "First steps", "Lava burns", "Lake movement", "You are Kobold 1", "Pillars in lava", "Ancient mine", "The fall", "You are Kobold 2", "The climb", "We're... lost?", "It's very hot", "You are Kobold 3" };
+		std::snprintf(name, sizeof(name), levelTitles[i].c_str(), i + 1);
 
 		float nameY = frameY + frameH + S(5.0f);
 		ui->Text(drawX + S(12.0f), nameY, name,

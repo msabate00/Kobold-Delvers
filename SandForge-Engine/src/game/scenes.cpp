@@ -597,7 +597,7 @@ void Scene_Level::DrawLevelCompleteModal()
     ui->TextCentered(titleX + S(2.0f), titleY - S(2.0f), titleW, titleH, "LEVEL COMPLETE", RGBAu32(248, 245, 240, 245), 0.92f * s);
 
     ui->TextCentered(px, py + S(42.0f), panelW, S(18.0f),
-        levelName.empty() ? "MISSION CLEARED" : levelName.c_str(),
+        levelName.c_str(),
         RGBAu32(236, 231, 222, 220), 0.72f * s);
 
     const char* headline = "YOU MADE IT!";
