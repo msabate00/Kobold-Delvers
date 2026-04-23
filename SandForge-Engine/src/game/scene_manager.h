@@ -21,6 +21,8 @@ public:
     SceneId CurrentId() const { return currentId; }
     bool WorldActive() const;
 
+    void ResetScene();
+
     float Fade() const { return fade; }
 
 private:

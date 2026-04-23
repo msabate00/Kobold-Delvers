@@ -104,6 +104,17 @@ bool SceneManager::WorldActive() const
     return s ? s->HasWorld() : false;
 }
 
+void SceneManager::ResetScene()
+{
+    if (currentId < SCENE_LEVEL1 || currentId > SCENE_LEVEL12) return;
+    pendingId = currentId;
+    hasPending = true;
+
+    if (fadeEnabled && fadePhase == FadePhase::None) {
+        fadePhase = FadePhase::Out;
+    }
+}
+
 void SceneManager::SyncSceneMusic(SceneId id, float fadeSec)
 {
     if (!app || !app->audio) return;
