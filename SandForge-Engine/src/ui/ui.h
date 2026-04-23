@@ -143,6 +143,10 @@ public:
     AtlasRectPx moveUpTutorialRect{ 1106, 0, 235, 178};
     AtlasRectPx moveSidesTutorialRect{ 1346, 0, 229, 178};
 
+
+    AtlasRectPx touchMaterialTutorialRect{ 628, 212, 339, 102};
+    AtlasRectPx movePlayerTutorialRect{ 0, 288, 624, 189};
+
 private:
 
     unsigned int prog = 0, vao = 0, vbo = 0;

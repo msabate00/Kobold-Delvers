@@ -644,6 +644,9 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     const float bonusW = 42;
     const float moveSidesW = 42;
 
+    const float playerMoveW = 78;
+    const float playerTouchW = 42;
+
     const float budgetX = ((float)app->framebufferSize.x / 2) - 810;
     const float budgetY = app->framebufferSize.y - 135.0f;
     const float barW = 201;
@@ -664,12 +667,18 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
         ui->Image(ui->tutorialsTex, budgetX, budgetY, ui->budgetTutorialRect.w * 0.8f, ui->budgetTutorialRect.h*0.8f, ui->budgetTutorialRect, tutorialColor);
     }
 
+    //Level 4
+    if (id == SceneId::SCENE_LEVEL4) {
+        ui->ImageWorld(ui->tutorialsTex, 30, 80, playerMoveW, KeepAspectH(playerMoveW, ui->movePlayerTutorialRect), ui->movePlayerTutorialRect, tutorialColor);
+        ui->ImageWorld(ui->tutorialsTex, 130, 110, playerTouchW, KeepAspectH(playerTouchW, ui->touchMaterialTutorialRect), ui->touchMaterialTutorialRect, tutorialColor);
+    }
+
     //Level 5
     if (id == SceneId::SCENE_LEVEL6) {
         ui->ImageWorld(ui->tutorialsTex, 70, 50, moveSidesW, KeepAspectH(moveSidesW, ui->moveSidesTutorialRect), ui->moveSidesTutorialRect, tutorialColor);
     }
      
-    //Level 2
+    //Level 7
     if (id == SceneId::SCENE_LEVEL7) {
         ui->ImageWorld(ui->tutorialsTex, 110, 200, moveSidesW, KeepAspectH(moveSidesW, ui->moveUpTutorialRect), ui->moveUpTutorialRect, tutorialColor);
     }
