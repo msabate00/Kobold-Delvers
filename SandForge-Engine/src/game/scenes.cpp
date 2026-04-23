@@ -564,65 +564,107 @@ void Scene_Level::DrawLevelCompleteModal()
     const float vw = (float)app->framebufferSize.x;
     const float vh = (float)app->framebufferSize.y;
 
-    ui->Button(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0));
-    ui->Rect(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 150));
+    float s = std::fmin(vw / 1280.0f, vh / 720.0f);
+    if (s < 0.85f) s = 0.85f;
+    if (s > 1.15f) s = 1.15f;
+    auto S = [&](float v) { return v * s; };
 
-    const float panelW = 360.0f;
-    const float panelH = IsSpecialLevel() ? 200.0f : 220.0f;
-    const float px = (vw - panelW) * 0.5f;
-    const float py = (vh - panelH) * 0.5f - 40.0f;
-     
-    ui->Rect(px, py, panelW, panelH, RGBAu32(34, 34, 38, 245));
-    ui->RectBorders(px, py, panelW, panelH, 3.0f, RGBAu32(235, 235, 235, 60));
-    ui->TextCentered(px, py + 14.0f, panelW, 34.0f, "LEVEL COMPLETE", RGBAu32(250, 250, 250, 245), 1.0f);
-
+    const bool specialLevel = IsSpecialLevel();
     const int starSlots = LevelStarSlots();
-    const float starY = py + 78.0f;
-    const float starR = 22.0f;
-    const float starGap = 70.0f;
+
+    ui->Button(0.0f, 0.0f, vw, vh,
+        RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0), RGBAu32(0, 0, 0, 0));
+    ui->Rect(0.0f, 0.0f, vw, vh, RGBAu32(0, 0, 0, 165));
+
+    const float panelW = std::fmin(S(500.0f), vw * 0.86f);
+    const float panelH = specialLevel ? std::fmin(S(270.0f), vh * 0.78f) : std::fmin(S(320.0f), vh * 0.82f);
+    const float px = std::floor((vw - panelW) * 0.5f);
+    const float py = std::floor((vh - panelH) * 0.5f) - S(16.0f);
+
+    ui->Rect(px + S(8.0f), py + S(10.0f), panelW, panelH, RGBAu32(8, 10, 14, 150));
+    ui->Image(ui->interfaceTex, px, py, panelW, panelH, ui->panelLevelRect, RGBAu32(232, 212, 180, 255), 6);
+
+    const float innerPad = S(18.0f);
+    ui->Rect(px + innerPad, py + innerPad, panelW - innerPad * 2.0f, panelH - innerPad * 2.0f, RGBAu32(26, 24, 30, 220));
+    ui->RectBorders(px + innerPad, py + innerPad, panelW - innerPad * 2.0f, panelH - innerPad * 2.0f, 2.0f, RGBAu32(255, 240, 210, 55));
+
+    const float titleW = std::fmin(S(280.0f), panelW * 0.64f);
+    const float titleH = S(46.0f);
+    const float titleX = std::floor(px + (panelW - titleW) * 0.5f);
+    const float titleY = std::floor(py - S(12.0f));
+
+    ui->Image(ui->interfaceTex, titleX, titleY, titleW, titleH, ui->buttonUp, RGBAu32(244, 224, 188, 255), 7);
+    ui->TextCentered(titleX + S(2.0f), titleY - S(2.0f), titleW, titleH, "LEVEL COMPLETE", RGBAu32(248, 245, 240, 245), 0.92f * s);
+
+    ui->TextCentered(px, py + S(42.0f), panelW, S(18.0f),
+        levelName.empty() ? "MISSION CLEARED" : levelName.c_str(),
+        RGBAu32(236, 231, 222, 220), 0.72f * s);
+
+    const char* headline = "YOU MADE IT!";
+    if (specialLevel) headline = "ESCAPE COMPLETE!";
+    else if ((int)levelStarsEarned >= starSlots) headline = "PERFECT RUN!";
+    else if (levelStarsEarned >= 2) headline = "GREAT JOB!";
+
+    ui->TextCentered(px, py + S(72.0f), panelW, S(24.0f), headline, RGBAu32(255, 242, 198, 245), 0.84f * s);
+
+    const float starSize = S(52.0f);
+    const float starGap = S(96.0f);
+    const float starY = py + S(132.0f);
     const float startX = px + panelW * 0.5f - starGap * 0.5f * (starSlots - 1);
 
     for (int i = 0; i < starSlots; ++i) {
         const float sx = startX + i * starGap;
         const bool filled = i < (int)levelStarsEarned;
-        ui->StarOutline(sx, starY, starR,
-            filled ? RGBAu32(250, 210, 70, 245) : RGBAu32(170, 170, 175, 200),
-            filled ? RGBAu32(250, 210, 70, 245) : RGBAu32(70, 70, 78, 220));
+        const float sy = starY + ((i % 2 == 0) ? 0.0f : S(4.0f));
+
+        ui->Image(ui->interfaceTex,
+            sx - starSize * 0.5f, sy - starSize * 0.5f,
+            starSize, starSize,
+            filled ? ui->starIconRect : ui->starEmptyIconRect,
+            filled ? RGBAu32(255, 228, 150, 255) : RGBAu32(155, 160, 172, 220),
+            7);
     }
 
     char line[128];
-    if (IsSpecialLevel()) {
-        std::snprintf(line, sizeof(line), "Congratulations");
-        ui->TextCentered(px, py + 126.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+    if (specialLevel) {
+        ui->TextCentered(px + S(26.0f), py + S(186.0f), panelW - S(52.0f), S(18.0f),
+            "Your kobold reached the exit safely.", RGBAu32(234, 232, 226, 220), 0.70f * s);
     }
     else {
-        std::snprintf(line, sizeof(line), "Bonus: %s", bonusStarEarned ? "OK" : "NO");
-        ui->TextCentered(px, py + 118.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+        std::snprintf(line, sizeof(line), "Bonus star: %s", bonusStarEarned ? "CLEARED" : "MISSED");
+        ui->TextCentered(px + S(22.0f), py + S(188.0f), panelW - S(44.0f), S(18.0f),
+            line, RGBAu32(236, 231, 222, 225), 0.68f * s);
 
         if (app->engine->MaterialBudgetEnabled()) {
-            std::snprintf(line, sizeof(line), "Material: %d / %d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetStar());
+            std::snprintf(line, sizeof(line), "Budget star: %d / %d", app->engine->MaterialUsed(), app->engine->LevelMaterialBudgetStar());
         }
         else {
-            std::snprintf(line, sizeof(line), "Material: no limit set");
+            std::snprintf(line, sizeof(line), "Budget star: no limit set");
         }
-        ui->TextCentered(px, py + 138.0f, panelW, 18.0f, line, RGBAu32(235, 235, 235, 225), 0.75f);
+        ui->TextCentered(px + S(22.0f), py + S(212.0f), panelW - S(44.0f), S(18.0f),
+            line, RGBAu32(236, 231, 222, 225), 0.68f * s);
     }
 
-    const float btnW = 120.0f;
-    const float btnH = 34.0f;
-    const float btnY = py + panelH - 50.0f;
-    const float retryX = px + 44.0f;
-    const float backX = px + panelW - btnW - 44.0f;
+    const float btnW = S(152.0f);
+    const float btnH = S(38.0f);
+    const float btnGap = S(22.0f);
+    const float btnY = py + panelH - btnH - S(26.0f);
+    const float retryX = px + (panelW - (btnW * 2.0f + btnGap)) * 0.5f;
+    const float levelsX = retryX + btnW + btnGap;
 
-    if (ui->Button(retryX, btnY, btnW, btnH, RGBAu32(90, 120, 90, 230), RGBAu32(110, 145, 110, 240), RGBAu32(70, 95, 70, 230))) {
-        OnEnter();
+    if (ui->ImageButton(ui->interfaceTex, retryX, btnY, btnW, btnH,
+        ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(164, 198, 142, 255), 7)) {
+        RestartLevel();
     }
-    ui->TextCentered(retryX, btnY, btnW, btnH, "RETRY", RGBAu32(245, 245, 245, 240), 0.85f);
+    ui->TextCentered(retryX + S(2.0f), btnY - S(2.0f), btnW, btnH,
+        "RETRY", RGBAu32(248, 245, 240, 245), 0.78f * s);
 
-    if (ui->Button(backX, btnY, btnW, btnH, RGBAu32(120, 80, 80, 230), RGBAu32(150, 105, 105, 240), RGBAu32(95, 60, 60, 230))) {
+    if (ui->ImageButton(ui->interfaceTex, levelsX, btnY, btnW, btnH,
+        ui->buttonUp, ui->buttonDown, ui->buttonDown, RGBAu32(196, 148, 136, 255), 7)) {
         mgr->Request(SCENE_LEVELSELECTOR);
     }
-    ui->TextCentered(backX, btnY, btnW, btnH, "LEVELS", RGBAu32(245, 245, 245, 240), 0.85f);
+    ui->TextCentered(levelsX + S(2.0f), btnY - S(2.0f), btnW, btnH,
+        "LEVELS", RGBAu32(248, 245, 240, 245), 0.78f * s);
 }
 
 static float KeepAspectH(float worldW, const AtlasRectPx& r)
