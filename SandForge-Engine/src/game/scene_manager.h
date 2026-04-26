@@ -19,6 +19,7 @@ public:
     void OpenSettings(SceneId returnTo);
     SceneId SettingsReturnTo() const { return settingsReturnTo; }
     SceneId CurrentId() const { return currentId; }
+    bool IsSpecialScene() { return (currentId == SCENE_LEVEL4 || currentId == SCENE_LEVEL8 || currentId == SCENE_LEVEL12); }
     bool WorldActive() const;
 
     void ResetScene();

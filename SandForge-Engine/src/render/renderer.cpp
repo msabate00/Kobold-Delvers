@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <game/scene_manager.h>
 
 
 Renderer::Renderer(App* app, bool start_enabled) : Module(app, start_enabled) {};
@@ -330,7 +331,7 @@ void Renderer::DrawSceneTarget(uint targetFBO, uint targetTex, int gridW, int gr
     else {
         const float outR = 0.02f, outG = 0.02f, outB = 0.03f;
         const float inR = 0.06f, inG = 0.06f, inB = 0.08f;
-
+         
         const float cw = std::fmax(1.0f, app->camera.size.x);
         const float ch = std::fmax(1.0f, app->camera.size.y);
 

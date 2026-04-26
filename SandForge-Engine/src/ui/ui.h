@@ -104,6 +104,7 @@ public:
 
 
     AtlasRectPx hudBackgroundRect{0,18,1920,150};
+    AtlasRectPx hudBackgroundSpecialRect{0,416,1920,58};
     AtlasRectPx hudSeparatorWoodRect{6,182,39,172};
 
     AtlasRectPx hudMaterialBackgroundSelectedRect{5,356,54,54};
