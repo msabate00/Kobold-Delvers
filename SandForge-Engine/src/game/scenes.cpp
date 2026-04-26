@@ -1056,6 +1056,12 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         const float bxSet = bxBack - 34.0f;
         const float bxGrid = bxSet - 34.0f;
         const float bxSpeed = bxGrid - 6.0f - speedW;
+        const float bxPause = bxSpeed - 34.0f;
+
+        uint32 pauseC = app->engine->paused ? RGBAu32(90, 150, 110, 230) : RGBAu32(110, 95, 150, 225);
+        if (tinyBtn(bxPause, by, b, b, pauseC, app->engine->paused ? ">" : "II", 0.72f)) {
+            app->engine->paused = !app->engine->paused;
+        }
 
         char speedLabel[8];
         std::snprintf(speedLabel, sizeof(speedLabel), "x%d", app->engine->simSpeed);
