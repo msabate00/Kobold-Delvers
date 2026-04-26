@@ -266,7 +266,7 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 	ui->Cursor();
 
     //info
-    ui->Text(vw - 150, vh - 30, "v21.04.2026", RGBAu32(255,255,255,255), 0.8F);
+    ui->Text(vw - 150, vh - 30, "v27.04.2026", RGBAu32(255,255,255,255), 0.8F);
 
 
     ui->Text(50, vh - 60, "Created by", RGBAu32(255,255,255,255), 0.8F);
