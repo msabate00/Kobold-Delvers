@@ -76,7 +76,7 @@ private:
         float minv, float maxv, float& v,
         float& t, float& kx, float& kx0, float& kw);
 
-    void LevelCellsProtectionMark(int brushSize);
+    void LevelCellsProtectionMark(int brushSize, int mx, int my);
 
 public:
     Texture2D matAtlas;

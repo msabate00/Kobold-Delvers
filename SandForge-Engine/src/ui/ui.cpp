@@ -105,9 +105,7 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 	}
 	const MatProps actualMat = matProps((uint8)auxMat);
 
-	if (app->engine->levelCellsProtection) {
-		LevelCellsProtectionMark(brushSize);
-	}
+	
 
 	float ringX = (float)mx;
 	float ringY = (float)my;
@@ -122,11 +120,16 @@ void UI::Draw(int& brushSize, Material& brushMat) {
 				app->framebufferSize.x, app->framebufferSize.y, sx, sy, sw, sh)) {
 				ringX = std::floor(sx + sw * 0.5f);
 				ringY = std::floor(sy + sh * 0.5f);
+				LevelCellsProtectionMark(ringRadius, ringX, ringY);
 			}
 		}
 	}
 
 	Ring(ringX, ringY, ringRadius, 2, RGBAu32(actualMat.color.r, actualMat.color.g, actualMat.color.b, 100), 12);
+
+	if (app->engine->levelCellsProtection && !app->engine->HasPlayer()) {
+		LevelCellsProtectionMark(brushSize, mx, my);
+	}
 
 	Cursor();
 
@@ -387,7 +390,7 @@ bool UI::SliderLogic(float x, float y, float w, float h,
 }
 
 
-void UI::LevelCellsProtectionMark(int brushSize)
+void UI::LevelCellsProtectionMark(int brushSize, int mx, int my)
 {
 	int cx = 0, cy = 0;
 	if (app->engine->ScreenToWorldCell((int)mx, (int)my, cx, cy)) {
