@@ -4,6 +4,7 @@
 
 #include "render/anim.h"
 #include "render/texture.h"
+#include "core/level.h"
 #include <string>
 #include <vector>
 
@@ -126,8 +127,21 @@ private:
     void EnsureLevelsFolder();
     std::string NextAutoName();
 
+    void ResetUndo();
+    void SaveUndo();
+    void LoadUndo(int index);
+    void Undo();
+    void Redo();
+    void UpdateUndoInput();
+
 private:
+    static const int MAX_UNDO = 20;
+
     std::vector<std::string> files;
     int selected = 0;
     bool requestRescan = true;
+
+    std::vector<Level> undoLevels;
+    int undoIndex = -1;
+    bool painting = false;
 };

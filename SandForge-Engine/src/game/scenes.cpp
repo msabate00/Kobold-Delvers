@@ -886,6 +886,82 @@ void Scene_Level::DrawUI(int& brushSize, Material& brushMat)
     DrawLevelCompleteModal();
 }
 
+void Scene_Sandbox::ResetUndo()
+{
+    undoLevels.clear();
+    undoIndex = -1;
+    painting = false;
+
+    SaveUndo();
+}
+
+void Scene_Sandbox::SaveUndo()
+{
+    Level lvl;
+    app->engine->ExportLevel(lvl);
+
+    // Si hemos vuelto atras y pintamos, borramos los redos
+    if (undoIndex + 1 < (int)undoLevels.size()) {
+        undoLevels.erase(undoLevels.begin() + undoIndex + 1, undoLevels.end());
+    }
+
+    undoLevels.push_back(lvl);
+
+    if ((int)undoLevels.size() > MAX_UNDO) {
+        undoLevels.erase(undoLevels.begin());
+    }
+
+    undoIndex = (int)undoLevels.size() - 1;
+}
+
+void Scene_Sandbox::LoadUndo(int index)
+{
+    if (index < 0 || index >= (int)undoLevels.size()) return;
+
+    app->engine->StopPaint();
+    painting = false;
+    undoIndex = index;
+
+    app->engine->ImportLevel(undoLevels[undoIndex]);
+    gSandboxResetMatCounter = true;
+}
+
+void Scene_Sandbox::Undo()
+{
+    if (undoIndex <= 0) return;
+    LoadUndo(undoIndex - 1);
+}
+
+void Scene_Sandbox::Redo()
+{
+    if (undoIndex + 1 >= (int)undoLevels.size()) return;
+    LoadUndo(undoIndex + 1);
+}
+
+void Scene_Sandbox::UpdateUndoInput()
+{
+    const bool ctrl = app->input->KeyRepeat(GLFW_KEY_LEFT_CONTROL);
+
+    if (ctrl && app->input->KeyDown(GLFW_KEY_Z)) {
+        Undo();
+        return;
+    }
+
+    if (ctrl && app->input->KeyDown(GLFW_KEY_Y)) {
+        Redo();
+        return;
+    }
+
+    if (!painting && app->input->MouseDown(GLFW_MOUSE_BUTTON_1) && !app->ui->ConsumedMouse()) {
+        painting = true;
+    }
+
+    if (painting && app->input->MouseUp(GLFW_MOUSE_BUTTON_1)) {
+        painting = false;
+        SaveUndo();
+    }
+}
+
 Scene_Sandbox::Scene_Sandbox(App* app, SceneManager* mgr)
     : Scene_Level(app, mgr, SCENE_SANDBOX, "")
 {
@@ -908,10 +984,13 @@ void Scene_Sandbox::OnEnter()
     gSandboxResetMatCounter = true;
 
     app->ResetCamera();
+    ResetUndo();
 }
 
 void Scene_Sandbox::Update(float)
 {
+    UpdateUndoInput();
+
     if (app->input->KeyDown(GLFW_KEY_ESCAPE)) mgr->Request(SCENE_MAINMENU);
 
     if (requestRescan) {
@@ -1026,7 +1105,9 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
         //Load
         if (tinyBtn(x0 + 6.0f + (bw + gap) * 0, by, bw, bh, RGBAu32(80, 120, 80, 230), "LOAD", 0.58f)) {
             if (!files.empty()) {
-                app->engine->LoadLevel(files[selected].c_str());
+                if (app->engine->LoadLevel(files[selected].c_str())) {
+                    ResetUndo();
+                }
                 gSandboxResetMatCounter = true;
             }
         }
@@ -1043,6 +1124,7 @@ void Scene_Sandbox::DrawUI(int& brushSize, Material& brushMat)
             app->engine->ClearWorld();
             app->engine->SetLevelMaterialLimits(0, 0);
             app->engine->SaveLevel(name.c_str());
+            ResetUndo();
             requestRescan = true;
             gSandboxResetMatCounter = true;
         }
