@@ -287,7 +287,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Snow", Material::Snow,
             "Cold falling material. It behaves like a soft solid, but heat melts it into water.",
-            10,
+            9,
             {
                 { "Snow falls and piles up, similar to sand but colder.",
                     {
@@ -300,6 +300,42 @@ void Scene_Compendium::CompendiumEntries()
                         { MiniCell{1, 1, Material::Snow}, MiniCell{2, 1, Material::Fire}, MiniCell{0, 2, Material::Stone}, MiniCell{1, 2, Material::Stone}, MiniCell{2, 2, Material::Stone} },
                         { MiniCell{1, 1, Material::Water}, MiniCell{2, 1, Material::Fire}, MiniCell{0, 2, Material::Stone}, MiniCell{1, 2, Material::Stone}, MiniCell{2, 2, Material::Stone} },
                         { MiniCell{0, 1, Material::Water}, MiniCell{1, 1, Material::Water}, MiniCell{2, 1, Material::Steam}, MiniCell{0, 2, Material::Stone}, MiniCell{1, 2, Material::Stone}, MiniCell{2, 2, Material::Stone} }
+                    }
+                }
+            }
+        },
+        {
+            "Ice", Material::Ice,
+            "Cold solid block. It does not fall, freezes nearby water if the\nwater has empty space above it. Heat turns it directly into steam.",
+            8,
+            {
+                { "Ice works as a solid cold platform. It can hold kobolds or block liquids like stone,\nbut it is still weak against heat.",
+                    {
+                        { MiniCell{0, 2, Material::Ice}, MiniCell{1, 2, Material::Ice}, MiniCell{2, 2, Material::Ice} },
+                        { MiniCell{0, 1, Material::NpcCell}, MiniCell{0, 2, Material::Ice}, MiniCell{1, 2, Material::Ice}, MiniCell{2, 2, Material::Ice} },
+                        { MiniCell{1, 1, Material::NpcCell}, MiniCell{0, 2, Material::Ice}, MiniCell{1, 2, Material::Ice}, MiniCell{2, 2, Material::Ice} },
+                        { MiniCell{2, 1, Material::NpcCell}, MiniCell{0, 2, Material::Ice}, MiniCell{1, 2, Material::Ice}, MiniCell{2, 2, Material::Ice} }
+                    }
+                },
+                { "Ice can freeze nearby water. This is useful to close pools or make a bridge.",
+                    {
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Water}, MiniCell{2, 1, Material::Water}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} },
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Ice}, MiniCell{2, 1, Material::Water}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} },
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Ice}, MiniCell{2, 1, Material::Ice}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} }
+                    }
+                },
+                { "If there is empty space above the water, ice can keep spreading through the water.",
+                    {
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Water}, MiniCell{2, 1, Material::Water}, MiniCell{0, 0, Material::Empty}, MiniCell{1, 0, Material::Empty}, MiniCell{2, 0, Material::Empty}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} },
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Ice}, MiniCell{2, 1, Material::Water}, MiniCell{0, 0, Material::Empty}, MiniCell{1, 0, Material::Empty}, MiniCell{2, 0, Material::Empty}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} },
+                        { MiniCell{0, 1, Material::Ice}, MiniCell{1, 1, Material::Ice}, MiniCell{2, 1, Material::Ice}, MiniCell{0, 0, Material::Empty}, MiniCell{1, 0, Material::Empty}, MiniCell{2, 0, Material::Empty}, MiniCell{0, 2, Material::Water}, MiniCell{1, 2, Material::Water}, MiniCell{2, 2, Material::Water} }
+                    }
+                },
+                { "Fire, lava or hot coal melts ice instantly into steam, so ice platforms are risky\nnear heat reactions.",
+                    {
+                        { MiniCell{1, 1, Material::Ice}, MiniCell{2, 1, Material::Fire}},
+                        { MiniCell{1, 1, Material::Steam}, MiniCell{2, 1, Material::Fire} },
+                        { MiniCell{1, 0, Material::Steam}, MiniCell{2, 1, Material::Smoke} }
                     }
                 }
             }
