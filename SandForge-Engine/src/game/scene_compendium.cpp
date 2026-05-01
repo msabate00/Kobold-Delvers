@@ -585,6 +585,9 @@ void Scene_Compendium::DrawMatIcon(Material mat, float x, float y, float size, u
     DrawHolder(x, y, size, RGBAu32(255, 255, 255, 245));
 
     const AtlasRectPx& r = matProps((uint8)mat).rect;
+    if (mat == PlayerCell) {
+        tint = RGBAu32(255, 150, 215, 255);
+    }
     ui->Image(ui->matAtlas, x + size * 0.14f, y + size * 0.14f, size * 0.72f, size * 0.72f, r, tint, 5);
 }
 
@@ -612,7 +615,13 @@ void Scene_Compendium::DrawGrid(float x, float y, float size, const std::vector<
             ui->TextCentered(ix, iy - is * 0.10f, is, is, "X", RGBAu32(250, 235, 220, 230), is / 38.0f);
         }
         else {
-            ui->Image(ui->matAtlas, ix, iy, is, is, matProps((uint8)c.mat).rect, RGBAu32(255, 255, 255, 245), 6);
+            if (c.mat == PlayerCell) {
+                ui->Image(ui->matAtlas, ix, iy, is, is, matProps((uint8)c.mat).rect, RGBAu32(255, 150, 215,255), 6);
+            }
+            else {
+                ui->Image(ui->matAtlas, ix, iy, is, is, matProps((uint8)c.mat).rect, RGBAu32(255, 255, 255, 245), 6);
+            }
+            
         }
     }
 }
@@ -733,7 +742,7 @@ void Scene_Compendium::DrawInfoPanel(const CompendiumEntry& e, float x, float y,
     const float maxScroll = std::fmax(0.0f, contentH - viewH);
     infoScroll = std::clamp(infoScroll, 0.0f, maxScroll);
 
-    ui->Text(x + pad, iy, maxScroll > 0.0f ? "INTERACTIONS  (mouse wheel)" : "INTERACTIONS", RGBAu32(245, 220, 160, 240), 0.78f * scale);
+    ui->Text(x + pad, iy, maxScroll > 0.0f ? "INTERACTIONS  (use mouse wheel to scroll)" : "INTERACTIONS", RGBAu32(245, 220, 160, 240), 0.78f * scale);
 
     if (e.interactions.empty()) {
         ui->Text(x + pad, viewY, "No special reaction for now.", RGBAu32(210, 205, 195, 180), 0.72f * scale);
