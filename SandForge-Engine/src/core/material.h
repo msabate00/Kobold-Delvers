@@ -24,17 +24,17 @@ enum Material : uint8 {
     NpcBonusCell,
     Vine,
     Snow,
-    Ice,
     Oil,
     Coal,
     HotCoal,
     FlammableGas,
     FragilePlatform,
+    Ice,
     Acid,
-    Dynamite,
+    Dynamite,  
     PlayerCell,
     PlayerTriggerCell,
-    COUNT
+    COUNT 
 };
 
 struct Cell {
