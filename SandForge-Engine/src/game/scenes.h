@@ -21,7 +21,7 @@ public:
     void DrawUI(int& brushSize, Material& brushMat) override;
 
 private:
-    bool DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT);
+    bool DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT, AtlasRectPx upRect, AtlasRectPx downRect);
     void ResetBgNpc(int i, float vw, float vh, bool firstTime);
     void ResetBgMat(int i, float vw, float vh, bool firstTime);
     void DrawMenuBackground(float vw, float vh);
@@ -59,6 +59,7 @@ private:
     float uiIntroTimer = 0.0f;
     float logoBobTimer = 0.0f;
     float levelsHoverT = 0.0f;
+    float compendiumHoverT = 0.0f;
     float sandboxHoverT = 0.0f;
     float settingsHoverT = 0.0f;
     float quitHoverT = 0.0f;

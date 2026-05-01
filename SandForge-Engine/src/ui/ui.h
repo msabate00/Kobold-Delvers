@@ -128,6 +128,9 @@ public:
     AtlasRectPx buttonUp{ 1388, 179, 345, 78 };
     AtlasRectPx buttonDown{ 1388, 255, 345, 78 };
 
+    AtlasRectPx compendiumUp{ 344, 173, 155, 155 };
+    AtlasRectPx compendiumDown{ 494, 173, 155, 155 };
+
     AtlasRectPx buttonLittleUp{ 1746, 179, 85, 78 };
     AtlasRectPx buttonLittleDown{ 1746, 255, 85, 78 };
 

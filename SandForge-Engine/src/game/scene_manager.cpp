@@ -1,7 +1,8 @@
 #include "scene_manager.h"
 #include "scenes.h"
 #include "scene_settings.h"
-#include "scene_levelSelector.h"
+#include "scene_levelselector.h"
+#include "scene_compendium.h"
 #include "app/app.h"
 #include "audio/audio.h"
 #include "render/renderer.h"
@@ -15,6 +16,7 @@ bool SceneManager::Awake()
 {
     scenes[SCENE_MAINMENU] = new Scene_MainMenu(app, this);
     scenes[SCENE_LEVELSELECTOR] = new Scene_LevelSelector(app, this);
+    scenes[SCENE_COMPENDIUM] = new Scene_Compendium(app, this);
     scenes[SCENE_TUTORIAL] = new Scene_Level(app, this, SCENE_TUTORIAL, "levels/vanilla/tutorial.lvl");
     scenes[SCENE_SANDBOX] = new Scene_Sandbox(app, this);
     scenes[SCENE_LEVEL1] = new Scene_Level(app, this, SCENE_LEVEL1, "levels/vanilla/level_01.lvl", "FIRST STEPS");
@@ -123,6 +125,7 @@ void SceneManager::SyncSceneMusic(SceneId id, float fadeSec)
     switch (id) {
     case SCENE_MAINMENU:
     case SCENE_LEVELSELECTOR:
+    case SCENE_COMPENDIUM:
         key = "main_menu";
         break;
     case SCENE_SANDBOX:

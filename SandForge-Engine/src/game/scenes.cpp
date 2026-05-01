@@ -69,6 +69,7 @@ void Scene_MainMenu::OnEnter()
 	uiIntroTimer = 0.0f;
 	logoBobTimer = 0.0f;
 	levelsHoverT = 0.0f;
+	compendiumHoverT = 0.0f;
 	sandboxHoverT = 0.0f;
 	settingsHoverT = 0.0f;
 	quitHoverT = 0.0f;
@@ -227,7 +228,7 @@ void Scene_MainMenu::DrawMenuBackground(float vw, float vh)
 	}
 }
 
-bool Scene_MainMenu::DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT)
+bool Scene_MainMenu::DrawMainMenuButton(float x, float y, float w, float h, const char* text, uint32 color, float delay, float introDir, float& hoverT, AtlasRectPx upRect, AtlasRectPx downRect)
 {
 	UI* ui = app->ui;
 
@@ -247,7 +248,7 @@ bool Scene_MainMenu::DrawMainMenuButton(float x, float y, float w, float h, cons
 	float drawX = bx - (drawW - w) * 0.5f;
 	float drawY = y - (drawH - h) * 0.5f - hoverT * 3.0f;
 
-	if (ui->ImageButton(ui->interfaceTex, drawX, drawY, drawW, drawH, ui->buttonUp, ui->buttonDown, ui->buttonDown, UIAnim::AlphaRGBA(color, introAlpha)))
+	if (ui->ImageButton(ui->interfaceTex, drawX, drawY, drawW, drawH, upRect, downRect, downRect, UIAnim::AlphaRGBA(color, introAlpha)))
 		return true;
 
 	ui->TextCentered(drawX + 2, drawY - 2, drawW, drawH, text, RGBAu32(240, 240, 240, (unsigned)(230.0f * introAlpha)), 1.0f + hoverT * 0.04f);
@@ -304,24 +305,28 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 
 	//Botones
 	float bw = 260.0f;
-	float bh = 70.0f;
-	float spacing = 8.0f;
+	float bh = 60.0f;
+	float spacing = 6.0f;
 	float cx = (vw - bw) * 0.5f;
 	float cy = logoY + logoH + 28.0f;
 
-	if (DrawMainMenuButton(cx, cy, bw, bh, "LEVELS", RGBAu32(180, 180, 220, 220), 0.10f, -1.0f, levelsHoverT))
+	if (DrawMainMenuButton(cx, cy, bw, bh, "LEVELS", RGBAu32(180, 180, 220, 220), 0.10f, -1.0f, levelsHoverT, ui->buttonUp, ui->buttonDown))
 		mgr->Request(SCENE_LEVELSELECTOR);
 
+	//cy += bh + spacing;
+	if (DrawMainMenuButton(cx + bw, cy+12, 90, 90, "", RGBAu32(222, 196, 130, 220), 0.16f, 1.0f, compendiumHoverT, ui->compendiumUp, ui->compendiumDown))
+		mgr->Request(SCENE_COMPENDIUM);
+
 	cy += bh + spacing;
-	if (DrawMainMenuButton(cx, cy, bw, bh, "SANDBOX", RGBAu32(170, 220, 170, 220), 0.18f, 1.0f, sandboxHoverT))
+	if (DrawMainMenuButton(cx, cy, bw, bh, "SANDBOX", RGBAu32(170, 220, 170, 220), 0.22f, -1.0f, sandboxHoverT, ui->buttonUp, ui->buttonDown))
 		mgr->Request(SCENE_SANDBOX);
 
 	cy += bh + spacing;
-	if (DrawMainMenuButton(cx, cy, bw, bh, "SETTINGS", RGBAu32(102, 161, 255, 220), 0.26f, -1.0f, settingsHoverT))
+	if (DrawMainMenuButton(cx, cy, bw, bh, "SETTINGS", RGBAu32(102, 161, 255, 220), 0.28f, 1.0f, settingsHoverT, ui->buttonUp, ui->buttonDown))
 		mgr->OpenSettings(SCENE_MAINMENU);
 
 	cy += bh + spacing;
-	if (DrawMainMenuButton(cx, cy, bw, bh, "QUIT", RGBAu32(220, 170, 170, 220), 0.34f, 1.0f, quitHoverT))
+	if (DrawMainMenuButton(cx, cy, bw, bh, "QUIT", RGBAu32(220, 170, 170, 220), 0.34f, -1.0f, quitHoverT, ui->buttonUp, ui->buttonDown))
 		app->RequestQuit();
 }
 
