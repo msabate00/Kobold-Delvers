@@ -61,6 +61,43 @@ static void SnowUpdate(Engine& E, int x, int y, const Cell& self)
     E.tryMove(x, y, db, +1, self);
 }
 
+static void IceUpdate(Engine& E, int x, int y, const Cell& self) {
+
+    static const int8 dirs[4][2] = {
+                    {0,-1},
+            {-1, 0},       {1, 0},
+                    {0, 1}
+    };
+    static const int8 dirsArrowd[8][2] = {
+            {-1,-1}, {0,-1},{1,-1},
+            {-1, 0},        {1, 0},
+            {-1, 1}, {0, 1},{1, 1},
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        const int nx = x + dirs[i][0];
+        const int ny = y + dirs[i][1];
+        if (!E.InRange(nx, ny)) continue;
+        if (IsHeatMat(E.GetCell(nx, ny).m)) {
+            E.SetCell(x, y, (uint8)Material::Steam);
+            return;
+        }
+    }
+
+    for (int i = 0; i < 8; ++i) {
+        const int nx = x + dirsArrowd[i][0];
+        const int ny = y + dirsArrowd[i][1];
+        if (!E.InRange(nx, ny)) continue;
+        if (E.GetCell(nx, ny).m == Material::Water) {
+            if (E.GetCell(nx, ny - 1).m == Material::Empty) {
+                E.SetCell(nx, ny, (uint8)Material::Ice);
+                return;
+            }
+        }
+    }
+
+}
+
 static void WaterUpdate(Engine& E, int x, int y, const Cell& self) {
     if (E.tryMove(x, y, 0, +1, self)) return;
 
@@ -492,6 +529,7 @@ void registerDefaultMaterials()
     g_mat[(uint8)Material::Steam] = {       "Steam",            {200,200,200,255, 1},       255,                AtlasRectPx{256,0, 32, 32},     &SteamUpdate };
     g_mat[(uint8)Material::Vine] = {        "Vine",             {70,180,70,255, 1},         255,                AtlasRectPx{0, 32, 32, 32},     &VineUpdate };
     g_mat[(uint8)Material::Snow] = {        "Snow",             {235,240,255,255, 1},       2,                  AtlasRectPx{32,32, 32, 32},     &SnowUpdate };
+    g_mat[(uint8)Material::Ice] = {         "Ice",              {140,215,255,255, 1},       2,                  AtlasRectPx{288,32, 32, 32},    &IceUpdate };
     g_mat[(uint8)Material::Oil] = {         "Oil",              {95,70,30,220, 1},          1,                  AtlasRectPx{64,32, 32, 32},     &OilUpdate };
     g_mat[(uint8)Material::Coal] = {        "Coal",             {45,45,52,255, 1},          255,                AtlasRectPx{96,32, 32, 32},     &CoalUpdate };
     g_mat[(uint8)Material::HotCoal] = {     "HotCoal",          {255,110,35,255, 3.0f},     255,                AtlasRectPx{128,32, 32, 32},    &HotCoalUpdate };

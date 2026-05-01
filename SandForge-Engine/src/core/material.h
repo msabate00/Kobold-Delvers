@@ -24,6 +24,7 @@ enum Material : uint8 {
     NpcBonusCell,
     Vine,
     Snow,
+    Ice,
     Oil,
     Coal,
     HotCoal,
