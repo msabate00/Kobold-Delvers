@@ -37,7 +37,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Player", Material::PlayerCell,
             "You play as a kobold in special levels. You can move, jump and use the available\nmaterials to solve the room yourself.",
-            0,
+            4,
             {
                 { "Walk left and right over solid terrain.",
                     {
@@ -287,7 +287,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Snow", Material::Snow,
             "Cold falling material. It behaves like a soft solid, but heat melts it into water.",
-            9,
+            10,
             {
                 { "Snow falls and piles up, similar to sand but colder.",
                     {
@@ -307,7 +307,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Vine", Material::Vine,
             "Plant material. It grows when touching water, can fill gaps and burns very quickly\nwhen heat gets close.",
-            10,
+            9,
             {
                 { "Vines grow from water into nearby empty or water cells.",
                     {
@@ -429,7 +429,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Fragile", Material::FragilePlatform,
             "Breakable solid platform. It can hold kobolds, but it is flammable and weak against\nacid, so it is not reliable forever.",
-            11,
+            12,
             {
                 { "Fragile platforms can be used as temporary floor for materials.",
                     {
@@ -494,7 +494,7 @@ void Scene_Compendium::CompendiumEntries()
         {
             "Dynamite", Material::Dynamite,
             "Explosive solid. It detonates when touched by heat and fills a large area with fire.\nVery useful for opening paths, very bad near kobolds.",
-            11,
+            8,
             {
                 { "Dynamite stays still until a heat source reaches it.",
                     {

@@ -314,7 +314,7 @@ void Scene_MainMenu::DrawUI(int&, Material&)
 		mgr->Request(SCENE_LEVELSELECTOR);
 
 	//cy += bh + spacing;
-	if (DrawMainMenuButton(cx + bw, cy+12, 90, 90, "", RGBAu32(222, 196, 130, 220), 0.16f, 1.0f, compendiumHoverT, ui->compendiumUp, ui->compendiumDown))
+	if (DrawMainMenuButton(cx + bw, cy+12, 90, 90, "", RGBAu32(222, 222, 222, 220), 0.16f, 1.0f, compendiumHoverT, ui->compendiumUp, ui->compendiumDown))
 		mgr->Request(SCENE_COMPENDIUM);
 
 	cy += bh + spacing;
